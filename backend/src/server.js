@@ -14,21 +14,22 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 // Middleware imports
-const authMiddleware = require('./middleware/auth');
-const multiTenantMiddleware = require('./middleware/multiTenant');
-const rateLimitMiddleware = require('./middleware/rateLimit');
-const errorHandler = require('./middleware/errorHandler');
+const authMiddleware = require('../middleware/auth');
+const multiTenantMiddleware = require('../middleware/multiTenant');
+const rateLimitMiddleware = require('../middleware/rateLimit');
+const errorHandler = require('../middleware/errorHandler');
 
 // Route imports
-const authRoutes = require('./routes/auth');
-const dancerRoutes = require('./routes/dancers');
-const djQueueRoutes = require('./routes/dj-queue');
-const musicRoutes = require('./routes/music');
-const vipRoomRoutes = require('./routes/vip-rooms');
-const financialRoutes = require('./routes/financial');
-const subscriptionRoutes = require('./routes/subscriptions');
-const analyticsRoutes = require('./routes/analytics');
-const webhookRoutes = require('./routes/webhooks');
+const authRoutes = require('../routes/auth');
+const dashboardRoutes = require('../routes/dashboard');
+const dancerRoutes = require('../routes/dancers');
+const djQueueRoutes = require('../routes/dj-queue');
+const musicRoutes = require('../routes/music');
+const vipRoomRoutes = require('../routes/vip-rooms');
+const financialRoutes = require('../routes/financial');
+const subscriptionRoutes = require('../routes/subscriptions');
+const analyticsRoutes = require('../routes/analytics');
+const webhookRoutes = require('../routes/webhooks');
 
 const app = express();
 const server = http.createServer(app);
@@ -74,16 +75,17 @@ app.use('/api/webhooks', express.raw({ type: 'application/json' }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// Custom middleware
+// Public routes (no auth required)
 app.use('/api/auth', authRoutes);
-app.use('/api/webhooks', webhookRoutes); // Before auth middleware
+app.use('/api/webhooks', webhookRoutes);
 
-// Protected routes with multi-tenant isolation
-app.use('/api', authMiddleware);
+// Protected routes with authentication and multi-tenant isolation
+app.use('/api', authMiddleware.auth);
 app.use('/api', multiTenantMiddleware);
 app.use('/api', rateLimitMiddleware);
 
 // Core business routes
+app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/dancers', dancerRoutes);
 app.use('/api/dj-queue', djQueueRoutes);
 app.use('/api/music', musicRoutes);

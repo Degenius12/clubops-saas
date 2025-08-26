@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
-const User = require('../models/User');
-const Club = require('../models/Club');
+const { PrismaClient } = require('@prisma/client');
+
+const prisma = new PrismaClient();
 
 // Authentication middleware
 const auth = async (req, res, next) => {
@@ -22,19 +23,25 @@ const auth = async (req, res, next) => {
     req.user = decoded.user;
     
     // Verify user still exists and is active
-    const user = await User.findById(req.user.id).populate('clubId');
+    const user = await prisma.clubUser.findUnique({
+      where: { id: req.user.id },
+      include: {
+        club: true
+      }
+    });
+
     if (!user || !user.isActive) {
       return res.status(401).json({ error: 'User not found or inactive' });
     }
 
-    // Verify club is active and subscription is valid
-    if (!user.clubId || !user.clubId.isActive) {
-      return res.status(403).json({ error: 'Club inactive or subscription suspended' });
+    // Verify club has active subscription
+    if (!user.club || user.club.subscriptionStatus === 'cancelled') {
+      return res.status(403).json({ error: 'Club subscription inactive' });
     }
 
     // Add full user and club info to request
     req.fullUser = user;
-    req.club = user.clubId;
+    req.club = user.club;
     
     next();
   } catch (error) {
@@ -67,30 +74,30 @@ const authorize = (...roles) => {
   };
 };
 
-// Subscription tier middleware
+// Subscription tier middleware with feature flag checking
 const requireSubscription = (...tiers) => {
   return async (req, res, next) => {
     try {
-      if (!req.club || !req.club.subscription) {
-        return res.status(403).json({ error: 'No subscription information' });
+      if (!req.club) {
+        return res.status(403).json({ error: 'No club information' });
       }
 
-      const { subscription } = req.club;
+      const { subscriptionTier, subscriptionStatus } = req.club;
       
       // Check if subscription is active
-      if (subscription.status !== 'active' && subscription.status !== 'trial') {
+      if (subscriptionStatus === 'cancelled' || subscriptionStatus === 'past_due') {
         return res.status(403).json({ 
           error: 'Subscription required',
-          message: 'Please upgrade your subscription to access this feature'
+          message: 'Please update your subscription to access this feature'
         });
       }
 
       // Check if subscription tier allows access
-      if (!tiers.includes(subscription.tier)) {
+      if (!tiers.includes(subscriptionTier)) {
         return res.status(403).json({ 
           error: 'Subscription upgrade required',
           message: `This feature requires: ${tiers.join(' or ')} subscription`,
-          currentTier: subscription.tier,
+          currentTier: subscriptionTier,
           requiredTiers: tiers
         });
       }
@@ -103,4 +110,56 @@ const requireSubscription = (...tiers) => {
   };
 };
 
-module.exports = { auth, authorize, requireSubscription };
+// Feature flag middleware - checks if feature is enabled for subscription tier
+const requireFeature = (featureName) => {
+  return async (req, res, next) => {
+    try {
+      if (!req.club) {
+        return res.status(403).json({ error: 'No club information' });
+      }
+
+      // Get feature flag
+      const feature = await prisma.featureFlag.findUnique({
+        where: { featureName }
+      });
+
+      if (!feature) {
+        return res.status(404).json({ error: 'Feature not found' });
+      }
+
+      const tier = req.club.subscriptionTier;
+      let hasAccess = false;
+
+      switch (tier) {
+        case 'free':
+          hasAccess = feature.freeTier;
+          break;
+        case 'basic':
+          hasAccess = feature.basicTier;
+          break;
+        case 'pro':
+          hasAccess = feature.proTier;
+          break;
+        case 'enterprise':
+          hasAccess = feature.enterpriseTier;
+          break;
+      }
+
+      if (!hasAccess) {
+        return res.status(403).json({
+          error: 'Feature not available',
+          message: `${featureName} is not available in your ${tier} plan`,
+          feature: featureName,
+          currentTier: tier
+        });
+      }
+
+      next();
+    } catch (error) {
+      console.error('Feature flag middleware error:', error);
+      res.status(500).json({ error: 'Server error in feature check' });
+    }
+  };
+};
+
+module.exports = { auth, authorize, requireSubscription, requireFeature };

@@ -2,10 +2,9 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
-const User = require('../models/User');
-const Club = require('../models/Club');
-const auth = require('../middleware/auth');
+const { PrismaClient } = require('@prisma/client');
 
+const prisma = new PrismaClient();
 const router = express.Router();
 
 // @route   POST /api/auth/register
@@ -15,6 +14,7 @@ router.post('/register', [
   body('email').isEmail().normalizeEmail(),
   body('password').isLength({ min: 6 }),
   body('clubName').notEmpty().trim(),
+  body('subdomain').notEmpty().trim(),
   body('firstName').notEmpty().trim(),
   body('lastName').notEmpty().trim()
 ], async (req, res) => {
@@ -24,46 +24,80 @@ router.post('/register', [
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { email, password, clubName, firstName, lastName, phone } = req.body;
+    const { email, password, clubName, subdomain, firstName, lastName } = req.body;
 
-    // Check if user already exists
-    let existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({ error: 'User already exists' });
+    // Check if subdomain is taken
+    const existingClub = await prisma.club.findUnique({
+      where: { subdomain }
+    });
+    if (existingClub) {
+      return res.status(400).json({ error: 'Subdomain already taken' });
     }
 
     // Hash password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // Create club first
-    const club = new Club({
-      name: clubName,
-      subscription: {
-        tier: 'free', // Start with free tier
-        status: 'active',
-        trialEndsAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days
-      }
-    });
-    await club.save();
+    // Create club with owner in a transaction
+    const result = await prisma.$transaction(async (tx) => {
+      // Create club
+      const club = await tx.club.create({
+        data: {
+          name: clubName,
+          subdomain,
+          subscriptionTier: 'free',
+          subscriptionStatus: 'trialing',
+          settings: {}
+        }
+      });
 
-    // Create user
-    const user = new User({
-      email,
-      password: hashedPassword,
-      firstName,
-      lastName,
-      phone,
-      role: 'owner',
-      clubId: club._id
+      // Check if user email already exists for this club
+      const existingUser = await tx.clubUser.findUnique({
+        where: {
+          clubId_email: {
+            clubId: club.id,
+            email
+          }
+        }
+      });
+
+      if (existingUser) {
+        throw new Error('User already exists');
+      }
+
+      // Create owner user
+      const user = await tx.clubUser.create({
+        data: {
+          clubId: club.id,
+          email,
+          passwordHash: hashedPassword,
+          role: 'owner',
+          firstName,
+          lastName,
+          isActive: true
+        }
+      });
+
+      // Create initial subscription
+      const subscription = await tx.subscription.create({
+        data: {
+          clubId: club.id,
+          status: 'trialing',
+          currentPeriodStart: new Date(),
+          currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days trial
+          trialEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+        }
+      });
+
+      return { club, user, subscription };
     });
-    await user.save();
+
     // Generate JWT token
     const payload = {
       user: {
-        id: user.id,
-        clubId: club._id,
-        role: user.role
+        id: result.user.id,
+        clubId: result.club.id,
+        role: result.user.role
       }
     };
 
@@ -73,16 +107,18 @@ router.post('/register', [
       { expiresIn: '24h' },
       (err, token) => {
         if (err) throw err;
-        res.json({
+        res.status(201).json({
           token,
           user: {
-            id: user.id,
-            email: user.email,
-            firstName: user.firstName,
-            lastName: user.lastName,
-            role: user.role,
-            clubId: club._id,
-            clubName: club.name
+            id: result.user.id,
+            email: result.user.email,
+            firstName: result.user.firstName,
+            lastName: result.user.lastName,
+            role: result.user.role,
+            clubId: result.club.id,
+            clubName: result.club.name,
+            subdomain: result.club.subdomain,
+            subscriptionTier: result.club.subscriptionTier
           }
         });
       }
@@ -90,6 +126,9 @@ router.post('/register', [
 
   } catch (error) {
     console.error('Registration error:', error);
+    if (error.message === 'User already exists') {
+      return res.status(400).json({ error: 'User already exists' });
+    }
     res.status(500).json({ error: 'Server error during registration' });
   }
 });
@@ -109,23 +148,38 @@ router.post('/login', [
 
     const { email, password } = req.body;
 
-    // Check if user exists
-    const user = await User.findOne({ email }).populate('clubId');
+    // Find user with club info
+    const user = await prisma.clubUser.findFirst({
+      where: { 
+        email,
+        isActive: true 
+      },
+      include: {
+        club: true
+      }
+    });
+
     if (!user) {
       return res.status(400).json({ error: 'Invalid credentials' });
     }
 
     // Check password
-    const isMatch = await bcrypt.compare(password, user.password);
+    const isMatch = await bcrypt.compare(password, user.passwordHash);
     if (!isMatch) {
       return res.status(400).json({ error: 'Invalid credentials' });
     }
+
+    // Update last login
+    await prisma.clubUser.update({
+      where: { id: user.id },
+      data: { lastLogin: new Date() }
+    });
 
     // Generate JWT token
     const payload = {
       user: {
         id: user.id,
-        clubId: user.clubId._id,
+        clubId: user.clubId,
         role: user.role
       }
     };
@@ -144,9 +198,11 @@ router.post('/login', [
             firstName: user.firstName,
             lastName: user.lastName,
             role: user.role,
-            clubId: user.clubId._id,
-            clubName: user.clubId.name,
-            subscription: user.clubId.subscription
+            clubId: user.clubId,
+            clubName: user.club.name,
+            subdomain: user.club.subdomain,
+            subscriptionTier: user.club.subscriptionTier,
+            subscriptionStatus: user.club.subscriptionStatus
           }
         });
       }
@@ -160,12 +216,20 @@ router.post('/login', [
 
 // @route   GET /api/auth/me
 // @desc    Get current user
-// @access  Private
-router.get('/me', auth, async (req, res) => {
+// @access  Private (handled by auth middleware)
+router.get('/me', async (req, res) => {
   try {
-    const user = await User.findById(req.user.id)
-      .select('-password')
-      .populate('clubId');
+    const user = await prisma.clubUser.findUnique({
+      where: { id: req.user.id },
+      include: {
+        club: true
+      }
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
     res.json({
       user: {
         id: user.id,
@@ -173,9 +237,12 @@ router.get('/me', auth, async (req, res) => {
         firstName: user.firstName,
         lastName: user.lastName,
         role: user.role,
-        clubId: user.clubId._id,
-        clubName: user.clubId.name,
-        subscription: user.clubId.subscription
+        clubId: user.clubId,
+        clubName: user.club.name,
+        subdomain: user.club.subdomain,
+        subscriptionTier: user.club.subscriptionTier,
+        subscriptionStatus: user.club.subscriptionStatus,
+        lastLogin: user.lastLogin
       }
     });
   } catch (error) {

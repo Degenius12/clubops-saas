@@ -1,8 +1,9 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
-const Dancer = require('../models/Dancer');
-const { auth, authorize, requireSubscription } = require('../middleware/auth');
+const { PrismaClient } = require('@prisma/client');
+const { auth, authorize, requireFeature } = require('../middleware/auth');
 
+const prisma = new PrismaClient();
 const router = express.Router();
 
 // @route   GET /api/dancers
@@ -10,19 +11,31 @@ const router = express.Router();
 // @access  Private
 router.get('/', auth, async (req, res) => {
   try {
-    const dancers = await Dancer.find({ clubId: req.user.clubId });
+    const dancers = await prisma.dancer.findMany({
+      where: { clubId: req.user.clubId },
+      orderBy: { stageName: 'asc' }
+    });
     
     // Add license warning flags
     const dancersWithWarnings = dancers.map(dancer => {
       const today = new Date();
-      const expiryDate = new Date(dancer.license.expiryDate);
-      const warningDate = new Date(expiryDate);
-      warningDate.setDate(warningDate.getDate() - 14);
+      const expiryDate = dancer.licenseExpiryDate ? new Date(dancer.licenseExpiryDate) : null;
+      
+      let licenseWarning = false;
+      let licenseExpired = false;
+      
+      if (expiryDate) {
+        const warningDate = new Date(expiryDate);
+        warningDate.setDate(warningDate.getDate() - 14);
+        
+        licenseWarning = today >= warningDate && today < expiryDate;
+        licenseExpired = today >= expiryDate;
+      }
       
       return {
-        ...dancer.toObject(),
-        licenseWarning: today >= warningDate && today < expiryDate,
-        licenseExpired: today >= expiryDate
+        ...dancer,
+        licenseWarning,
+        licenseExpired
       };
     });
     
@@ -36,23 +49,29 @@ router.get('/', auth, async (req, res) => {
 // @route   GET /api/dancers/license-alerts
 // @desc    Get dancers with expiring licenses (next 2 weeks)
 // @access  Private
-router.get('/license-alerts', auth, async (req, res) => {
+router.get('/license-alerts', auth, requireFeature('license_compliance'), async (req, res) => {
   try {
     const today = new Date();
     const twoWeeksFromNow = new Date();
     twoWeeksFromNow.setDate(today.getDate() + 14);
     
-    const expiringLicenses = await Dancer.find({
-      clubId: req.user.clubId,
-      'license.expiryDate': {
-        $gte: today,
-        $lte: twoWeeksFromNow
+    const expiringLicenses = await prisma.dancer.findMany({
+      where: {
+        clubId: req.user.clubId,
+        licenseExpiryDate: {
+          gte: today,
+          lte: twoWeeksFromNow
+        },
+        isActive: true
       }
     });
     
-    const expiredLicenses = await Dancer.find({
-      clubId: req.user.clubId,
-      'license.expiryDate': { $lt: today }
+    const expiredLicenses = await prisma.dancer.findMany({
+      where: {
+        clubId: req.user.clubId,
+        licenseExpiryDate: { lt: today },
+        isActive: true
+      }
     });
     
     res.json({
@@ -73,12 +92,11 @@ router.post('/', [
   auth,
   authorize('owner', 'manager'),
   body('stageName').notEmpty().trim(),
-  body('firstName').notEmpty().trim(),
-  body('lastName').notEmpty().trim(),
-  body('email').isEmail().normalizeEmail(),
-  body('phone').notEmpty(),
-  body('license.number').notEmpty(),
-  body('license.expiryDate').isISO8601()
+  body('legalName').optional().trim(),
+  body('email').optional().isEmail().normalizeEmail(),
+  body('phone').optional(),
+  body('licenseNumber').optional(),
+  body('licenseExpiryDate').optional().isISO8601()
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -86,34 +104,66 @@ router.post('/', [
       return res.status(400).json({ errors: errors.array() });
     }
 
-    // Check if dancer limit is reached based on subscription
-    const currentDancerCount = await Dancer.countDocuments({ 
-      clubId: req.user.clubId,
-      employmentStatus: 'active'
-    });
-
-    if (currentDancerCount >= req.club.limits.maxDancers) {
-      return res.status(403).json({ 
-        error: 'Dancer limit reached',
-        message: `Your ${req.club.subscription.tier} plan allows up to ${req.club.limits.maxDancers} dancers`,
-        currentCount: currentDancerCount,
-        limit: req.club.limits.maxDancers
-      });
-    }
-
     const dancerData = {
       ...req.body,
-      clubId: req.user.clubId
+      clubId: req.user.clubId,
+      licenseExpiryDate: req.body.licenseExpiryDate ? new Date(req.body.licenseExpiryDate) : null,
+      licenseStatus: 'valid',
+      emergencyContact: req.body.emergencyContact || {},
+      preferredMusic: req.body.preferredMusic || [],
+      isActive: true
     };
 
-    const dancer = new Dancer(dancerData);
-    await dancer.save();
+    const dancer = await prisma.dancer.create({
+      data: dancerData
+    });
 
     res.status(201).json(dancer);
   } catch (error) {
     console.error('Add dancer error:', error);
-    if (error.code === 11000) {
+    if (error.code === 'P2002') {
       res.status(400).json({ error: 'License number already exists' });
+    } else {
+      res.status(500).json({ error: 'Server error' });
+    }
+  }
+});
+
+// @route   PUT /api/dancers/:id
+// @desc    Update dancer information
+// @access  Private (Manager+)
+router.put('/:id', [
+  auth,
+  authorize('owner', 'manager'),
+  body('stageName').optional().notEmpty().trim(),
+  body('legalName').optional().trim(),
+  body('email').optional().isEmail().normalizeEmail(),
+  body('licenseExpiryDate').optional().isISO8601()
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const updateData = { ...req.body };
+    if (req.body.licenseExpiryDate) {
+      updateData.licenseExpiryDate = new Date(req.body.licenseExpiryDate);
+    }
+
+    const dancer = await prisma.dancer.update({
+      where: {
+        id: req.params.id,
+        clubId: req.user.clubId
+      },
+      data: updateData
+    });
+
+    res.json(dancer);
+  } catch (error) {
+    console.error('Update dancer error:', error);
+    if (error.code === 'P2025') {
+      res.status(404).json({ error: 'Dancer not found' });
     } else {
       res.status(500).json({ error: 'Server error' });
     }
@@ -135,9 +185,11 @@ router.post('/:id/checkin', [
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const dancer = await Dancer.findOne({
-      _id: req.params.id,
-      clubId: req.user.clubId
+    const dancer = await prisma.dancer.findFirst({
+      where: {
+        id: req.params.id,
+        clubId: req.user.clubId
+      }
     });
 
     if (!dancer) {
@@ -146,39 +198,65 @@ router.post('/:id/checkin', [
 
     // Check license status
     const today = new Date();
-    if (new Date(dancer.license.expiryDate) <= today) {
+    if (dancer.licenseExpiryDate && new Date(dancer.licenseExpiryDate) <= today) {
       return res.status(403).json({ 
         error: 'License expired',
         message: 'Cannot check in dancer with expired license',
-        licenseExpiry: dancer.license.expiryDate
+        licenseExpiry: dancer.licenseExpiryDate
       });
     }
 
-    // Update check-in status
-    dancer.currentShift = {
-      isCheckedIn: true,
-      checkInTime: new Date(),
-      barFeePaid: req.body.barFeePaid,
-      amountPaid: req.body.amountPaid || dancer.fees.standardBarFee,
-      paymentMethod: req.body.paymentMethod || 'cash'
-    };
-
-    // Update financial tracking if fee was paid
+    // Create financial transaction if bar fee is paid
     if (req.body.barFeePaid && req.body.amountPaid) {
-      dancer.fees.totalFeesCollected += req.body.amountPaid;
+      await prisma.financialTransaction.create({
+        data: {
+          clubId: req.user.clubId,
+          dancerId: dancer.id,
+          transactionType: 'bar_fee',
+          amount: parseFloat(req.body.amountPaid),
+          description: `Bar fee for ${dancer.stageName}`,
+          paymentMethod: req.body.paymentMethod || 'cash',
+          isPaid: true,
+          recordedBy: req.user.id
+        }
+      });
     }
-
-    await dancer.save();
 
     res.json({
       message: 'Dancer checked in successfully',
       dancer,
-      checkedInAt: dancer.currentShift.checkInTime
+      checkedInAt: new Date(),
+      barFeePaid: req.body.barFeePaid,
+      amountPaid: req.body.amountPaid
     });
 
   } catch (error) {
     console.error('Check-in error:', error);
     res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// @route   DELETE /api/dancers/:id
+// @desc    Deactivate dancer (soft delete)
+// @access  Private (Manager+)
+router.delete('/:id', auth, authorize('owner', 'manager'), async (req, res) => {
+  try {
+    const dancer = await prisma.dancer.update({
+      where: {
+        id: req.params.id,
+        clubId: req.user.clubId
+      },
+      data: { isActive: false }
+    });
+
+    res.json({ message: 'Dancer deactivated successfully' });
+  } catch (error) {
+    console.error('Delete dancer error:', error);
+    if (error.code === 'P2025') {
+      res.status(404).json({ error: 'Dancer not found' });
+    } else {
+      res.status(500).json({ error: 'Server error' });
+    }
   }
 });
 

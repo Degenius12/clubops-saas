@@ -1,8 +1,9 @@
 const express = require('express');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-const Club = require('../models/Club');
+const { PrismaClient } = require('@prisma/client');
 const { auth, authorize } = require('../middleware/auth');
 
+const prisma = new PrismaClient();
 const router = express.Router();
 
 // Subscription tiers configuration
@@ -60,19 +61,35 @@ router.get('/tiers', (req, res) => {
 // @access  Private
 router.get('/current', auth, async (req, res) => {
   try {
-    const club = await Club.findById(req.user.clubId);
+    const club = await prisma.club.findUnique({
+      where: { id: req.user.clubId },
+      include: {
+        subscriptions: {
+          orderBy: { createdAt: 'desc' },
+          take: 1
+        }
+      }
+    });
     
     if (!club) {
       return res.status(404).json({ error: 'Club not found' });
     }
 
-    const currentTier = SUBSCRIPTION_TIERS[club.subscription.tier];
+    const currentTier = SUBSCRIPTION_TIERS[club.subscriptionTier] || SUBSCRIPTION_TIERS.free;
     
     res.json({
-      subscription: club.subscription,
+      subscription: {
+        tier: club.subscriptionTier,
+        status: club.subscriptionStatus,
+        stripeSubscriptionId: club.subscriptions[0]?.stripeSubscriptionId || null
+      },
       tierInfo: currentTier,
-      usage: club.usage,
-      limits: club.limits
+      limits: {
+        maxDancers: currentTier.maxDancers,
+        maxManagers: currentTier.maxManagers,
+        maxVipRooms: currentTier.maxVipRooms,
+        storageGB: currentTier.storageGB
+      }
     });
   } catch (error) {
     console.error('Get subscription error:', error);
@@ -91,7 +108,10 @@ router.post('/create-checkout', auth, authorize('owner'), async (req, res) => {
       return res.status(400).json({ error: 'Invalid subscription tier' });
     }
 
-    const club = await Club.findById(req.user.clubId);
+    const club = await prisma.club.findUnique({
+      where: { id: req.user.clubId }
+    });
+    
     if (!club) {
       return res.status(404).json({ error: 'Club not found' });
     }
@@ -99,22 +119,23 @@ router.post('/create-checkout', auth, authorize('owner'), async (req, res) => {
     const tierInfo = SUBSCRIPTION_TIERS[tier];
     
     // Create or retrieve Stripe customer
-    let customerId = club.subscription.stripeCustomerId;
+    let customerId = null;
     
-    if (!customerId) {
+    // Look for existing payment method
+    const existingPayment = await prisma.paymentMethod.findFirst({
+      where: { clubId: club.id }
+    });
+    
+    if (!existingPayment) {
       const customer = await stripe.customers.create({
         email: req.fullUser.email,
         name: `${req.fullUser.firstName} ${req.fullUser.lastName}`,
         metadata: {
-          clubId: club._id.toString(),
+          clubId: club.id,
           clubName: club.name
         }
       });
       customerId = customer.id;
-      
-      // Update club with customer ID
-      club.subscription.stripeCustomerId = customerId;
-      await club.save();
     }
 
     // Create checkout session
@@ -128,10 +149,10 @@ router.post('/create-checkout', auth, authorize('owner'), async (req, res) => {
         },
       ],
       mode: 'subscription',
-      success_url: `${process.env.CLIENT_URL}/dashboard/subscription/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.CLIENT_URL}/dashboard/subscription/pricing`,
+      success_url: `${process.env.CLIENT_URL || 'http://localhost:3000'}/dashboard/subscription/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.CLIENT_URL || 'http://localhost:3000'}/dashboard/subscription/pricing`,
       metadata: {
-        clubId: club._id.toString(),
+        clubId: club.id,
         tier: tier
       }
     });
@@ -147,118 +168,82 @@ router.post('/create-checkout', auth, authorize('owner'), async (req, res) => {
   }
 });
 
-// @route   POST /api/subscriptions/webhook
-// @desc    Handle Stripe webhooks
-// @access  Public (but verified)
-router.post('/webhook', express.raw({type: 'application/json'}), async (req, res) => {
-  const sig = req.headers['stripe-signature'];
-  let event;
-
+// @route   POST /api/subscriptions/cancel
+// @desc    Cancel subscription
+// @access  Private (Owner only)
+router.post('/cancel', auth, authorize('owner'), async (req, res) => {
   try {
-    event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
-  } catch (err) {
-    console.error('Webhook signature verification failed:', err.message);
-    return res.status(400).send(`Webhook Error: ${err.message}`);
-  }
+    const subscription = await prisma.subscription.findFirst({
+      where: { clubId: req.user.clubId },
+      orderBy: { createdAt: 'desc' }
+    });
 
-  try {
-    switch (event.type) {
-      case 'checkout.session.completed':
-        await handleCheckoutCompleted(event.data.object);
-        break;
-      
-      case 'customer.subscription.updated':
-        await handleSubscriptionUpdated(event.data.object);
-        break;
-      
-      case 'customer.subscription.deleted':
-        await handleSubscriptionDeleted(event.data.object);
-        break;
-      
-      case 'invoice.payment_failed':
-        await handlePaymentFailed(event.data.object);
-        break;
-      
-      default:
-        console.log(`Unhandled event type: ${event.type}`);
+    if (!subscription || !subscription.stripeSubscriptionId) {
+      return res.status(404).json({ error: 'No active subscription found' });
     }
 
-    res.json({ received: true });
+    // Cancel the subscription at period end
+    await stripe.subscriptions.update(subscription.stripeSubscriptionId, {
+      cancel_at_period_end: true
+    });
+
+    // Update subscription record
+    await prisma.subscription.update({
+      where: { id: subscription.id },
+      data: { cancelAtPeriodEnd: true }
+    });
+
+    res.json({ 
+      message: 'Subscription will be cancelled at the end of the current billing period'
+    });
+
   } catch (error) {
-    console.error('Webhook handling error:', error);
-    res.status(500).json({ error: 'Webhook handling failed' });
+    console.error('Cancel subscription error:', error);
+    res.status(500).json({ error: 'Server error canceling subscription' });
   }
 });
 
-// Webhook handlers
-async function handleCheckoutCompleted(session) {
-  const clubId = session.metadata.clubId;
-  const tier = session.metadata.tier;
-  
-  const club = await Club.findById(clubId);
-  if (!club) return;
+// @route   GET /api/subscriptions/usage
+// @desc    Get current usage statistics
+// @access  Private
+router.get('/usage', auth, async (req, res) => {
+  try {
+    const [dancerCount, managerCount, vipRoomCount] = await Promise.all([
+      prisma.dancer.count({
+        where: { clubId: req.user.clubId, isActive: true }
+      }),
+      prisma.clubUser.count({
+        where: { clubId: req.user.clubId, isActive: true }
+      }),
+      prisma.vipRoom.count({
+        where: { clubId: req.user.clubId }
+      })
+    ]);
 
-  const tierInfo = SUBSCRIPTION_TIERS[tier];
-  
-  // Update club subscription
-  club.subscription = {
-    ...club.subscription,
-    tier: tier,
-    status: 'active',
-    stripeSubscriptionId: session.subscription
-  };
-  
-  // Update limits based on new tier
-  club.limits = {
-    maxDancers: tierInfo.maxDancers,
-    maxManagers: tierInfo.maxManagers,
-    maxVipRooms: tierInfo.maxVipRooms,
-    storageGB: tierInfo.storageGB,
-    monthlyReports: tier !== 'free'
-  };
-  
-  await club.save();
-}
+    const currentTier = SUBSCRIPTION_TIERS[req.club.subscriptionTier] || SUBSCRIPTION_TIERS.free;
 
-async function handleSubscriptionUpdated(subscription) {
-  const club = await Club.findOne({ 'subscription.stripeSubscriptionId': subscription.id });
-  if (!club) return;
+    res.json({
+      usage: {
+        dancers: dancerCount,
+        managers: managerCount,
+        vipRooms: vipRoomCount
+      },
+      limits: {
+        maxDancers: currentTier.maxDancers,
+        maxManagers: currentTier.maxManagers,
+        maxVipRooms: currentTier.maxVipRooms
+      },
+      percentages: {
+        dancers: Math.round((dancerCount / currentTier.maxDancers) * 100),
+        managers: Math.round((managerCount / currentTier.maxManagers) * 100),
+        vipRooms: Math.round((vipRoomCount / currentTier.maxVipRooms) * 100)
+      }
+    });
 
-  club.subscription.status = subscription.status;
-  club.subscription.currentPeriodStart = new Date(subscription.current_period_start * 1000);
-  club.subscription.currentPeriodEnd = new Date(subscription.current_period_end * 1000);
-  club.subscription.cancelAtPeriodEnd = subscription.cancel_at_period_end;
-  
-  await club.save();
-}
-
-async function handleSubscriptionDeleted(subscription) {
-  const club = await Club.findOne({ 'subscription.stripeSubscriptionId': subscription.id });
-  if (!club) return;
-
-  // Downgrade to free tier
-  club.subscription.tier = 'free';
-  club.subscription.status = 'cancelled';
-  club.limits = {
-    maxDancers: SUBSCRIPTION_TIERS.free.maxDancers,
-    maxManagers: SUBSCRIPTION_TIERS.free.maxManagers,
-    maxVipRooms: SUBSCRIPTION_TIERS.free.maxVipRooms,
-    storageGB: SUBSCRIPTION_TIERS.free.storageGB,
-    monthlyReports: false
-  };
-  
-  await club.save();
-}
-
-async function handlePaymentFailed(invoice) {
-  const club = await Club.findOne({ 'subscription.stripeCustomerId': invoice.customer });
-  if (!club) return;
-
-  // Suspend subscription after payment failure
-  club.subscription.status = 'suspended';
-  await club.save();
-  
-  // TODO: Send notification email to club owner
-}
+  } catch (error) {
+    console.error('Get usage error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
 
 module.exports = router;
