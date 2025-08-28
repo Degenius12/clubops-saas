@@ -14,6 +14,7 @@ interface SubscriptionState {
   billingCycle: 'monthly' | 'yearly'
   nextBillingDate: string
   isLoading: boolean
+  loading: boolean // alias for isLoading for compatibility
   error: string | null
 }
 
@@ -37,6 +38,7 @@ const initialState: SubscriptionState = {
   billingCycle: 'monthly',
   nextBillingDate: '',
   isLoading: false,
+  loading: false,
   error: null,
 }
 
@@ -111,15 +113,18 @@ const subscriptionSlice = createSlice({
       // fetchSubscription
       .addCase(fetchSubscription.pending, (state) => {
         state.isLoading = true
+        state.loading = true
       })
       .addCase(fetchSubscription.fulfilled, (state, action) => {
         state.isLoading = false
+        state.loading = false
         state.currentPlan = action.payload.plan
         state.usage = action.payload.usage
         state.billing = action.payload.billing
       })
       .addCase(fetchSubscription.rejected, (state, action) => {
         state.isLoading = false
+        state.loading = false
         state.error = action.error.message || 'Failed to fetch subscription'
       })
       // upgradeSubscription

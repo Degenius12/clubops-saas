@@ -4,8 +4,8 @@ import { RootState, AppDispatch } from '../../store/store'
 import { fetchRevenue } from '../../store/slices/revenueSlice'
 import {
   CurrencyDollarIcon,
-  TrendingUpIcon,
-  TrendingDownIcon,
+  ArrowTrendingUpIcon as TrendingUpIcon,
+  ArrowTrendingDownIcon as TrendingDownIcon,
   CalendarDaysIcon,
   ChartBarIcon,
   ArrowUpIcon

@@ -180,7 +180,7 @@ const VIPRooms: React.FC = () => {
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
                       <span className="text-gray-400">Customer:</span>
-                      <span className="text-white">{room.currentSession.customerName || 'Anonymous'}</span>
+                      <span className="text-white">{room.currentSession.dancerName || 'Anonymous'}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-400">Started:</span>

@@ -17,6 +17,12 @@ export interface Dancer {
   bar_fee_amount: number
   created_at: string
   updated_at: string
+  complianceStatus: 'valid' | 'expiring' | 'expired' | 'compliant' | 'warning' | 'expiring_soon'
+  daysUntilExpiry: number
+  todayCheckIns: number
+  totalEarnings: number
+  ownerName?: string
+  clubName?: string
 }
 
 export interface LicenseAlert {
@@ -32,6 +38,7 @@ interface DancerState {
   activeDancers: Dancer[]
   licenseAlerts: LicenseAlert[]
   isLoading: boolean
+  loading: boolean // alias for isLoading for compatibility
   error: string | null
   selectedDancer: Dancer | null
 }const initialState: DancerState = {
@@ -39,6 +46,7 @@ interface DancerState {
   activeDancers: [],
   licenseAlerts: [],
   isLoading: false,
+  loading: false,
   error: null,
   selectedDancer: null,
 }
@@ -116,15 +124,18 @@ const dancerSlice = createSlice({
     builder
       .addCase(fetchDancers.pending, (state) => {
         state.isLoading = true
+        state.loading = true
         state.error = null
       })
       .addCase(fetchDancers.fulfilled, (state, action) => {
         state.isLoading = false
+        state.loading = false
         state.dancers = action.payload
         state.activeDancers = action.payload.filter((d: Dancer) => d.is_checked_in)
       })
       .addCase(fetchDancers.rejected, (state, action) => {
         state.isLoading = false
+        state.loading = false
         state.error = action.error.message || 'Failed to fetch dancers'
       })
       // Check in dancer
@@ -164,4 +175,8 @@ const dancerSlice = createSlice({
 })
 
 export const { setSelectedDancer, clearError, updateDancerStatus } = dancerSlice.actions
+
+// Export addDancer as alias for createDancer to maintain compatibility
+export const addDancer = createDancer
+
 export default dancerSlice.reducer

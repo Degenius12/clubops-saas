@@ -6,6 +6,7 @@ export interface QueueItem {
   dancer_id: string
   dancer_name: string
   song_title: string
+  title?: string // alias for song_title for compatibility
   artist: string
   position: number
   stage: 'main' | 'vip' | 'side'
@@ -29,7 +30,14 @@ interface QueueState {
   mainQueue: QueueItem[]
   vipQueue: QueueItem[]
   currentPerformances: CurrentPerformance[]
+  currentQueue: QueueItem[] // alias for mainQueue for compatibility
+  currentTrack: QueueItem | null
+  isPlaying: boolean
+  volume: number
+  currentTime: number
+  duration: number
   isLoading: boolean
+  loading: boolean // alias for isLoading for compatibility
   error: string | null
   draggedItem: QueueItem | null
 }
@@ -38,7 +46,14 @@ const initialState: QueueState = {
   mainQueue: [],
   vipQueue: [],
   currentPerformances: [],
+  currentQueue: [],
+  currentTrack: null,
+  isPlaying: false,
+  volume: 0.7,
+  currentTime: 0,
+  duration: 0,
   isLoading: false,
+  loading: false,
   error: null,
   draggedItem: null,
 }
@@ -103,25 +118,25 @@ export const endPerformance = createAsyncThunk(
 
 export const playTrack = createAsyncThunk(
   'queue/playTrack',
-  async (trackId: string) => {
+  async (trackId?: string) => {
     // Mock implementation - replace with actual music player API
-    return { trackId, status: 'playing' }
+    return { trackId: trackId || 'current', status: 'playing' }
   }
 )
 
 export const pauseTrack = createAsyncThunk(
   'queue/pauseTrack',
-  async (trackId: string) => {
+  async (trackId?: string) => {
     // Mock implementation - replace with actual music player API
-    return { trackId, status: 'paused' }
+    return { trackId: trackId || 'current', status: 'paused' }
   }
 )
 
 export const nextTrack = createAsyncThunk(
   'queue/nextTrack',
-  async () => {
+  async (currentTrackId?: string) => {
     // Mock implementation - replace with actual music player API
-    return { action: 'next' }
+    return { action: 'next', currentTrackId }
   }
 )
 
@@ -156,16 +171,20 @@ const queueSlice = createSlice({
     builder
       .addCase(fetchQueue.pending, (state) => {
         state.isLoading = true
+        state.loading = true
         state.error = null
       })
       .addCase(fetchQueue.fulfilled, (state, action) => {
         state.isLoading = false
+        state.loading = false
         state.mainQueue = action.payload.mainQueue || []
         state.vipQueue = action.payload.vipQueue || []
+        state.currentQueue = action.payload.mainQueue || []
         state.currentPerformances = action.payload.currentPerformances || []
       })
       .addCase(fetchQueue.rejected, (state, action) => {
         state.isLoading = false
+        state.loading = false
         state.error = action.error.message || 'Failed to fetch queue'
       })
       // Add to queue
@@ -189,6 +208,21 @@ const queueSlice = createSlice({
       .addCase(endPerformance.fulfilled, (state, action) => {
         const performanceId = action.payload.id
         state.currentPerformances = state.currentPerformances.filter(p => p.dancer_id !== performanceId)
+      })
+      // Play track
+      .addCase(playTrack.fulfilled, (state, action) => {
+        state.isPlaying = true
+      })
+      // Pause track
+      .addCase(pauseTrack.fulfilled, (state, action) => {
+        state.isPlaying = false
+      })
+      // Next track
+      .addCase(nextTrack.fulfilled, (state, action) => {
+        // Move to next track in queue
+        if (state.mainQueue.length > 0) {
+          state.currentTrack = state.mainQueue[0]
+        }
       })
   },
 })

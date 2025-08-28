@@ -8,12 +8,16 @@ interface User {
   role: 'owner' | 'manager' | 'dj' | 'security'
   club_id: string
   subscription_tier: 'free' | 'basic' | 'pro' | 'enterprise'
+  ownerName?: string
+  clubName?: string
+  phoneNumber?: string
 }
 
 interface AuthState {
   user: User | null
   token: string | null
   isLoading: boolean
+  loading: boolean // alias for isLoading for compatibility
   error: string | null
   isAuthenticated: boolean
 }
@@ -22,6 +26,7 @@ const initialState: AuthState = {
   user: null,
   token: localStorage.getItem('token'),
   isLoading: false,
+  loading: false,
   error: null,
   isAuthenticated: false,
 }
@@ -136,10 +141,12 @@ const authSlice = createSlice({
     builder
       .addCase(loginUser.pending, (state) => {
         state.isLoading = true
+        state.loading = true
         state.error = null
       })
       .addCase(loginUser.fulfilled, (state, action) => {
         state.isLoading = false
+        state.loading = false
         state.user = action.payload.user
         state.token = action.payload.token
         state.isAuthenticated = true
@@ -147,15 +154,18 @@ const authSlice = createSlice({
       })
       .addCase(loginUser.rejected, (state, action) => {
         state.isLoading = false
+        state.loading = false
         state.error = action.error.message || 'Login failed'
       })
       // Register cases
       .addCase(registerClub.pending, (state) => {
         state.isLoading = true
+        state.loading = true
         state.error = null
       })
       .addCase(registerClub.fulfilled, (state, action) => {
         state.isLoading = false
+        state.loading = false
         state.user = action.payload.user
         state.token = action.payload.token
         state.isAuthenticated = true
@@ -163,15 +173,18 @@ const authSlice = createSlice({
       })
       .addCase(registerClub.rejected, (state, action) => {
         state.isLoading = false
+        state.loading = false
         state.error = action.error.message || 'Registration failed'
       })
       // Register user cases
       .addCase(registerUser.pending, (state) => {
         state.isLoading = true
+        state.loading = true
         state.error = null
       })
       .addCase(registerUser.fulfilled, (state, action) => {
         state.isLoading = false
+        state.loading = false
         state.user = action.payload.user
         state.token = action.payload.token
         state.isAuthenticated = true
@@ -179,6 +192,7 @@ const authSlice = createSlice({
       })
       .addCase(registerUser.rejected, (state, action) => {
         state.isLoading = false
+        state.loading = false
         state.error = action.error.message || 'Registration failed'
       })
       // Update user cases

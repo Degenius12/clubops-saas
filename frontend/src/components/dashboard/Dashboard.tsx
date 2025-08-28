@@ -9,7 +9,7 @@ import {
   MusicalNoteIcon,
   BuildingStorefrontIcon,
   CurrencyDollarIcon,
-  TrendingUpIcon,
+  ArrowTrendingUpIcon as TrendingUpIcon,
   ClockIcon,
   CheckCircleIcon,
   ExclamationTriangleIcon
