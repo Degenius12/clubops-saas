@@ -1,4 +1,4 @@
-// ClubOps API - Full Version with Authentication
+// ClubOps API - Working Version with Mock Authentication
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
@@ -15,7 +15,12 @@ app.use(helmet({
 }));
 
 app.use(cors({
-  origin: process.env.CLIENT_URL || process.env.FRONTEND_URL || "https://frontend-o9bhynpim-tony-telemacques-projects.vercel.app",
+  origin: [
+    'https://frontend-145s5avoo-tony-telemacques-projects.vercel.app',
+    'https://frontend-o9bhynpim-tony-telemacques-projects.vercel.app',
+    'http://localhost:5173',
+    'http://localhost:3000'
+  ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
@@ -44,38 +49,33 @@ app.get('/', (req, res) => {
   });
 });
 
-// Test database connection (temporarily mock)
-app.get('/api/test-db', async (req, res) => {
-  try {
-    // For now, let's test if we can import Prisma without connecting
-    const { PrismaClient } = require('@prisma/client');
-    
-    res.json({ 
-      status: 'ok',
-      message: 'Prisma client imported successfully',
-      prismaVersion: 'Available'
-    });
-  } catch (error) {
-    res.status(500).json({ 
-      status: 'error',
-      message: 'Prisma client import failed',
-      error: error.message
-    });
-  }
-});
-
-// Mock user storage for testing (replace with database later)
+// Mock user storage - Pre-hashed passwords for testing
 const mockUsers = [
   {
     id: 1,
     email: 'admin@clubops.com',
     password: '$2a$10$N9qo8uLOickgx2ZMRZoMye.IACBhGhLfhQPwjJJK7.C8xhA2mFOEC', // "password"
+    name: 'Admin User',
     firstName: 'Admin',
     lastName: 'User',
     role: 'owner',
-    clubId: 1,
+    club_id: '1',
+    subscription_tier: 'enterprise',
     clubName: 'Demo Club',
     subdomain: 'demo'
+  },
+  {
+    id: 2,
+    email: 'test@test.com',
+    password: '$2a$10$N9qo8uLOickgx2ZMRZoMye.IACBhGhLfhQPwjJJK7.C8xhA2mFOEC', // "password"
+    name: 'Test User',
+    firstName: 'Test',
+    lastName: 'User',
+    role: 'manager',
+    club_id: '2',
+    subscription_tier: 'pro',
+    clubName: 'Test Club',
+    subdomain: 'test'
   }
 ];
 
@@ -97,7 +97,9 @@ const authMiddleware = (req, res, next) => {
   }
 };
 
-// Auth routes
+// @route   POST /api/auth/login
+// @desc    Authenticate user and get token
+// @access  Public
 app.post('/api/auth/login', [
   body('email').isEmail().normalizeEmail(),
   body('password').exists()
@@ -105,22 +107,30 @@ app.post('/api/auth/login', [
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+      return res.status(400).json({ 
+        error: 'Validation failed',
+        details: errors.array() 
+      });
     }
 
     const { email, password } = req.body;
+    console.log('Login attempt for:', email);
 
     // Find user in mock storage
     const user = mockUsers.find(u => u.email === email);
     if (!user) {
+      console.log('User not found:', email);
       return res.status(400).json({ error: 'Invalid credentials' });
     }
 
     // Check password
     const isMatch = await bcryptjs.compare(password, user.password);
     if (!isMatch) {
+      console.log('Password mismatch for:', email);
       return res.status(400).json({ error: 'Invalid credentials' });
     }
+
+    console.log('Login successful for:', email);
 
     // Generate JWT
     const payload = {
@@ -128,7 +138,7 @@ app.post('/api/auth/login', [
         id: user.id,
         email: user.email,
         role: user.role,
-        clubId: user.clubId
+        club_id: user.club_id
       }
     };
 
@@ -137,18 +147,24 @@ app.post('/api/auth/login', [
       process.env.JWT_SECRET || 'fallback_secret_key',
       { expiresIn: '24h' },
       (err, token) => {
-        if (err) throw err;
+        if (err) {
+          console.error('JWT sign error:', err);
+          throw err;
+        }
         res.json({
           token,
           user: {
             id: user.id,
             email: user.email,
+            name: user.name,
             firstName: user.firstName,
             lastName: user.lastName,
             role: user.role,
-            clubId: user.clubId,
+            club_id: user.club_id,
+            subscription_tier: user.subscription_tier,
+            ownerName: user.firstName + ' ' + user.lastName,
             clubName: user.clubName,
-            subdomain: user.subdomain
+            phoneNumber: user.phoneNumber || ''
           }
         });
       }
@@ -160,20 +176,26 @@ app.post('/api/auth/login', [
   }
 });
 
-// Register endpoint (simplified)
+// @route   POST /api/auth/register
+// @desc    Register new user
+// @access  Public
 app.post('/api/auth/register', [
   body('email').isEmail().normalizeEmail(),
   body('password').isLength({ min: 6 }),
-  body('firstName').notEmpty().trim(),
-  body('lastName').notEmpty().trim()
+  body('clubName').notEmpty().trim(),
+  body('ownerName').notEmpty().trim()
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+      return res.status(400).json({ 
+        error: 'Validation failed',
+        details: errors.array() 
+      });
     }
 
-    const { email, password, firstName, lastName } = req.body;
+    const { email, password, clubName, ownerName, phoneNumber } = req.body;
+    console.log('Registration attempt for:', email);
 
     // Check if user exists
     if (mockUsers.find(u => u.email === email)) {
@@ -188,15 +210,19 @@ app.post('/api/auth/register', [
       id: mockUsers.length + 1,
       email,
       password: hashedPassword,
-      firstName,
-      lastName,
+      name: ownerName,
+      firstName: ownerName.split(' ')[0] || ownerName,
+      lastName: ownerName.split(' ')[1] || '',
       role: 'owner',
-      clubId: mockUsers.length + 1,
-      clubName: `${firstName}'s Club`,
-      subdomain: `club${mockUsers.length + 1}`
+      club_id: (mockUsers.length + 1).toString(),
+      subscription_tier: 'free',
+      clubName,
+      subdomain: `club${mockUsers.length + 1}`,
+      phoneNumber: phoneNumber || ''
     };
 
     mockUsers.push(newUser);
+    console.log('User registered successfully:', email);
 
     // Generate JWT
     const payload = {
@@ -204,7 +230,7 @@ app.post('/api/auth/register', [
         id: newUser.id,
         email: newUser.email,
         role: newUser.role,
-        clubId: newUser.clubId
+        club_id: newUser.club_id
       }
     };
 
@@ -213,18 +239,24 @@ app.post('/api/auth/register', [
       process.env.JWT_SECRET || 'fallback_secret_key',
       { expiresIn: '24h' },
       (err, token) => {
-        if (err) throw err;
+        if (err) {
+          console.error('JWT sign error:', err);
+          throw err;
+        }
         res.status(201).json({
           token,
           user: {
             id: newUser.id,
             email: newUser.email,
+            name: newUser.name,
             firstName: newUser.firstName,
             lastName: newUser.lastName,
             role: newUser.role,
-            clubId: newUser.clubId,
+            club_id: newUser.club_id,
+            subscription_tier: newUser.subscription_tier,
+            ownerName: newUser.name,
             clubName: newUser.clubName,
-            subdomain: newUser.subdomain
+            phoneNumber: newUser.phoneNumber
           }
         });
       }
@@ -236,7 +268,37 @@ app.post('/api/auth/register', [
   }
 });
 
-// Protected route example
+// @route   GET /api/auth/me
+// @desc    Get current user
+// @access  Private
+app.get('/api/auth/me', authMiddleware, async (req, res) => {
+  try {
+    const user = mockUsers.find(u => u.id === req.user.id);
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json({
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      role: user.role,
+      club_id: user.club_id,
+      subscription_tier: user.subscription_tier,
+      ownerName: user.firstName + ' ' + user.lastName,
+      clubName: user.clubName,
+      phoneNumber: user.phoneNumber || ''
+    });
+  } catch (error) {
+    console.error('Get user error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Protected dashboard endpoint
 app.get('/api/dashboard', authMiddleware, (req, res) => {
   res.json({
     message: 'Dashboard data',
@@ -261,10 +323,23 @@ app.use((error, req, res, next) => {
 
 // 404 handler
 app.use('*', (req, res) => {
+  console.log('404 for path:', req.originalUrl);
   res.status(404).json({ 
     error: 'Route not found',
     path: req.originalUrl 
   });
 });
 
+// For serverless deployment
 module.exports = app;
+
+// For local development
+if (process.env.NODE_ENV !== 'production') {
+  const PORT = process.env.PORT || 5000;
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+    console.log('Available test accounts:');
+    console.log('- admin@clubops.com / password');
+    console.log('- test@test.com / password');
+  });
+}
