@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit'
-import axios from 'axios'
+import apiClient from '../../config/api'
 
 export interface Dancer {
   id: string
@@ -54,8 +54,8 @@ interface DancerState {
 // Async thunks for dancer management
 export const fetchDancers = createAsyncThunk(
   'dancers/fetchAll',
-  async (_, { getState }) => {
-    const response = await axios.get('/api/dancers')
+  async () => {
+    const response = await apiClient.get('/api/dancers')
     return response.data
   }
 )
@@ -63,7 +63,7 @@ export const fetchDancers = createAsyncThunk(
 export const checkInDancer = createAsyncThunk(
   'dancers/checkIn',
   async ({ dancerId, barFeeAmount }: { dancerId: string; barFeeAmount: number }) => {
-    const response = await axios.post(`/api/dancers/${dancerId}/check-in`, {
+    const response = await apiClient.post(`/api/dancers/${dancerId}/check-in`, {
       bar_fee_amount: barFeeAmount
     })
     return response.data
@@ -73,7 +73,7 @@ export const checkInDancer = createAsyncThunk(
 export const checkOutDancer = createAsyncThunk(
   'dancers/checkOut',
   async (dancerId: string) => {
-    const response = await axios.post(`/api/dancers/${dancerId}/check-out`)
+    const response = await apiClient.post(`/api/dancers/${dancerId}/check-out`)
     return response.data
   }
 )
@@ -81,7 +81,7 @@ export const checkOutDancer = createAsyncThunk(
 export const createDancer = createAsyncThunk(
   'dancers/create',
   async (dancerData: Partial<Dancer>) => {
-    const response = await axios.post('/api/dancers', dancerData)
+    const response = await apiClient.post('/api/dancers', dancerData)
     return response.data
   }
 )
@@ -89,7 +89,7 @@ export const createDancer = createAsyncThunk(
 export const updateDancer = createAsyncThunk(
   'dancers/update',
   async ({ id, data }: { id: string; data: Partial<Dancer> }) => {
-    const response = await axios.put(`/api/dancers/${id}`, data)
+    const response = await apiClient.put(`/api/dancers/${id}`, data)
     return response.data
   }
 )
@@ -97,7 +97,7 @@ export const updateDancer = createAsyncThunk(
 export const fetchLicenseAlerts = createAsyncThunk(
   'dancers/fetchLicenseAlerts',
   async () => {
-    const response = await axios.get('/api/dancers/license-alerts')
+    const response = await apiClient.get('/api/dancers/license-alerts')
     return response.data
   }
 )

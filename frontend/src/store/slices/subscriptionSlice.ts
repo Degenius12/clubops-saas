@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit'
-import axios from 'axios'
+import apiClient from '../../config/api'
 
 type SubscriptionTier = 'free' | 'basic' | 'pro' | 'enterprise'
 
@@ -46,7 +46,7 @@ const initialState: SubscriptionState = {
 export const fetchSubscription = createAsyncThunk(
   'subscription/fetchSubscription',
   async () => {
-    const response = await axios.get('/api/subscription')
+    const response = await apiClient.get('/api/subscription')
     return response.data
   }
 )
@@ -54,7 +54,7 @@ export const fetchSubscription = createAsyncThunk(
 export const upgradeSubscription = createAsyncThunk(
   'subscription/upgradeSubscription',
   async (planId: string) => {
-    const response = await axios.post('/api/subscription/upgrade', { planId })
+    const response = await apiClient.post('/api/subscription/upgrade', { planId })
     return response.data
   }
 )
@@ -62,7 +62,7 @@ export const upgradeSubscription = createAsyncThunk(
 export const fetchBilling = createAsyncThunk(
   'subscription/fetchBilling',
   async () => {
-    const response = await axios.get('/api/billing')
+    const response = await apiClient.get('/api/billing')
     return response.data
   }
 )
@@ -70,7 +70,7 @@ export const fetchBilling = createAsyncThunk(
 export const updatePaymentMethod = createAsyncThunk(
   'subscription/updatePaymentMethod',
   async (paymentData: any) => {
-    const response = await axios.post('/api/billing/payment-methods', paymentData)
+    const response = await apiClient.post('/api/billing/payment-methods', paymentData)
     return response.data
   }
 )
@@ -78,7 +78,7 @@ export const updatePaymentMethod = createAsyncThunk(
 export const downloadInvoice = createAsyncThunk(
   'subscription/downloadInvoice',
   async (invoiceId: string) => {
-    const response = await axios.get(`/api/billing/invoices/${invoiceId}/download`)
+    const response = await apiClient.get(`/api/billing/invoices/${invoiceId}/download`)
     return response.data
   }
 )

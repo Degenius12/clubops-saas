@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit'
-import axios from 'axios'
+import apiClient from '../../config/api'
 
 export interface QueueItem {
   id: string
@@ -62,7 +62,7 @@ const initialState: QueueState = {
 export const fetchQueue = createAsyncThunk(
   'queue/fetchAll',
   async () => {
-    const response = await axios.get('/api/queue')
+    const response = await apiClient.get('/api/queue')
     return response.data
   }
 )
@@ -75,7 +75,7 @@ export const addToQueue = createAsyncThunk(
     artist: string
     stage: 'main' | 'vip' | 'side'
   }) => {
-    const response = await axios.post('/api/queue', {
+    const response = await apiClient.post('/api/queue', {
       dancer_id: dancerId,
       song_title: songTitle,
       artist,
@@ -92,7 +92,7 @@ export const reorderQueue = createAsyncThunk(
     itemId: string
     newPosition: number 
   }) => {
-    const response = await axios.put(`/api/queue/${itemId}/position`, {
+    const response = await apiClient.put(`/api/queue/${itemId}/position`, {
       position: newPosition,
       stage
     })
@@ -103,7 +103,7 @@ export const reorderQueue = createAsyncThunk(
 export const startPerformance = createAsyncThunk(
   'queue/start',
   async (queueItemId: string) => {
-    const response = await axios.post(`/api/queue/${queueItemId}/start`)
+    const response = await apiClient.post(`/api/queue/${queueItemId}/start`)
     return response.data
   }
 )
@@ -111,7 +111,7 @@ export const startPerformance = createAsyncThunk(
 export const endPerformance = createAsyncThunk(
   'queue/end',
   async (performanceId: string) => {
-    const response = await axios.post(`/api/queue/${performanceId}/end`)
+    const response = await apiClient.post(`/api/queue/${performanceId}/end`)
     return response.data
   }
 )
