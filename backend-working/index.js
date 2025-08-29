@@ -47,25 +47,36 @@ app.post('/api/auth/login', async (req, res) => {
     const { email, password } = req.body;
     
     if (!email || !password) {
+      console.log('Missing email or password');
       return res.status(400).json({ error: 'Email and password required' });
     }
 
     const user = testUsers.find(u => u.email === email);
     if (!user) {
+      console.log('User not found for email:', email);
       return res.status(400).json({ error: 'Invalid credentials' });
     }
 
+    console.log('Found user, comparing passwords...');
+    console.log('Stored password hash:', user.password);
+    console.log('Provided password:', password);
+    
     const validPassword = await bcrypt.compare(password, user.password);
+    console.log('Password comparison result:', validPassword);
+    
     if (!validPassword) {
+      console.log('Password comparison failed');
       return res.status(400).json({ error: 'Invalid credentials' });
     }
 
+    console.log('Login successful, generating token...');
     const token = jwt.sign(
       { user: { id: user.id, email: user.email } },
       'secret123',
       { expiresIn: '24h' }
     );
 
+    console.log('Token generated, sending response...');
     res.json({
       token,
       user: {
@@ -134,7 +145,7 @@ app.post('/api/auth/register', async (req, res) => {
   }
 });
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3002;
 
 if (process.env.NODE_ENV !== 'production') {
   app.listen(PORT, () => {
