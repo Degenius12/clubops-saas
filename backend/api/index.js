@@ -199,7 +199,7 @@ let mockDjQueue = {
 
 // ============= AUTHENTICATION ROUTES =============
 
-app.post('/api/auth/login', async (req, res) => {
+app.post('/auth/login', async (req, res) => {
   try {
     const { email, password } = req.body;
     
@@ -244,7 +244,7 @@ app.post('/api/auth/login', async (req, res) => {
 // ============= DANCER MANAGEMENT ROUTES =============
 
 // Get all dancers
-app.get('/api/dancers', mockAuth, async (req, res) => {
+app.get('/dancers', mockAuth, async (req, res) => {
   try {
     res.json(mockDancers);
   } catch (error) {
@@ -254,7 +254,7 @@ app.get('/api/dancers', mockAuth, async (req, res) => {
 });
 
 // Add new dancer
-app.post('/api/dancers', [
+app.post('/dancers', [
   mockAuth,
   body('stageName').notEmpty().trim().withMessage('Stage name is required'),
   body('legalName').optional().trim(),
@@ -296,7 +296,7 @@ app.post('/api/dancers', [
 });
 
 // Update dancer
-app.put('/api/dancers/:id', [
+app.put('/dancers/:id', [
   mockAuth,
   body('stageName').optional().notEmpty().trim(),
   body('legalName').optional().trim(),
@@ -321,7 +321,7 @@ app.put('/api/dancers/:id', [
 });
 
 // Delete dancer (soft delete)
-app.delete('/api/dancers/:id', mockAuth, async (req, res) => {
+app.delete('/dancers/:id', mockAuth, async (req, res) => {
   try {
     const dancerIndex = mockDancers.findIndex(d => d.id === req.params.id);
     if (dancerIndex === -1) {
@@ -338,7 +338,7 @@ app.delete('/api/dancers/:id', mockAuth, async (req, res) => {
 
 // ============= DASHBOARD ROUTES =============
 
-app.get('/api/dashboard/stats', mockAuth, (req, res) => {
+app.get('/dashboard/stats', mockAuth, (req, res) => {
   const totalDancers = mockDancers.length;
   const activeDancers = mockDancers.filter(d => d.isActive).length;
   const occupiedVipRooms = mockVipRooms.filter(r => r.isOccupied).length;
@@ -512,19 +512,19 @@ app.get('/', (req, res) => {
       'Real-time Dashboard'
     ],
     endpoints: [
-      'POST /api/auth/login',
-      'GET /api/dancers',
-      'POST /api/dancers', 
-      'PUT /api/dancers/:id',
-      'DELETE /api/dancers/:id',
-      'GET /api/dashboard/stats',
-      'GET /api/vip-rooms',
-      'POST /api/vip-rooms/:id/checkin',
-      'POST /api/vip-rooms/:id/checkout',
-      'GET /api/dj-queue',
-      'POST /api/dj-queue/add',
-      'POST /api/dj-queue/next',
-      'GET /api/financial/transactions'
+      'POST /auth/login',
+      'GET /dancers',
+      'POST /dancers', 
+      'PUT /dancers/:id',
+      'DELETE /dancers/:id',
+      'GET /dashboard/stats',
+      'GET /vip-rooms',
+      'POST /vip-rooms/:id/checkin',
+      'POST /vip-rooms/:id/checkout',
+      'GET /dj-queue',
+      'POST /dj-queue/add',
+      'POST /dj-queue/next',
+      'GET /financial/transactions'
     ]
   });
 });
