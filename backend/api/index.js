@@ -493,7 +493,7 @@ app.get('/api/financial/transactions', mockAuth, (req, res) => {
 app.get('/health', (req, res) => {
   res.json({ 
     status: 'ok', 
-    message: 'ClubOps Complete API is running',
+    message: 'ClubOps Complete API is running - CORS FIXED',
     timestamp: new Date().toISOString(),
     version: '2.0.0-complete'
   });
