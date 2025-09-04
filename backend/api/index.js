@@ -23,12 +23,7 @@ app.use(helmet({
 }));
 
 app.use(cors({
-  origin: [
-    'http://localhost:3000', 
-    'http://127.0.0.1:3000',
-    'https://frontend-6v4tpr1qa-tony-telemacques-projects.vercel.app',
-    'https://clubops-saas.vercel.app'
-  ],
+  origin: true, // Allow all origins temporarily
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
