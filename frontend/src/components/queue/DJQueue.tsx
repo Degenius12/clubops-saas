@@ -58,9 +58,10 @@ const DJQueue: React.FC = () => {
   const handleAddTrack = () => {
     if (newTrackUrl && newTrackTitle) {
       dispatch(addToQueue({
-        url: newTrackUrl,
-        title: newTrackTitle,
-        duration: 0 // Will be calculated when loaded
+        dancerId: 'temp-dancer-id', // TODO: Get from dancer selection
+        songTitle: newTrackTitle,
+        artist: 'Unknown Artist', // TODO: Get from track metadata  
+        stage: 'main'
       }))
       setNewTrackUrl('')
       setNewTrackTitle('')

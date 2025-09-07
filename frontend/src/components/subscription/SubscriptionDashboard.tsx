@@ -218,7 +218,7 @@ const SubscriptionDashboard: React.FC = () => {
                   style={{ 
                     width: currentPlanData.limits.dancers === 'unlimited' 
                       ? '20%' 
-                      : `${Math.min(((usage?.dancers || 0) / currentPlanData.limits.dancers) * 100, 100)}%` 
+                      : `${Math.min(((usage?.dancers || 0) / (typeof currentPlanData.limits.dancers === 'number' ? currentPlanData.limits.dancers : 1)) * 100, 100)}%` 
                   }}
                 />
               </div>
@@ -242,7 +242,7 @@ const SubscriptionDashboard: React.FC = () => {
                   style={{ 
                     width: currentPlanData.limits.vipRooms === 'unlimited' 
                       ? '30%' 
-                      : `${Math.min(((usage?.vipRooms || 0) / currentPlanData.limits.vipRooms) * 100, 100)}%` 
+                      : `${Math.min(((usage?.vipRooms || 0) / (typeof currentPlanData.limits.vipRooms === 'number' ? currentPlanData.limits.vipRooms : 1)) * 100, 100)}%` 
                   }}
                 />
               </div>
