@@ -7,10 +7,15 @@ export default {
   theme: {
     extend: {
       colors: {
-        'dark-bg': '#1a1a1a',
-        'dark-surface': '#242424',
+        'dark-bg': '#0a0a0a',
+        'dark-secondary': '#1a1a1a', 
+        'dark-accent': '#242424',
+        'dark-surface': '#2a2a2a',
+        'dark-card': '#1e1e1e',
         'metallic-blue': '#2563eb',
+        'accent-blue': '#3b82f6',
         'accent-gold': '#d97706',
+        'accent-red': '#dc2626',
         'deep-red': '#dc2626',
         'neon-blue': '#0066ff',
         'premium-gold': '#ffd700',
