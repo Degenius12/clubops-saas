@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ClubOps Auth Debug - COMPLETE DIAGNOSIS</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .error { background: #f8d7da; border-color: #f5c6cb; }
+        .success { background: #d4edda; border-color: #c3e6cb; }
+        .info { background: #d1ecf1; border-color: #bee5eb; }
+        button { padding: 10px 15px; margin: 5px; }
+        pre { background: #f8f9fa; padding: 10px; overflow-x: auto; white-space: pre-wrap; }
+        .token-analysis { background: #fff3cd; border-color: #ffeaa7; padding: 15px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>🔍 ClubOps Authentication - COMPLETE DIAGNOSIS</h1>
+
+    <div class="test info">
+        <h2>Step 1: Check Current Storage State</h2>
+        <button onclick="checkStorage()">Check All Storage</button>
+        <div id="storageResult"></div>
+    </div>
+
+    <div class="test info">
+        <h2>Step 2: Test Backend Health</h2>
+        <button onclick="testBackend()">Test Backend Connection</button>
+        <div id="backendResult"></div>
+    </div>
+
+    <div class="test info">
+        <h2>Step 3: Test Login WITHOUT Any Libraries</h2>
+        <button onclick="testRawLogin()">Test Raw Fetch Login</button>
+        <div id="rawLoginResult"></div>
+    </div>
+
+    <div class="test info">
+        <h2>Step 4: Simulate Frontend API Call</h2>
+        <button onclick="simulateReactApp()">Simulate React App Call</button>
+        <div id="reactSimResult"></div>
+    </div>
+
+    <div class="test error">
+        <h2>Step 5: Force Clear Everything</h2>
+        <button onclick="nuclearClear()">🧨 NUCLEAR CLEAR (All Storage)</button>
+        <div id="clearResult"></div>
+    </div>
+
+    <script>
+        function checkStorage() {
+            const result = document.getElementById('storageResult');
+            
+            const localStorage_token = localStorage.getItem('token');
+            const sessionStorage_token = sessionStorage.getItem('token');
+            
+            // Check all localStorage keys
+            const localKeys = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                localKeys.push(localStorage.key(i));
+            }
+            
+            // Check all sessionStorage keys  
+            const sessionKeys = [];
+            for (let i = 0; i < sessionStorage.length; i++) {
+                sessionKeys.push(sessionStorage.key(i));
+            }
+            
+            result.innerHTML = `
+                <h3>📊 Storage Analysis</h3>
+                <pre><strong>localStorage token:</strong> ${localStorage_token ? 'EXISTS' : 'NONE'}
+<strong>sessionStorage token:</strong> ${sessionStorage_token ? 'NONE' : 'NONE'}
+
+<strong>All localStorage keys:</strong> ${JSON.stringify(localKeys, null, 2)}
+<strong>All sessionStorage keys:</strong> ${JSON.stringify(sessionKeys, null, 2)}
+
+${localStorage_token ? `
+<div class="token-analysis">
+<strong>⚠️ TOKEN FOUND IN LOCALSTORAGE!</strong>
+Token preview: ${localStorage_token.substring(0, 100)}...
+
+Decoded payload: ${decodeJWT(localStorage_token)}
+</div>` : '✅ No token found in localStorage'}
+                </pre>
+            `;
+        }
+
+        function decodeJWT(token) {
+            try {
+                const base64Url = token.split('.')[1];
+                const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+                const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+                    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+                }).join(''));
+                return JSON.stringify(JSON.parse(jsonPayload), null, 2);
+            } catch (e) {
+                return 'Error decoding token: ' + e.message;
+            }
+        }
+
+        async function testBackend() {
+            const result = document.getElementById('backendResult');
+            try {
+                const response = await fetch('http://localhost:3001/api/health', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.text();
+                    result.className = 'test success';
+                    result.innerHTML = `<h3>✅ Backend is running!</h3><pre>${data}</pre>`;
+                } else {
+                    result.className = 'test error'; 
+                    result.innerHTML = `<h3>❌ Backend responded with error</h3><pre>Status: ${response.status}</pre>`;
+                }
+            } catch (error) {
+                result.className = 'test error';
+                result.innerHTML = `<h3>❌ Backend connection failed</h3><pre>${error.message}</pre><p>Start backend with: <code>cd C:/Users/tonyt/ClubOps-SaaS/backend && node api/index.js</code></p>`;
+            }
+        }
+
+        async function testRawLogin() {
+            const result = document.getElementById('rawLoginResult');
+            
+            // Clear any auth headers and use pure fetch
+            const loginData = {
+                email: 'tonytele@gmail.com',
+                password: 'Admin1.0'
+            };
+            
+            try {
+                console.log('🔄 Making raw login request...');
+                const response = await fetch('http://localhost:3001/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                        // Deliberately NOT including Authorization header
+                    },
+                    body: JSON.stringify(loginData)
+                });
+
+                console.log('📡 Response status:', response.status);
+                console.log('📡 Response headers:', [...response.headers.entries()]);
+
+                const data = await response.text();
+                let jsonData;
+                try {
+                    jsonData = JSON.parse(data);
+                } catch (e) {
+                    jsonData = { raw: data };
+                }
+
+                if (response.ok) {
+                    result.className = 'test success';
+                    result.innerHTML = `
+                        <h3>✅ Raw Login SUCCESS!</h3>
+                        <pre>${JSON.stringify(jsonData, null, 2)}</pre>
+                        <p><strong>This proves the backend works!</strong> The issue is in the frontend axios configuration.</p>
+                    `;
+                } else {
+                    result.className = 'test error';
+                    result.innerHTML = `
+                        <h3>❌ Raw Login Failed</h3>
+                        <pre>Status: ${response.status}
+Response: ${JSON.stringify(jsonData, null, 2)}</pre>
+                    `;
+                }
+            } catch (error) {
+                result.className = 'test error';
+                result.innerHTML = `<h3>❌ Raw Login Error</h3><pre>${error.message}</pre>`;
+            }
+        }
+
+        async function simulateReactApp() {
+            const result = document.getElementById('reactSimResult');
+            
+            // Simulate the exact axios configuration from the React app
+            const API_BASE_URL = 'http://localhost:3001';
+            
+            // Create axios-like behavior
+            const makeRequest = async (url, options = {}) => {
+                const token = localStorage.getItem('token');
+                
+                // Simulate the interceptor logic
+                const authEndpoints = ['/api/auth/login', '/api/auth/signup', '/api/auth/register', '/api/auth/forgot-password', '/api/auth/reset-password'];
+                const isAuthEndpoint = authEndpoints.some(endpoint => options.url?.includes(endpoint) || url.includes(endpoint));
+                
+                const headers = {
+                    'Content-Type': 'application/json',
+                    ...options.headers
+                };
+                
+                // This is the critical logic - let's see what happens
+                if (token && !isAuthEndpoint) {
+                    headers.Authorization = `Bearer ${token}`;
+                }
+                
+                console.log('🔧 Interceptor simulation:');
+                console.log('  - URL:', url);
+                console.log('  - Auth endpoints:', authEndpoints);
+                console.log('  - Is auth endpoint:', isAuthEndpoint);
+                console.log('  - Has token:', !!token);
+                console.log('  - Will add auth header:', !isAuthEndpoint && !!token);
+                console.log('  - Final headers:', headers);
+                
+                const response = await fetch(`${API_BASE_URL}${url}`, {
+                    method: options.method || 'GET',
+                    headers,
+                    body: options.body
+                });
+                
+                return response;
+            };
+            
+            try {
+                const response = await makeRequest('/api/auth/login', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        email: 'tonytele@gmail.com',
+                        password: 'Admin1.0'
+                    })
+                });
+                
+                const data = await response.text();
+                let jsonData;
+                try {
+                    jsonData = JSON.parse(data);
+                } catch (e) {
+                    jsonData = { raw: data };
+                }
+                
+                if (response.ok) {
+                    result.className = 'test success';
+                    result.innerHTML = `
+                        <h3>✅ Simulated React App Call SUCCESS!</h3>
+                        <pre>${JSON.stringify(jsonData, null, 2)}</pre>
+                    `;
+                } else {
+                    result.className = 'test error';
+                    result.innerHTML = `
+                        <h3>❌ Simulated React App Call Failed</h3>
+                        <pre>Status: ${response.status}
+Response: ${JSON.stringify(jsonData, null, 2)}</pre>
+                        <p><strong>Check the console for interceptor logic details!</strong></p>
+                    `;
+                }
+            } catch (error) {
+                result.className = 'test error';
+                result.innerHTML = `<h3>❌ Simulation Error</h3><pre>${error.message}</pre>`;
+            }
+        }
+
+        function nuclearClear() {
+            // Clear everything possible
+            localStorage.clear();
+            sessionStorage.clear();
+            
+            // Clear any cookies that might contain auth info
+            document.cookie.split(";").forEach(function(c) { 
+                document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+            });
+            
+            // Clear any cached data
+            if ('caches' in window) {
+                caches.keys().then(names => {
+                    names.forEach(name => {
+                        caches.delete(name);
+                    });
+                });
+            }
+            
+            document.getElementById('clearResult').innerHTML = `
+                <h3>🧨 NUCLEAR CLEAR COMPLETED!</h3>
+                <p>✅ localStorage cleared</p>
+                <p>✅ sessionStorage cleared</p>
+                <p>✅ Cookies cleared</p>
+                <p>✅ Cache cleared</p>
+                <p><strong>Now refresh your React app and try logging in again!</strong></p>
+            `;
+            
+            // Re-check storage to confirm
+            setTimeout(checkStorage, 1000);
+        }
+
+        // Auto-run storage check on load
+        window.onload = () => {
+            checkStorage();
+        };
+    </script>
+</body>
+</html>

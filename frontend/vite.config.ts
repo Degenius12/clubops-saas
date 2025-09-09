@@ -9,13 +9,15 @@ export default defineConfig({
     host: true,
     proxy: {
       '/api': {
-        target: 'http://localhost:5000',
+        target: 'https://clubops-backend-vercel-kmhv.vercel.app',
         changeOrigin: true,
+        secure: true,
       },
       '/socket.io': {
-        target: 'http://localhost:5000',
+        target: 'https://clubops-backend-vercel-kmhv.vercel.app',
         changeOrigin: true,
         ws: true,
+        secure: true,
       }
     }
   },

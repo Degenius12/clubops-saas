@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧪 Backend Deployment Test - New URL</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: #1a1a1a;
+            color: #00ff00;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .test-section {
+            background: #2a2a2a;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border-left: 4px solid #00ff00;
+        }
+        .error { color: #ff3333; font-weight: bold; }
+        .success { color: #00ff00; font-weight: bold; }
+        .warning { color: #ffaa00; font-weight: bold; }
+        .info { color: #66ccff; font-weight: bold; }
+        .code {
+            background: #333;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+        }
+        button {
+            background: #00ff00;
+            color: #000;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            margin: 5px;
+        }
+        button:hover { background: #00cc00; }
+        .result {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 4px;
+            background: #333;
+        }
+        .url-comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 ClubOps Backend Deployment Test</h1>
+    
+    <div class="test-section">
+        <h2>🎯 Backend URL Change Detected!</h2>
+        <div class="url-comparison">
+            <div>
+                <h3 class="error">❌ OLD Backend (in frontend config):</h3>
+                <div class="code">https://clubops-backend-vercel-kmhv.vercel.app</div>
+            </div>
+            <div>
+                <h3 class="success">✅ NEW Backend (just deployed):</h3>
+                <div class="code">https://clubops-backend-j3e3lqk1w-tony-telemacques-projects.vercel.app</div>
+            </div>
+        </div>
+        <p class="warning">⚠️ Frontend needs to be updated with new backend URL!</p>
+    </div>
+
+    <div class="test-section">
+        <h2>📡 Test 1: New Backend Health Check</h2>
+        <button onclick="testNewBackendHealth()">Test New Backend Health</button>
+        <div id="newHealthResult" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>🔐 Test 2: New Backend Login Test</h2>
+        <button onclick="testNewBackendLogin()">Test Login on New Backend</button>
+        <div id="newLoginResult" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>📊 Test 3: Compare Old vs New Backend</h2>
+        <button onclick="compareBackends()">Compare Both Backends</button>
+        <div id="compareResult" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>🔧 Frontend Configuration Update Needed</h2>
+        <div class="warning">
+            <p>Since the backend URL changed, you need to update:</p>
+            <div class="code">File: frontend/.env
+OLD: VITE_API_URL=https://clubops-backend-vercel-kmhv.vercel.app
+NEW: VITE_API_URL=https://clubops-backend-j3e3lqk1w-tony-telemacques-projects.vercel.app</div>
+        </div>
+        <button onclick="generateUpdateCommands()">Generate Update Commands</button>
+        <div id="updateCommands" class="result"></div>
+    </div>
+
+    <script>
+        const OLD_BACKEND = 'https://clubops-backend-vercel-kmhv.vercel.app';
+        const NEW_BACKEND = 'https://clubops-backend-j3e3lqk1w-tony-telemacques-projects.vercel.app';
+        
+        async function testNewBackendHealth() {
+            const resultDiv = document.getElementById('newHealthResult');
+            resultDiv.innerHTML = '<span class="warning">Testing new backend health...</span>';
+            
+            try {
+                const response = await fetch(`${NEW_BACKEND}/health`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                const data = await response.text();
+                const isJson = response.headers.get('content-type')?.includes('application/json');
+                
+                resultDiv.innerHTML = `
+                    <div class="code">Status: ${response.status} ${response.statusText}
+Content-Type: ${response.headers.get('content-type')}
+Response: ${isJson ? JSON.stringify(JSON.parse(data), null, 2) : data}</div>
+                    ${response.ok ? 
+                        '<span class="success">✅ New backend is responding correctly!</span>' : 
+                        '<span class="error">❌ New backend health check failed</span>'
+                    }
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `<span class="error">❌ Network Error: ${error.message}</span>`;
+            }
+        }
+
+        async function testNewBackendLogin() {
+            const resultDiv = document.getElementById('newLoginResult');
+            resultDiv.innerHTML = '<span class="warning">Testing login on new backend...</span>';
+            
+            try {
+                const response = await fetch(`${NEW_BACKEND}/api/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'Origin': 'https://clubops-saas-platform.vercel.app'
+                    },
+                    body: JSON.stringify({
+                        email: 'admin@clubops.com',
+                        password: 'password'
+                    })
+                });
+                
+                const data = await response.text();
+                let parsedData;
+                try {
+                    parsedData = JSON.parse(data);
+                } catch {
+                    parsedData = data;
+                }
+                
+                resultDiv.innerHTML = `
+                    <div class="code">Status: ${response.status} ${response.statusText}
+Response: ${typeof parsedData === 'object' ? JSON.stringify(parsedData, null, 2) : parsedData}</div>
+                    ${response.status === 200 && parsedData.token ? 
+                        '<span class="success">✅ LOGIN WORKS! Authentication fixed!</span>' :
+                        response.status === 401 ? 
+                            '<span class="error">❌ Still getting 401 - check credentials or CORS</span>' :
+                            '<span class="warning">⚠️ Unexpected response - check details above</span>'
+                    }
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `<span class="error">❌ Network Error: ${error.message}</span>`;
+            }
+        }
+
+        async function compareBackends() {
+            const resultDiv = document.getElementById('compareResult');
+            resultDiv.innerHTML = '<span class="warning">Comparing old vs new backend...</span>';
+            
+            const testUrls = [OLD_BACKEND, NEW_BACKEND];
+            let results = '';
+            
+            for (const url of testUrls) {
+                const isOld = url === OLD_BACKEND;
+                try {
+                    const response = await fetch(`${url}/health`, {
+                        method: 'GET',
+                        headers: { 'Accept': 'application/json' }
+                    });
+                    
+                    const data = await response.text();
+                    results += `
+<strong>${isOld ? '🟡 OLD' : '🟢 NEW'} Backend (${url}):</strong>
+Status: ${response.status}
+Response: ${data.substring(0, 100)}${data.length > 100 ? '...' : ''}
+
+`;
+                } catch (error) {
+                    results += `
+<strong>${isOld ? '🟡 OLD' : '🟢 NEW'} Backend (${url}):</strong>
+Error: ${error.message}
+
+`;
+                }
+            }
+            
+            resultDiv.innerHTML = `<div class="code">${results}</div>
+                <p class="info">💡 If old backend fails and new backend works, the deployment was successful!</p>`;
+        }
+
+        function generateUpdateCommands() {
+            const resultDiv = document.getElementById('updateCommands');
+            
+            resultDiv.innerHTML = `
+                <div class="code"><strong>Step 1: Update Frontend Environment</strong>
+# Navigate to frontend directory
+cd frontend
+
+# Update .env file
+echo "VITE_API_URL=${NEW_BACKEND}" > .env
+echo "VITE_APP_NAME=ClubOps" >> .env  
+echo "VITE_STRIPE_PUBLISHABLE_KEY=pk_test_your_stripe_publishable_key_here" >> .env
+echo "VITE_FORCE_REBUILD=true" >> .env
+
+# Also update .env.production
+echo "VITE_API_URL=${NEW_BACKEND}" > .env.production
+echo "VITE_APP_NAME=ClubOps" >> .env.production
+
+<strong>Step 2: Deploy Frontend with New Backend URL</strong>
+# From frontend directory
+vercel --prod
+
+<strong>Step 3: Test Full Application</strong>
+# Visit your frontend URL and test login</div>
+                <p class="success">✅ Copy and run these commands to update your frontend!</p>
+            `;
+        }
+
+        // Auto-run health check
+        window.onload = function() {
+            testNewBackendHealth();
+            setTimeout(testNewBackendLogin, 2000);
+        };
+    </script>
+
+    <div class="test-section">
+        <h2>📋 Next Steps Summary</h2>
+        <div class="info">
+            <p><strong>1. Verify Tests Above Pass</strong></p>
+            <p><strong>2. Update Frontend .env with New Backend URL</strong></p>
+            <p><strong>3. Redeploy Frontend</strong></p>
+            <p><strong>4. Test Full Login Flow</strong></p>
+        </div>
+    </div>
+</body>
+</html>

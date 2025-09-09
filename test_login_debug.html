@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ClubOps Login Debug Tool</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 50px auto; padding: 20px; }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        button { background: #007bff; color: white; padding: 10px 15px; border: none; border-radius: 3px; cursor: pointer; }
+        input { padding: 8px; margin: 5px; width: 250px; }
+        .response { background: #f8f9fa; padding: 10px; margin: 10px 0; border-radius: 3px; font-family: monospace; }
+    </style>
+</head>
+<body>
+    <h1>🔍 ClubOps Login Debug Tool</h1>
+    
+    <div class="section">
+        <h3>Step 1: Test Backend Connection</h3>
+        <button onclick="testBackend()">Test Backend Health</button>
+        <div id="backendResult"></div>
+    </div>
+
+    <div class="section">
+        <h3>Step 2: Test Known Working Credentials</h3>
+        <button onclick="testKnownLogin()">Test tonytele@gmail.com + Admin123!</button>
+        <div id="knownLoginResult"></div>
+    </div>
+
+    <div class="section">
+        <h3>Step 3: Test Your Credentials</h3>
+        <input type="email" id="userEmail" placeholder="Your email" value="">
+        <input type="password" id="userPassword" placeholder="Your password" value="">
+        <button onclick="testUserLogin()">Test Your Login</button>
+        <div id="userLoginResult"></div>
+    </div>
+
+    <div class="section">
+        <h3>Step 4: Create New Account (If Needed)</h3>
+        <input type="text" id="newFirstName" placeholder="First Name" value="">
+        <input type="text" id="newLastName" placeholder="Last Name" value="">
+        <input type="text" id="newClubName" placeholder="Club Name" value="">
+        <input type="text" id="newSubdomain" placeholder="Subdomain (unique)" value="">
+        <input type="email" id="newEmail" placeholder="Email" value="">
+        <input type="password" id="newPassword" placeholder="Password" value="">
+        <button onclick="createAccount()">Create Account</button>
+        <div id="createResult"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:3001/api';
+
+        async function makeRequest(url, method = 'GET', body = null) {
+            try {
+                const options = {
+                    method,
+                    headers: { 'Content-Type': 'application/json' }
+                };
+                if (body) options.body = JSON.stringify(body);
+                
+                const response = await fetch(url, options);
+                const data = await response.json();
+                return { success: response.ok, status: response.status, data };
+            } catch (error) {
+                return { success: false, error: error.message };
+            }
+        }
+
+        function displayResult(elementId, result) {
+            const element = document.getElementById(elementId);
+            const isSuccess = result.success;
+            element.className = `response ${isSuccess ? 'success' : 'error'}`;
+            
+            if (isSuccess) {
+                element.innerHTML = `✅ SUCCESS (${result.status})<br><pre>${JSON.stringify(result.data, null, 2)}</pre>`;
+            } else {
+                element.innerHTML = `❌ FAILED<br><pre>Status: ${result.status || 'Network Error'}<br>Error: ${JSON.stringify(result.data || result.error, null, 2)}</pre>`;
+            }
+        }
+
+        async function testBackend() {
+            const result = await makeRequest(`${API_BASE}/health`);
+            displayResult('backendResult', result);
+        }
+
+        async function testKnownLogin() {
+            const result = await makeRequest(`${API_BASE}/auth/login`, 'POST', {
+                email: 'tonytele@gmail.com',
+                password: 'Admin123!'
+            });
+            displayResult('knownLoginResult', result);
+        }
+
+        async function testUserLogin() {
+            const email = document.getElementById('userEmail').value;
+            const password = document.getElementById('userPassword').value;
+            
+            if (!email || !password) {
+                displayResult('userLoginResult', { success: false, error: 'Please enter both email and password' });
+                return;
+            }
+
+            const result = await makeRequest(`${API_BASE}/auth/login`, 'POST', { email, password });
+            displayResult('userLoginResult', result);
+        }
+
+        async function createAccount() {
+            const firstName = document.getElementById('newFirstName').value;
+            const lastName = document.getElementById('newLastName').value;
+            const clubName = document.getElementById('newClubName').value;
+            const subdomain = document.getElementById('newSubdomain').value;
+            const email = document.getElementById('newEmail').value;
+            const password = document.getElementById('newPassword').value;
+
+            if (!firstName || !lastName || !clubName || !subdomain || !email || !password) {
+                displayResult('createResult', { success: false, error: 'Please fill all fields' });
+                return;
+            }
+
+            const result = await makeRequest(`${API_BASE}/auth/register`, 'POST', {
+                firstName, lastName, clubName, subdomain, email, password, confirmPassword: password
+            });
+            displayResult('createResult', result);
+        }
+
+        // Auto-test backend on load
+        window.onload = () => testBackend();
+    </script>
+</body>
+</html>

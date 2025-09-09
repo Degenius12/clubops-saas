@@ -12,11 +12,19 @@
       "dest": "/api/index.js"
     },
     {
+      "src": "/health",
+      "dest": "/api/index.js"
+    },
+    {
       "src": "/(.*)",
       "dest": "/api/index.js"
     }
   ],
   "env": {
-    "NODE_ENV": "production"
+    "NODE_ENV": "production",
+    "CLIENT_URL": "https://clubops-saas-platform.vercel.app",
+    "FRONTEND_URL": "https://clubops-saas-platform.vercel.app",
+    "JWT_SECRET": "clubops-super-secure-jwt-key-2024-make-this-very-long-and-random-please",
+    "DATABASE_URL": "postgresql://neondb_owner:npg_a2IrCUykWc0p@ep-rough-star-adk34eay-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require"
   }
 }

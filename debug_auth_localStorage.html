@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClubOps Auth Debug - localStorage Issue</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        .section {
+            margin: 20px 0;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        button {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            margin: 5px;
+            transition: transform 0.2s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+        }
+        button.success {
+            background: linear-gradient(45deg, #00d2d3, #54a0ff);
+        }
+        button.warning {
+            background: linear-gradient(45deg, #feca57, #ff9ff3);
+        }
+        input, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 16px;
+            margin: 10px 0;
+        }
+        input::placeholder, textarea::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+        .output {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            white-space: pre-wrap;
+            margin-top: 10px;
+            min-height: 100px;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-weight: 600;
+        }
+        .status.error {
+            background: rgba(255, 107, 107, 0.2);
+            border: 1px solid #ff6b6b;
+        }
+        .status.success {
+            background: rgba(0, 210, 211, 0.2);
+            border: 1px solid #00d2d3;
+        }
+        .status.warning {
+            background: rgba(254, 202, 87, 0.2);
+            border: 1px solid #feca57;
+        }
+        h1, h2 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        h1 {
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        .flex {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        .flex > * {
+            flex: 1;
+            min-width: 200px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 ClubOps Auth Debug - localStorage Issue</h1>
+        
+        <div class="section">
+            <h2>🕵️ Issue Analysis</h2>
+            <div class="status warning">
+                <strong>PROBLEM IDENTIFIED:</strong> Old token in localStorage is being sent with login requests!
+            </div>
+            <p>Your login request is failing because an old authentication token is stored in localStorage and being added to the login request. The backend receives both login credentials AND an auth token, which confuses it.</p>
+        </div>
+
+        <div class="section">
+            <h2>🔍 localStorage Inspector</h2>
+            <button onclick="inspectLocalStorage()">Check localStorage</button>
+            <button onclick="clearAllAuth()" class="warning">Clear Auth Data</button>
+            <div id="localStorageOutput" class="output">Click "Check localStorage" to see stored data...</div>
+        </div>
+
+        <div class="section">
+            <h2>🧪 Backend Connection Test</h2>
+            <div class="flex">
+                <div>
+                    <input type="email" id="testEmail" placeholder="Email" value="tonytele@gmail.com">
+                    <input type="password" id="testPassword" placeholder="Password" value="Admin1.0">
+                </div>
+            </div>
+            <button onclick="testLogin()" class="success">Test Clean Login (No Auth Headers)</button>
+            <div id="loginOutput" class="output">Ready to test login...</div>
+        </div>
+
+        <div class="section">
+            <h2>🎯 Fix Steps</h2>
+            <ol>
+                <li><strong>Clear localStorage:</strong> Remove any old tokens</li>
+                <li><strong>Test Clean Login:</strong> Verify login works without auth headers</li>
+                <li><strong>Restart Frontend:</strong> Clear any cached tokens in memory</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        const BACKEND_URL = 'http://localhost:3001';
+        
+        function inspectLocalStorage() {
+            const output = document.getElementById('localStorageOutput');
+            let result = '=== localStorage Contents ===\n\n';
+            
+            // Check for any keys that might contain auth data
+            const authKeys = ['token', 'auth', 'user', 'jwt', 'access_token', 'refresh_token'];
+            const allKeys = [];
+            
+            for (let i = 0; i < localStorage.length; i++) {
+                allKeys.push(localStorage.key(i));
+            }
+            
+            result += `Total localStorage keys: ${allKeys.length}\n\n`;
+            
+            if (allKeys.length === 0) {
+                result += '✅ localStorage is empty - no auth tokens found!\n';
+            } else {
+                allKeys.forEach(key => {
+                    const value = localStorage.getItem(key);
+                    const isAuthRelated = authKeys.some(authKey => key.toLowerCase().includes(authKey));
+                    const indicator = isAuthRelated ? '🔑 [AUTH]' : '📝';
+                    
+                    result += `${indicator} ${key}: ${value ? value.substring(0, 100) + (value.length > 100 ? '...' : '') : 'null'}\n`;
+                });
+                
+                const hasAuthTokens = allKeys.some(key => authKeys.some(authKey => key.toLowerCase().includes(authKey)));
+                if (hasAuthTokens) {
+                    result += '\n❌ AUTH TOKENS FOUND! These need to be cleared.\n';
+                } else {
+                    result += '\n✅ No auth tokens found in localStorage.\n';
+                }
+            }
+            
+            // Check sessionStorage too
+            result += '\n=== sessionStorage Contents ===\n\n';
+            const sessionKeys = [];
+            for (let i = 0; i < sessionStorage.length; i++) {
+                sessionKeys.push(sessionStorage.key(i));
+            }
+            
+            if (sessionKeys.length === 0) {
+                result += '✅ sessionStorage is empty\n';
+            } else {
+                sessionKeys.forEach(key => {
+                    const value = sessionStorage.getItem(key);
+                    result += `📝 ${key}: ${value ? value.substring(0, 100) + (value.length > 100 ? '...' : '') : 'null'}\n`;
+                });
+            }
+            
+            output.textContent = result;
+        }
+        
+        function clearAllAuth() {
+            const output = document.getElementById('localStorageOutput');
+            let result = '🧹 Clearing Authentication Data...\n\n';
+            
+            // Clear specific auth keys
+            const authKeys = ['token', 'auth', 'user', 'jwt', 'access_token', 'refresh_token'];
+            let clearedCount = 0;
+            
+            authKeys.forEach(key => {
+                if (localStorage.getItem(key)) {
+                    localStorage.removeItem(key);
+                    result += `✅ Removed: ${key}\n`;
+                    clearedCount++;
+                }
+                if (sessionStorage.getItem(key)) {
+                    sessionStorage.removeItem(key);
+                    result += `✅ Removed from session: ${key}\n`;
+                    clearedCount++;
+                }
+            });
+            
+            // Clear any other keys that might contain tokens
+            const allKeys = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                allKeys.push(localStorage.key(i));
+            }
+            
+            allKeys.forEach(key => {
+                if (authKeys.some(authKey => key.toLowerCase().includes(authKey))) {
+                    localStorage.removeItem(key);
+                    result += `✅ Removed: ${key}\n`;
+                    clearedCount++;
+                }
+            });
+            
+            if (clearedCount === 0) {
+                result += '✅ No auth tokens found to clear.\n';
+            } else {
+                result += `\n🎉 Cleared ${clearedCount} auth-related items!\n`;
+                result += '\n⚠️  IMPORTANT: Restart your frontend development server to clear any cached tokens in memory!\n';
+            }
+            
+            output.textContent = result;
+            
+            // Show success message
+            setTimeout(() => {
+                inspectLocalStorage();
+            }, 1000);
+        }
+        
+        async function testLogin() {
+            const output = document.getElementById('loginOutput');
+            const email = document.getElementById('testEmail').value;
+            const password = document.getElementById('testPassword').value;
+            
+            if (!email || !password) {
+                output.textContent = '❌ Please enter both email and password';
+                return;
+            }
+            
+            output.textContent = '🔄 Testing login without any auth headers...\n';
+            
+            try {
+                // Create a completely clean request - no auth headers at all
+                const response = await fetch(`${BACKEND_URL}/api/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        // Explicitly no Authorization header
+                    },
+                    body: JSON.stringify({ email, password }),
+                    credentials: 'include'
+                });
+                
+                const result = await response.text();
+                let data;
+                try {
+                    data = JSON.parse(result);
+                } catch (e) {
+                    data = result;
+                }
+                
+                output.textContent = `Status: ${response.status}\n`;
+                output.textContent += `Response: ${JSON.stringify(data, null, 2)}\n\n`;
+                
+                if (response.status === 200) {
+                    output.textContent += '🎉 SUCCESS! Login works when no auth header is sent!\n';
+                    output.textContent += '✅ The issue is confirmed: old tokens in localStorage were causing the problem.\n';
+                } else if (response.status === 401 && data.message === 'Invalid credentials') {
+                    output.textContent += '✅ GOOD! Server is accessible and responding properly.\n';
+                    output.textContent += '🔐 Login failed due to invalid credentials (expected if credentials are wrong).\n';
+                    output.textContent += '✅ No more "Access token required" error!\n';
+                } else if (response.status === 400) {
+                    output.textContent += '⚠️  Still getting 400 error. Check backend logs for details.\n';
+                } else {
+                    output.textContent += '❌ Unexpected response. Check backend status.\n';
+                }
+                
+            } catch (error) {
+                output.textContent += `❌ Network Error: ${error.message}\n`;
+                output.textContent += `\nMake sure backend is running on: ${BACKEND_URL}\n`;
+            }
+        }
+        
+        // Auto-run inspection on page load
+        window.onload = function() {
+            inspectLocalStorage();
+        };
+    </script>
+</body>
+</html>

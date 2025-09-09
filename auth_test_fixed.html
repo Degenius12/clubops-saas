@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClubOps Authentication Test - FIXED</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; background: #1a1a1a; color: #fff; }
+        .test-result { padding: 15px; margin: 10px 0; border-radius: 5px; }
+        .success { background: #2d5a2d; border: 1px solid #4caf50; }
+        .error { background: #5a2d2d; border: 1px solid #f44336; }
+        .warning { background: #5a5a2d; border: 1px solid #ff9800; }
+        button { background: #007bff; color: white; border: none; padding: 10px 20px; margin: 5px; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        pre { background: #2a2a2a; padding: 10px; border-radius: 5px; overflow-x: auto; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <h1>🔐 ClubOps Authentication Test Suite - FIXED</h1>
+    
+    <div id="results"></div>
+    
+    <button onclick="testBackendHealth()">Test Backend Health</button>
+    <button onclick="testLogin()">Test Login</button>
+    <button onclick="testDashboard()">Test Dashboard Access</button>
+    <button onclick="testFullFlow()">Test Complete Auth Flow</button>
+    <button onclick="clearResults()">Clear Results</button>
+
+    <script>
+        const BACKEND_URL = 'https://clubops-backend-hf732oon7-tony-telemacques-projects.vercel.app';
+        const FRONTEND_URL = 'https://frontend-6v4tpr1qa-tony-telemacques-projects.vercel.app';
+        
+        let authToken = null; // Store token for subsequent tests
+        
+        function addResult(title, content, type = 'success') {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `test-result ${type}`;
+            div.innerHTML = `<h3>${title}</h3><pre>${content}</pre>`;
+            results.appendChild(div);
+        }
+        
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+            authToken = null;
+        }
+        
+        async function testBackendHealth() {
+            try {
+                addResult('Testing Backend Health...', 'Checking if backend is responding...', 'warning');
+                
+                // Test root endpoint first
+                const rootResponse = await fetch(`${BACKEND_URL}/`, {
+                    method: 'GET',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                if (rootResponse.ok) {
+                    const rootData = await rootResponse.json();
+                    addResult('✅ Backend Root Endpoint', `Status: ${rootResponse.status}\nResponse: ${JSON.stringify(rootData, null, 2)}`, 'success');
+                }
+                
+                // Test health endpoint
+                const healthResponse = await fetch(`${BACKEND_URL}/health`, {
+                    method: 'GET',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                if (healthResponse.ok) {
+                    const healthData = await healthResponse.json();
+                    addResult('✅ Backend Health Check', `Status: ${healthResponse.status}\nHealth: ${JSON.stringify(healthData, null, 2)}`, 'success');
+                } else {
+                    const errorData = await healthResponse.text();
+                    addResult('⚠️ Backend Health Check', `Status: ${healthResponse.status}\nResponse: ${errorData}`, 'warning');
+                }
+                
+            } catch (error) {
+                addResult('❌ Backend Health Check Failed', `Error: ${error.message}\nBackend URL: ${BACKEND_URL}`, 'error');
+            }
+        }
+        
+        async function testLogin() {
+            try {
+                addResult('Testing Login...', 'Attempting login with test credentials...', 'warning');
+                
+                const response = await fetch(`${BACKEND_URL}/api/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: 'admin@clubops.com',
+                        password: 'password'
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.token) {
+                    authToken = data.token; // Store for future tests
+                    addResult('✅ Login Test Successful', `Status: ${response.status}\nToken received: ${data.token ? 'Yes' : 'No'}\nUser: ${JSON.stringify(data.user, null, 2)}`, 'success');
+                } else {
+                    addResult('❌ Login Test Failed', `Status: ${response.status}\nError: ${JSON.stringify(data, null, 2)}`, 'error');
+                }
+            } catch (error) {
+                addResult('❌ Login Test Error', `Error: ${error.message}\nLogin URL: ${BACKEND_URL}/api/auth/login`, 'error');
+            }
+        }
+        
+        async function testDashboard() {
+            if (!authToken) {
+                addResult('⚠️ Dashboard Test Skipped', 'No auth token available. Run login test first.', 'warning');
+                return;
+            }
+            
+            try {
+                addResult('Testing Dashboard Access...', 'Checking authenticated endpoint...', 'warning');
+                
+                const response = await fetch(`${BACKEND_URL}/api/dashboard/stats`, {
+                    method: 'GET',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    addResult('✅ Dashboard Access Successful', `Status: ${response.status}\nStats: ${JSON.stringify(data, null, 2)}`, 'success');
+                } else {
+                    addResult('❌ Dashboard Access Failed', `Status: ${response.status}\nError: ${JSON.stringify(data, null, 2)}`, 'error');
+                }
+            } catch (error) {
+                addResult('❌ Dashboard Test Error', `Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testFullFlow() {
+            addResult('🚀 Starting Complete Authentication Flow Test', 'Testing all components...', 'warning');
+            
+            // Test 1: Backend Health
+            await testBackendHealth();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            // Test 2: Login
+            await testLogin();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            // Test 3: Dashboard (if login successful)
+            if (authToken) {
+                await testDashboard();
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+            
+            // Test 4: Frontend Accessibility
+            try {
+                addResult('Testing Frontend Access...', 'Checking if frontend is accessible...', 'warning');
+                
+                const frontendResponse = await fetch(FRONTEND_URL, { mode: 'no-cors' });
+                addResult('✅ Frontend Accessible', `Frontend URL: ${FRONTEND_URL}\nStatus: Accessible (no-cors mode)`, 'success');
+            } catch (error) {
+                addResult('❌ Frontend Access Error', `Error: ${error.message}\nFrontend URL: ${FRONTEND_URL}`, 'error');
+            }
+            
+            addResult('🎯 Authentication Analysis Complete', `
+Backend URL: ${BACKEND_URL}
+Frontend URL: ${FRONTEND_URL}
+Test Credentials: admin@clubops.com / password
+
+✅ Backend Status: ${authToken ? 'WORKING' : 'NEEDS ATTENTION'}
+✅ Authentication: ${authToken ? 'SUCCESSFUL' : 'FAILED'}
+✅ API Access: ${authToken ? 'VERIFIED' : 'UNVERIFIED'}
+
+Next Steps:
+1. If backend health passes but login fails → Check auth endpoint
+2. If login works but dashboard fails → Check JWT middleware
+3. If all backend tests pass → Frontend integration ready
+4. Visit ${FRONTEND_URL} for manual testing
+            `, authToken ? 'success' : 'warning');
+        }
+        
+        // Auto-run health check on page load
+        window.onload = function() {
+            addResult('🎯 ClubOps Authentication Tester - FIXED VERSION', `
+Backend URL: ${BACKEND_URL}
+Frontend URL: ${FRONTEND_URL}
+
+FIXES APPLIED:
+- Corrected health endpoint (/health instead of /api/health)
+- Added root endpoint test
+- Improved error handling
+- Added token storage for multi-step testing
+
+Click the buttons above to test different components.
+            `, 'warning');
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧪 ClubOps Backend Tester - LIVE</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: #1a1a1a;
+            color: #00ff00;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .test-panel {
+            background: #2a2a2a;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border-left: 4px solid #00ff00;
+        }
+        .result {
+            background: #333;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+        }
+        .success { color: #00ff00; font-weight: bold; }
+        .error { color: #ff3333; font-weight: bold; }
+        .warning { color: #ffaa00; font-weight: bold; }
+        .info { color: #00aaff; font-weight: bold; }
+        button {
+            background: #00ff00;
+            color: #000;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            margin: 5px;
+            font-size: 14px;
+        }
+        button:hover { background: #00cc00; }
+        button:disabled { background: #666; cursor: not-allowed; }
+        .auto-test { background: #ff6600; color: white; }
+        .deploy-needed { background: #ff3333; color: white; padding: 20px; margin: 20px 0; border-radius: 8px; }
+    </style>
+</head>
+<body>
+    <h1>🧪 ClubOps Backend Live Tester</h1>
+    
+    <div class="test-panel">
+        <h2>🔄 Auto-Testing Backend Status</h2>
+        <button onclick="runAllTests()" class="auto-test">🚀 RUN ALL TESTS</button>
+        <button onclick="clearResults()">🧹 Clear Results</button>
+        <div id="autoTestResults" class="result"></div>
+    </div>
+
+    <div class="test-panel">
+        <h2>📡 Manual Tests</h2>
+        <button onclick="testHealth()">1️⃣ Health Check</button>
+        <button onclick="testLogin()">2️⃣ Login Test</button>
+        <button onclick="testCORS()">3️⃣ CORS Test</button>
+        <button onclick="testWithDifferentOrigins()">4️⃣ Origin Test</button>
+    </div>
+
+    <div id="testResults"></div>
+
+    <div id="deploymentNeeded" class="deploy-needed" style="display: none;">
+        <h2>🚨 DEPLOYMENT NEEDED</h2>
+        <p>Backend tests failed! You need to deploy the fixes:</p>
+        <pre>.\deploy_backend_fix.bat</pre>
+        <p>Or manually deploy in backend directory:</p>
+        <pre>cd backend
+vercel --prod</pre>
+    </div>
+
+    <script>
+        const BACKEND_URL = 'https://clubops-backend-vercel-kmhv.vercel.app';
+        const FRONTEND_URL = 'https://clubops-saas-platform.vercel.app';
+        
+        let testResults = [];
+        
+        function clearResults() {
+            document.getElementById('testResults').innerHTML = '';
+            document.getElementById('autoTestResults').innerHTML = '';
+            document.getElementById('deploymentNeeded').style.display = 'none';
+            testResults = [];
+        }
+
+        function addResult(testName, success, message, details = '') {
+            const result = {
+                test: testName,
+                success: success,
+                message: message,
+                details: details,
+                timestamp: new Date().toISOString()
+            };
+            testResults.push(result);
+            
+            const resultDiv = document.createElement('div');
+            resultDiv.className = 'test-panel';
+            resultDiv.innerHTML = `
+                <h3>${success ? '✅' : '❌'} ${testName}</h3>
+                <div class="${success ? 'success' : 'error'}">${message}</div>
+                ${details ? `<div class="result">${details}</div>` : ''}
+                <small class="info">Time: ${new Date().toLocaleTimeString()}</small>
+            `;
+            
+            document.getElementById('testResults').appendChild(resultDiv);
+        }
+
+        async function testHealth() {
+            try {
+                const response = await fetch(`${BACKEND_URL}/health`, {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' }
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    addResult('Health Check', true, 'Backend is responding', 
+                        `Status: ${response.status}\nVersion: ${data.version}\nEnvironment: ${data.environment}\nFrontend URL: ${data.frontend_url}`);
+                } else {
+                    addResult('Health Check', false, 'Backend health check failed', 
+                        `Status: ${response.status}\nResponse: ${JSON.stringify(data, null, 2)}`);
+                }
+            } catch (error) {
+                addResult('Health Check', false, 'Network error connecting to backend', error.message);
+            }
+        }
+
+        async function testLogin() {
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'Origin': FRONTEND_URL
+                    },
+                    body: JSON.stringify({
+                        email: 'admin@clubops.com',
+                        password: 'password'
+                    })
+                });
+                
+                const data = await response.text();
+                let parsedData;
+                try {
+                    parsedData = JSON.parse(data);
+                } catch {
+                    parsedData = data;
+                }
+                
+                if (response.ok) {
+                    addResult('Login Test', true, 'Login successful!', 
+                        `Status: ${response.status}\nToken received: ${!!parsedData.token}\nUser: ${parsedData.user?.email}`);
+                    return true;
+                } else {
+                    addResult('Login Test', false, `Login failed - Status ${response.status}`, 
+                        `Response: ${JSON.stringify(parsedData, null, 2)}`);
+                    
+                    if (response.status === 401) {
+                        document.getElementById('deploymentNeeded').style.display = 'block';
+                    }
+                    return false;
+                }
+            } catch (error) {
+                addResult('Login Test', false, 'Login request failed', error.message);
+                return false;
+            }
+        }
+
+        async function testCORS() {
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/auth/login`, {
+                    method: 'OPTIONS',
+                    headers: {
+                        'Access-Control-Request-Method': 'POST',
+                        'Access-Control-Request-Headers': 'Content-Type',
+                        'Origin': FRONTEND_URL
+                    }
+                });
+                
+                const corsHeaders = {
+                    'Access-Control-Allow-Origin': response.headers.get('Access-Control-Allow-Origin'),
+                    'Access-Control-Allow-Methods': response.headers.get('Access-Control-Allow-Methods'),
+                    'Access-Control-Allow-Headers': response.headers.get('Access-Control-Allow-Headers')
+                };
+                
+                if (response.ok && corsHeaders['Access-Control-Allow-Origin']) {
+                    addResult('CORS Test', true, 'CORS properly configured', 
+                        `Status: ${response.status}\nCORS Headers:\n${JSON.stringify(corsHeaders, null, 2)}`);
+                } else {
+                    addResult('CORS Test', false, 'CORS configuration issue', 
+                        `Status: ${response.status}\nCORS Headers:\n${JSON.stringify(corsHeaders, null, 2)}`);
+                }
+            } catch (error) {
+                addResult('CORS Test', false, 'CORS test failed', error.message);
+            }
+        }
+
+        async function testWithDifferentOrigins() {
+            const origins = [
+                FRONTEND_URL,
+                'http://localhost:3000',
+                'http://localhost:5173'
+            ];
+            
+            for (const origin of origins) {
+                try {
+                    const response = await fetch(`${BACKEND_URL}/api/auth/login`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Origin': origin
+                        },
+                        body: JSON.stringify({
+                            email: 'admin@clubops.com',
+                            password: 'password'
+                        })
+                    });
+                    
+                    const statusText = response.ok ? 'Success' : 'Failed';
+                    addResult(`Origin Test (${origin})`, response.ok, 
+                        `${statusText} - Status ${response.status}`, 
+                        `Testing from origin: ${origin}`);
+                } catch (error) {
+                    addResult(`Origin Test (${origin})`, false, 'Request failed', error.message);
+                }
+            }
+        }
+
+        async function runAllTests() {
+            const autoResults = document.getElementById('autoTestResults');
+            autoResults.innerHTML = '<span class="warning">🔄 Running comprehensive backend tests...</span>\n';
+            
+            clearResults();
+            
+            // Run tests in sequence
+            await testHealth();
+            await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
+            
+            const loginSuccess = await testLogin();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            await testCORS();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            await testWithDifferentOrigins();
+            
+            // Analyze results
+            const failedTests = testResults.filter(r => !r.success);
+            const successfulTests = testResults.filter(r => r.success);
+            
+            let summary = `🧪 TEST SUMMARY:\n`;
+            summary += `✅ Passed: ${successfulTests.length}\n`;
+            summary += `❌ Failed: ${failedTests.length}\n\n`;
+            
+            if (loginSuccess) {
+                summary += `🎉 AUTHENTICATION WORKING!\n`;
+                summary += `✅ Backend is properly configured\n`;
+                summary += `✅ Login endpoint accessible\n`;
+                summary += `✅ Ready for production use\n\n`;
+                summary += `🚀 You can now use the frontend:\n`;
+                summary += `${FRONTEND_URL}\n`;
+                summary += `📧 Email: admin@clubops.com\n`;
+                summary += `🔑 Password: password`;
+                
+                document.getElementById('deploymentNeeded').style.display = 'none';
+            } else {
+                summary += `🚨 DEPLOYMENT NEEDED!\n`;
+                summary += `❌ Authentication failing\n`;
+                summary += `❌ Backend needs to be redeployed\n\n`;
+                summary += `🛠️ RUN THIS COMMAND:\n`;
+                summary += `.\deploy_backend_fix.bat\n\n`;
+                summary += `Or manually:\n`;
+                summary += `cd backend\n`;
+                summary += `vercel --prod`;
+                
+                document.getElementById('deploymentNeeded').style.display = 'block';
+            }
+            
+            autoResults.innerHTML = `<div class="${loginSuccess ? 'success' : 'error'}">${summary}</div>`;
+        }
+
+        // Auto-run tests when page loads
+        window.onload = function() {
+            setTimeout(runAllTests, 1000);
+        };
+    </script>
+
+    <div class="test-panel">
+        <h2>📋 Quick Commands</h2>
+        <p><strong>If tests fail, run in PowerShell:</strong></p>
+        <div class="result">.\deploy_backend_fix.bat</div>
+        
+        <p><strong>Or manual deployment:</strong></p>
+        <div class="result">cd backend
+vercel --prod</div>
+        
+        <p><strong>Test frontend after deployment:</strong></p>
+        <div class="result">https://clubops-saas-platform.vercel.app
+Email: admin@clubops.com
+Password: password</div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔍 Backend Authentication Issue Tester</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: #1a1a1a;
+            color: #00ff00;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .test-section {
+            background: #2a2a2a;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border-left: 4px solid #00ff00;
+        }
+        .error { color: #ff3333; font-weight: bold; }
+        .success { color: #00ff00; font-weight: bold; }
+        .warning { color: #ffaa00; font-weight: bold; }
+        .code {
+            background: #333;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+        }
+        button {
+            background: #00ff00;
+            color: #000;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            margin: 5px;
+        }
+        button:hover { background: #00cc00; }
+        .result {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 4px;
+            background: #333;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 ClubOps Backend Authentication Issue Tester</h1>
+    
+    <div class="test-section">
+        <h2>🎯 Issue Analysis</h2>
+        <p class="error">Error: POST /auth/login returns 401 "Invalid credentials"</p>
+        <p class="warning">This suggests the backend auth middleware is protecting the login endpoint</p>
+    </div>
+
+    <div class="test-section">
+        <h2>📡 Test 1: Backend Health Check</h2>
+        <button onclick="testHealth()">Test Backend Health</button>
+        <div id="healthResult" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>🔐 Test 2: Direct Login Test (No Auth Header)</h2>
+        <button onclick="testLoginDirect()">Test Login Without Auth</button>
+        <div id="loginDirectResult" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>🔍 Test 3: Login with Different Headers</h2>
+        <button onclick="testLoginWithHeaders()">Test Login With Various Headers</button>
+        <div id="loginHeadersResult" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>📋 Test 4: CORS Preflight Check</h2>
+        <button onclick="testCORS()">Test CORS Headers</button>
+        <div id="corsResult" class="result"></div>
+    </div>
+
+    <script>
+        const BACKEND_URL = 'https://clubops-backend-vercel-kmhv.vercel.app';
+        
+        async function testHealth() {
+            const resultDiv = document.getElementById('healthResult');
+            resultDiv.innerHTML = '<span class="warning">Testing backend health...</span>';
+            
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/health`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                const data = await response.text();
+                const isJson = response.headers.get('content-type')?.includes('application/json');
+                
+                resultDiv.innerHTML = `
+                    <div class="code">Status: ${response.status} ${response.statusText}
+Content-Type: ${response.headers.get('content-type')}
+Response: ${isJson ? JSON.stringify(JSON.parse(data), null, 2) : data}</div>
+                    ${response.ok ? 
+                        '<span class="success">✅ Backend is responding</span>' : 
+                        '<span class="error">❌ Backend health check failed</span>'
+                    }
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `<span class="error">❌ Network Error: ${error.message}</span>`;
+            }
+        }
+
+        async function testLoginDirect() {
+            const resultDiv = document.getElementById('loginDirectResult');
+            resultDiv.innerHTML = '<span class="warning">Testing direct login...</span>';
+            
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        email: 'admin@clubops.com',
+                        password: 'password'
+                    })
+                });
+                
+                const data = await response.text();
+                let parsedData;
+                try {
+                    parsedData = JSON.parse(data);
+                } catch {
+                    parsedData = data;
+                }
+                
+                const authHeader = response.headers.get('www-authenticate');
+                
+                resultDiv.innerHTML = `
+                    <div class="code">Status: ${response.status} ${response.statusText}
+WWW-Authenticate: ${authHeader || 'None'}
+Response: ${typeof parsedData === 'object' ? JSON.stringify(parsedData, null, 2) : parsedData}</div>
+                    ${response.status === 401 && (authHeader || JSON.stringify(parsedData).includes('token') || JSON.stringify(parsedData).includes('auth')) ? 
+                        '<span class="error">❌ CONFIRMED: Auth middleware protecting login endpoint!</span>' : 
+                        response.ok ? 
+                            '<span class="success">✅ Login endpoint accessible</span>' :
+                            '<span class="warning">⚠️ Different error - check response</span>'
+                    }
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `<span class="error">❌ Network Error: ${error.message}</span>`;
+            }
+        }
+
+        async function testLoginWithHeaders() {
+            const resultDiv = document.getElementById('loginHeadersResult');
+            resultDiv.innerHTML = '<span class="warning">Testing login with different headers...</span>';
+            
+            const tests = [
+                {
+                    name: 'Standard Headers',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    }
+                },
+                {
+                    name: 'With Origin Header',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'Origin': 'https://clubops-saas-platform.vercel.app'
+                    }
+                },
+                {
+                    name: 'With Fake Token',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'Authorization': 'Bearer fake-token'
+                    }
+                }
+            ];
+            
+            let results = '';
+            
+            for (const test of tests) {
+                try {
+                    const response = await fetch(`${BACKEND_URL}/api/auth/login`, {
+                        method: 'POST',
+                        headers: test.headers,
+                        body: JSON.stringify({
+                            email: 'admin@clubops.com',
+                            password: 'password'
+                        })
+                    });
+                    
+                    const data = await response.text();
+                    results += `
+<strong>${test.name}:</strong>
+Status: ${response.status}
+Response: ${data.substring(0, 100)}${data.length > 100 ? '...' : ''}
+
+`;
+                } catch (error) {
+                    results += `
+<strong>${test.name}:</strong>
+Error: ${error.message}
+
+`;
+                }
+            }
+            
+            resultDiv.innerHTML = `<div class="code">${results}</div>`;
+        }
+
+        async function testCORS() {
+            const resultDiv = document.getElementById('corsResult');
+            resultDiv.innerHTML = '<span class="warning">Testing CORS...</span>';
+            
+            try {
+                // Test OPTIONS request (CORS preflight)
+                const response = await fetch(`${BACKEND_URL}/api/auth/login`, {
+                    method: 'OPTIONS',
+                    headers: {
+                        'Access-Control-Request-Method': 'POST',
+                        'Access-Control-Request-Headers': 'Content-Type',
+                        'Origin': window.location.origin
+                    }
+                });
+                
+                const corsHeaders = {
+                    'Access-Control-Allow-Origin': response.headers.get('Access-Control-Allow-Origin'),
+                    'Access-Control-Allow-Methods': response.headers.get('Access-Control-Allow-Methods'),
+                    'Access-Control-Allow-Headers': response.headers.get('Access-Control-Allow-Headers'),
+                    'Access-Control-Allow-Credentials': response.headers.get('Access-Control-Allow-Credentials')
+                };
+                
+                resultDiv.innerHTML = `
+                    <div class="code">CORS Preflight Status: ${response.status}
+CORS Headers:
+${JSON.stringify(corsHeaders, null, 2)}</div>
+                    ${response.ok ? 
+                        '<span class="success">✅ CORS configured</span>' : 
+                        '<span class="error">❌ CORS issue</span>'
+                    }
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `<span class="error">❌ CORS Test Error: ${error.message}</span>`;
+            }
+        }
+
+        // Auto-run health check
+        window.onload = function() {
+            testHealth();
+        };
+    </script>
+
+    <div class="test-section">
+        <h2>🛠️ Backend Fix Needed</h2>
+        <p class="error">If tests confirm auth middleware on login endpoint:</p>
+        <div class="code">// Backend needs to exclude /auth/login from auth middleware
+// In your Express app:
+
+// ❌ WRONG: 
+app.use('/api', authMiddleware); // This protects ALL /api routes including login
+
+// ✅ CORRECT:
+app.use('/api/auth/login', loginHandler); // Public route first
+app.use('/api/auth/register', registerHandler); // Public route  
+app.use('/api', authMiddleware); // Protected routes after
+</div>
+    </div>
+</body>
+</html>

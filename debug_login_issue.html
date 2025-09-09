@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClubOps Login Debug Tool</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 20px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        button { padding: 10px 20px; margin: 10px 0; }
+        pre { background: #f8f9fa; padding: 10px; overflow-x: auto; }
+        input, select { padding: 8px; margin: 5px; width: 300px; }
+    </style>
+</head>
+<body>
+    <h1>🔧 ClubOps Login Debug Tool</h1>
+    
+    <div class="test-section">
+        <h2>1. Backend Health Check</h2>
+        <button onclick="testBackendHealth()">Test Backend Health</button>
+        <div id="healthResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>2. Login Test - Valid Backend User</h2>
+        <input type="email" id="validEmail" value="admin@clubops.com" placeholder="Email">
+        <input type="password" id="validPassword" value="password" placeholder="Password">
+        <button onclick="testValidLogin()">Test Valid Login</button>
+        <div id="validLoginResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>3. Login Test - Your Credentials</h2>
+        <input type="email" id="yourEmail" value="tonytele@gmail.com" placeholder="Email">
+        <input type="password" id="yourPassword" value="Admin1.0" placeholder="Password">
+        <button onclick="testYourLogin()">Test Your Login</button>
+        <div id="yourLoginResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>4. Register Your Account</h2>
+        <input type="text" id="regName" value="Tony Telemaque" placeholder="Full Name">
+        <input type="email" id="regEmail" value="tonytele@gmail.com" placeholder="Email">
+        <input type="password" id="regPassword" value="Admin1.0" placeholder="Password">
+        <input type="text" id="regClubName" value="My Club" placeholder="Club Name">
+        <button onclick="registerAccount()">Register Account</button>
+        <div id="registerResult"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:3001';
+
+        async function makeRequest(url, options = {}) {
+            try {
+                console.log(`🔄 Making request to: ${url}`);
+                console.log('📦 Options:', options);
+                
+                const response = await fetch(url, {
+                    ...options,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...options.headers
+                    }
+                });
+                
+                const data = await response.text();
+                let jsonData;
+                try {
+                    jsonData = JSON.parse(data);
+                } catch (e) {
+                    jsonData = { raw: data };
+                }
+                
+                console.log(`📡 Response Status: ${response.status}`);
+                console.log('📄 Response Data:', jsonData);
+                
+                return { status: response.status, data: jsonData, ok: response.ok };
+            } catch (error) {
+                console.error('❌ Request failed:', error);
+                return { status: 0, data: { error: error.message }, ok: false };
+            }
+        }
+
+        async function testBackendHealth() {
+            const result = await makeRequest(`${API_BASE}/api/health`);
+            const resultDiv = document.getElementById('healthResult');
+            
+            if (result.ok) {
+                resultDiv.className = 'success';
+                resultDiv.innerHTML = `<h3>✅ Backend is healthy!</h3><pre>${JSON.stringify(result.data, null, 2)}</pre>`;
+            } else {
+                resultDiv.className = 'error';
+                resultDiv.innerHTML = `<h3>❌ Backend health check failed</h3><pre>Status: ${result.status}\n${JSON.stringify(result.data, null, 2)}</pre>`;
+            }
+        }
+
+        async function testValidLogin() {
+            const email = document.getElementById('validEmail').value;
+            const password = document.getElementById('validPassword').value;
+            
+            const result = await makeRequest(`${API_BASE}/api/auth/login`, {
+                method: 'POST',
+                body: JSON.stringify({ email, password })
+            });
+            
+            const resultDiv = document.getElementById('validLoginResult');
+            
+            if (result.ok) {
+                resultDiv.className = 'success';
+                resultDiv.innerHTML = `<h3>✅ Valid login successful!</h3><pre>${JSON.stringify(result.data, null, 2)}</pre>`;
+            } else {
+                resultDiv.className = 'error';
+                resultDiv.innerHTML = `<h3>❌ Valid login failed</h3><pre>Status: ${result.status}\n${JSON.stringify(result.data, null, 2)}</pre>`;
+            }
+        }
+
+        async function testYourLogin() {
+            const email = document.getElementById('yourEmail').value;
+            const password = document.getElementById('yourPassword').value;
+            
+            const result = await makeRequest(`${API_BASE}/api/auth/login`, {
+                method: 'POST',
+                body: JSON.stringify({ email, password })
+            });
+            
+            const resultDiv = document.getElementById('yourLoginResult');
+            
+            if (result.ok) {
+                resultDiv.className = 'success';
+                resultDiv.innerHTML = `<h3>✅ Your login successful!</h3><pre>${JSON.stringify(result.data, null, 2)}</pre>`;
+            } else {
+                resultDiv.className = 'error';
+                resultDiv.innerHTML = `<h3>❌ Your login failed (Expected: should show "Invalid credentials")</h3><pre>Status: ${result.status}\n${JSON.stringify(result.data, null, 2)}</pre>`;
+            }
+        }
+
+        async function registerAccount() {
+            const name = document.getElementById('regName').value;
+            const email = document.getElementById('regEmail').value;
+            const password = document.getElementById('regPassword').value;
+            const club_name = document.getElementById('regClubName').value;
+            
+            const result = await makeRequest(`${API_BASE}/api/auth/register`, {
+                method: 'POST',
+                body: JSON.stringify({ name, email, password, club_name })
+            });
+            
+            const resultDiv = document.getElementById('registerResult');
+            
+            if (result.ok) {
+                resultDiv.className = 'success';
+                resultDiv.innerHTML = `<h3>✅ Registration successful!</h3><pre>${JSON.stringify(result.data, null, 2)}</pre><p><strong>Now try logging in with your credentials above!</strong></p>`;
+            } else {
+                resultDiv.className = 'error';
+                resultDiv.innerHTML = `<h3>❌ Registration failed</h3><pre>Status: ${result.status}\n${JSON.stringify(result.data, null, 2)}</pre>`;
+            }
+        }
+
+        // Auto-run health check on page load
+        window.onload = () => {
+            testBackendHealth();
+        };
+    </script>
+</body>
+</html>

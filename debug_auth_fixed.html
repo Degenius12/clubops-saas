@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClubOps Authentication Debug - Fixed</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 20px; 
+            background-color: #1a1a1a; 
+            color: #fff; 
+        }
+        .container { max-width: 800px; margin: 0 auto; }
+        .test-section { 
+            background: #2a2a2a; 
+            padding: 20px; 
+            margin: 20px 0; 
+            border-radius: 8px; 
+            border: 1px solid #444; 
+        }
+        button { 
+            background: #007acc; 
+            color: white; 
+            border: none; 
+            padding: 10px 20px; 
+            border-radius: 4px; 
+            cursor: pointer; 
+            margin: 5px;
+        }
+        button:hover { background: #005c99; }
+        .success { color: #4CAF50; }
+        .error { color: #f44336; }
+        .warning { color: #ff9800; }
+        pre { 
+            background: #000; 
+            padding: 10px; 
+            border-radius: 4px; 
+            overflow-x: auto; 
+        }
+        input { 
+            padding: 8px; 
+            margin: 5px; 
+            border: 1px solid #555; 
+            background: #333; 
+            color: #fff; 
+            border-radius: 4px; 
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 ClubOps Authentication Debug - Fixed Version</h1>
+        
+        <div class="test-section">
+            <h2>🌐 Backend URL Testing</h2>
+            <p>Testing different backend URLs to find the active one:</p>
+            <button onclick="testBackendUrls()">Test All Backend URLs</button>
+            <div id="urlResults"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>🔑 Authentication Testing</h2>
+            <div>
+                <label>Email:</label>
+                <input type="email" id="email" value="admin@clubops.com" placeholder="admin@clubops.com">
+                <br>
+                <label>Password:</label>
+                <input type="password" id="password" value="password" placeholder="password">
+                <br>
+                <button onclick="testLogin()">Test Login (Fixed API)</button>
+                <button onclick="testLoginOld()">Test Login (Old API)</button>
+            </div>
+            <div id="authResults"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>📋 Results Log</h2>
+            <button onclick="clearLog()">Clear Log</button>
+            <pre id="log"></pre>
+        </div>
+    </div>
+
+    <script>
+        const log = document.getElementById('log');
+        const authResults = document.getElementById('authResults');
+        const urlResults = document.getElementById('urlResults');
+
+        const backendUrls = [
+            'https://clubops-backend-vercel-kmhv.vercel.app',
+            'https://clubops-backend-24uoh0tgm-tony-telemacques-projects.vercel.app',
+            'https://clubops-backend-qgwp5goeh-tony-telemacques-projects.vercel.app',
+            'http://localhost:3001'
+        ];
+
+        function addLog(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const color = type === 'error' ? '#f44336' : type === 'success' ? '#4CAF50' : type === 'warning' ? '#ff9800' : '#fff';
+            log.innerHTML += `<span style="color: ${color}">[${timestamp}] ${message}</span>\n`;
+            log.scrollTop = log.scrollHeight;
+        }
+
+        function clearLog() {
+            log.innerHTML = '';
+        }
+
+        async function testBackendUrls() {
+            urlResults.innerHTML = '<p class="warning">Testing backend URLs...</p>';
+            addLog('🔍 Starting backend URL tests...', 'info');
+            
+            let workingUrl = null;
+            let results = '';
+
+            for (const url of backendUrls) {
+                try {
+                    addLog(`Testing: ${url}`, 'info');
+                    
+                    const response = await fetch(`${url}/health`, {
+                        method: 'GET',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        mode: 'cors'
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        results += `<div class="success">✅ ${url} - ACTIVE (${response.status})</div>`;
+                        addLog(`✅ ${url} - ACTIVE: ${JSON.stringify(data)}`, 'success');
+                        workingUrl = url;
+                    } else {
+                        results += `<div class="error">❌ ${url} - ${response.status}</div>`;
+                        addLog(`❌ ${url} - ${response.status}`, 'error');
+                    }
+                } catch (error) {
+                    results += `<div class="error">❌ ${url} - ${error.message}</div>`;
+                    addLog(`❌ ${url} - ${error.message}`, 'error');
+                }
+            }
+
+            urlResults.innerHTML = results;
+            
+            if (workingUrl) {
+                addLog(`🎯 Active backend found: ${workingUrl}`, 'success');
+                localStorage.setItem('workingBackendUrl', workingUrl);
+            } else {
+                addLog('❌ No working backend URLs found', 'error');
+            }
+        }
+
+        async function testLogin() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const workingUrl = localStorage.getItem('workingBackendUrl') || backendUrls[0];
+
+            addLog(`🔑 Testing login with fixed API path: ${workingUrl}/api/auth/login`, 'info');
+            authResults.innerHTML = '<p class="warning">Testing login...</p>';
+
+            try {
+                const response = await fetch(`${workingUrl}/api/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email, password }),
+                    credentials: 'include'
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    authResults.innerHTML = `<div class="success">✅ Login Successful!</div><pre>${JSON.stringify(data, null, 2)}</pre>`;
+                    addLog(`✅ Login successful: ${JSON.stringify(data)}`, 'success');
+                    
+                    if (data.token) {
+                        localStorage.setItem('token', data.token);
+                        addLog('💾 Token saved to localStorage', 'success');
+                    }
+                } else {
+                    authResults.innerHTML = `<div class="error">❌ Login Failed: ${data.error || 'Unknown error'}</div><pre>${JSON.stringify(data, null, 2)}</pre>`;
+                    addLog(`❌ Login failed: ${JSON.stringify(data)}`, 'error');
+                }
+            } catch (error) {
+                authResults.innerHTML = `<div class="error">❌ Request Failed: ${error.message}</div>`;
+                addLog(`❌ Login request failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function testLoginOld() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const workingUrl = localStorage.getItem('workingBackendUrl') || backendUrls[0];
+
+            addLog(`🔑 Testing login with old API path: ${workingUrl}/auth/login`, 'info');
+            authResults.innerHTML = '<p class="warning">Testing login with old path...</p>';
+
+            try {
+                const response = await fetch(`${workingUrl}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email, password }),
+                    credentials: 'include'
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    authResults.innerHTML = `<div class="success">✅ Login Successful (Old Path)!</div><pre>${JSON.stringify(data, null, 2)}</pre>`;
+                    addLog(`✅ Login successful (old path): ${JSON.stringify(data)}`, 'success');
+                } else {
+                    authResults.innerHTML = `<div class="error">❌ Login Failed (Old Path): ${data.error || 'Unknown error'}</div><pre>${JSON.stringify(data, null, 2)}</pre>`;
+                    addLog(`❌ Login failed (old path): ${JSON.stringify(data)}`, 'error');
+                }
+            } catch (error) {
+                authResults.innerHTML = `<div class="error">❌ Request Failed (Old Path): ${error.message}</div>`;
+                addLog(`❌ Login request failed (old path): ${error.message}`, 'error');
+            }
+        }
+
+        // Auto-test on load
+        window.onload = function() {
+            addLog('🚀 ClubOps Authentication Debug Tool Loaded', 'info');
+            addLog('📝 Test credentials: admin@clubops.com / password', 'info');
+            addLog('📝 Alternative: manager@clubops.com / password', 'info');
+        };
+    </script>
+</body>
+</html>

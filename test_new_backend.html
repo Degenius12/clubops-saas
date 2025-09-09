@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test New Backend - ClubOps Auth</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { color: #28a745; font-weight: bold; }
+        .error { color: #dc3545; font-weight: bold; }
+        .info { color: #007bff; }
+        .warning { color: #ffc107; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; background: #007bff; color: white; border: none; border-radius: 4px; }
+        button:hover { background: #0056b3; }
+        #results { 
+            white-space: pre-wrap; 
+            font-family: 'Courier New', monospace; 
+            background: #f8f9fa; 
+            padding: 15px; 
+            border-radius: 4px; 
+            max-height: 400px; 
+            overflow-y: auto;
+            font-size: 12px;
+        }
+        .status-indicator { 
+            display: inline-block; 
+            width: 10px; 
+            height: 10px; 
+            border-radius: 50%; 
+            margin-right: 8px; 
+        }
+        .status-success { background: #28a745; }
+        .status-error { background: #dc3545; }
+        .status-info { background: #007bff; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 ClubOps SaaS - New Backend Test</h1>
+        
+        <div class="test-section">
+            <h3>📍 Backend Configuration</h3>
+            <p><strong>Current Backend URL:</strong> <code>http://localhost:3001</code> (Local Development)</p>
+            <p><strong>Old Backend URL:</strong> <code>clubops-backend-vercel-kmhv.vercel.app</code> (should be replaced)</p>
+        </div>
+
+        <div class="test-section">
+            <h3>🧪 Test Controls</h3>
+            <button onclick="testHealth()">🏥 Test Health Endpoint</button>
+            <button onclick="testLogin()">🔐 Test Login Endpoint</button>
+            <button onclick="testCORS()">🌐 Test CORS Headers</button>
+            <button onclick="runAllTests()">🎯 Run All Tests</button>
+            <button onclick="clearResults()">🧹 Clear Results</button>
+        </div>
+
+        <div class="test-section">
+            <h3>📋 Test Results</h3>
+            <div id="results"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:3001';
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const results = document.getElementById('results');
+            const statusIcon = getStatusIcon(type);
+            const className = type === 'error' ? 'error' : type === 'success' ? 'success' : type === 'warning' ? 'warning' : 'info';
+            results.innerHTML += `<span class="${className}">${statusIcon}[${timestamp}] ${message}</span>\n`;
+            results.scrollTop = results.scrollHeight;
+        }
+
+        function getStatusIcon(type) {
+            switch(type) {
+                case 'success': return '✅ ';
+                case 'error': return '❌ ';
+                case 'warning': return '⚠️ ';
+                case 'info': return 'ℹ️ ';
+                default: return '• ';
+            }
+        }
+
+        async function testHealth() {
+            log('Testing health endpoint...', 'info');
+            try {
+                const startTime = Date.now();
+                const response = await fetch(`${API_BASE_URL}/health`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                const endTime = Date.now();
+                const responseTime = endTime - startTime;
+                
+                log(`Health Status: ${response.status} (${responseTime}ms)`, response.ok ? 'success' : 'error');
+                
+                const data = await response.text();
+                log(`Health Response: ${data}`, response.ok ? 'success' : 'error');
+                
+                if (response.ok) {
+                    log('Backend is responding correctly!', 'success');
+                } else {
+                    log('Backend health check failed!', 'error');
+                }
+                
+            } catch (error) {
+                log(`Health Error: ${error.message}`, 'error');
+                log('This usually indicates network issues or backend is down', 'warning');
+            }
+        }
+
+        async function testLogin() {
+            log('Testing login endpoint (should NOT require auth token)...', 'info');
+            try {
+                const startTime = Date.now();
+                const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: 'test@example.com',
+                        password: 'testpassword'
+                    })
+                });
+                const endTime = Date.now();
+                const responseTime = endTime - startTime;
+                
+                log(`Login Status: ${response.status} (${responseTime}ms)`, 'info');
+                const data = await response.text();
+                log(`Login Response: ${data}`, 'info');
+                
+                if (data.includes('Access token required')) {
+                    log('CRITICAL: Auth middleware is still blocking login endpoint!', 'error');
+                    log('This means the backend deployment did not fix the issue', 'error');
+                } else if (response.status === 401) {
+                    log('SUCCESS: Login endpoint is accessible (expected 401 for invalid credentials)', 'success');
+                } else if (response.status === 400) {
+                    log('SUCCESS: Login endpoint is accessible (400 = validation error, not auth block)', 'success');
+                } else {
+                    log(`Login endpoint responded with status: ${response.status}`, 'info');
+                }
+                
+            } catch (error) {
+                log(`Login Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testCORS() {
+            log('Testing CORS headers...', 'info');
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/health`, {
+                    method: 'OPTIONS',
+                    headers: {
+                        'Origin': window.location.origin,
+                        'Access-Control-Request-Method': 'GET',
+                    }
+                });
+                
+                log(`CORS Status: ${response.status}`, response.ok ? 'success' : 'error');
+                
+                const corsHeaders = {
+                    'Access-Control-Allow-Origin': response.headers.get('Access-Control-Allow-Origin'),
+                    'Access-Control-Allow-Methods': response.headers.get('Access-Control-Allow-Methods'),
+                    'Access-Control-Allow-Headers': response.headers.get('Access-Control-Allow-Headers'),
+                };
+                
+                log(`CORS Headers: ${JSON.stringify(corsHeaders, null, 2)}`, 'info');
+                
+            } catch (error) {
+                log(`CORS Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function runAllTests() {
+            log('=== RUNNING ALL TESTS ===', 'info');
+            await testHealth();
+            await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
+            await testLogin();
+            await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
+            await testCORS();
+            log('=== ALL TESTS COMPLETED ===', 'info');
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+
+        // Auto-test on load
+        window.onload = function() {
+            log('=== ClubOps New Backend Test Started ===', 'info');
+            log(`Testing URL: ${API_BASE_URL}`, 'info');
+            log('Running initial health check...', 'info');
+            testHealth();
+        };
+    </script>
+</body>
+</html>

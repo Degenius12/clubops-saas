@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClubOps Connectivity Tester</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            background: #1a1a1a; 
+            color: #fff; 
+            padding: 20px; 
+        }
+        .container { 
+            max-width: 900px; 
+            margin: 0 auto; 
+            background: #2a2a2a; 
+            padding: 20px; 
+            border-radius: 10px; 
+        }
+        .test-result { 
+            padding: 10px; 
+            margin: 5px 0; 
+            border-radius: 5px; 
+            font-family: monospace; 
+        }
+        .success { background: #1d4e1d; color: #90ee90; }
+        .error { background: #4e1d1d; color: #ffb3b3; }
+        .testing { background: #4e4e1d; color: #ffff90; }
+        .info { background: #1d4e4e; color: #90eeff; }
+        .btn { 
+            background: #007bff; 
+            color: white; 
+            padding: 10px 20px; 
+            border: none; 
+            border-radius: 5px; 
+            cursor: pointer; 
+            margin: 5px; 
+        }
+        .btn:hover { background: #0056b3; }
+        .url-list { 
+            background: #000; 
+            padding: 15px; 
+            border-radius: 5px; 
+            margin: 10px 0; 
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔌 ClubOps Connectivity Diagnostic Tool</h1>
+        
+        <div class="info test-result">
+            🎯 This tool will test multiple URLs to find working deployments
+        </div>
+
+        <div>
+            <button class="btn" onclick="testAllUrls()">🔍 Test All Known URLs</button>
+            <button class="btn" onclick="testNetworkBasics()">🌐 Test Network Basics</button>
+            <button class="btn" onclick="findAlternativeUrls()">🔎 Find Alternative URLs</button>
+            <button class="btn" onclick="testSpecificUrl()">✏️ Test Custom URL</button>
+        </div>
+
+        <div id="results"></div>
+
+        <div class="url-list">
+            <h3>📋 Known URLs to Test:</h3>
+            <div><strong>Main Frontend:</strong> https://frontend-o9bhynpim-tony-telemacques-projects.vercel.app</div>
+            <div><strong>Main Backend:</strong> https://clubops-backend-qgwp5goeh-tony-telemacques-projects.vercel.app</div>
+            <div><strong>Alternative Frontend:</strong> https://clubops-saas-platform.vercel.app</div>
+            <div><strong>Alternative Backend:</strong> https://clubops-backend-mhv2g1tuo-tony-telemacques-projects.vercel.app</div>
+        </div>
+    </div>
+
+    <script>
+        const urls = {
+            'Primary Frontend': 'https://frontend-o9bhynpim-tony-telemacques-projects.vercel.app',
+            'Primary Backend': 'https://clubops-backend-qgwp5goeh-tony-telemacques-projects.vercel.app',
+            'Alt Frontend 1': 'https://clubops-saas-platform.vercel.app',
+            'Alt Backend 1': 'https://clubops-backend-mhv2g1tuo-tony-telemacques-projects.vercel.app',
+            'Alt Backend 2': 'https://clubops-backend-vercel-kmhv.vercel.app'
+        };
+
+        function log(message, type = 'info') {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `test-result ${type}`;
+            div.innerHTML = message;
+            results.appendChild(div);
+            results.scrollTop = results.scrollHeight;
+        }
+
+        async function testUrl(name, url) {
+            log(`🔍 Testing ${name}: ${url}`, 'testing');
+            
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 10000);
+                
+                const response = await fetch(url, {
+                    method: 'GET',
+                    mode: 'no-cors',
+                    signal: controller.signal
+                });
+                
+                clearTimeout(timeoutId);
+                log(`✅ ${name}: REACHABLE (${url})`, 'success');
+                return true;
+            } catch (error) {
+                if (error.name === 'AbortError') {
+                    log(`⏱️ ${name}: TIMEOUT (${url})`, 'error');
+                } else {
+                    log(`❌ ${name}: ERROR - ${error.message} (${url})`, 'error');
+                }
+                return false;
+            }
+        }
+
+        async function testAllUrls() {
+            document.getElementById('results').innerHTML = '';
+            log('🚀 Starting comprehensive URL test...', 'info');
+            
+            const workingUrls = [];
+            
+            for (const [name, url] of Object.entries(urls)) {
+                const isWorking = await testUrl(name, url);
+                if (isWorking) {
+                    workingUrls.push({name, url});
+                }
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+            
+            log('', 'info');
+            if (workingUrls.length > 0) {
+                log('🎉 WORKING URLS FOUND:', 'success');
+                workingUrls.forEach(({name, url}) => {
+                    log(`✅ ${name}: ${url}`, 'success');
+                });
+            } else {
+                log('🚨 NO WORKING URLS FOUND', 'error');
+                log('Possible causes:', 'info');
+                log('1. All deployments are down', 'error');
+                log('2. Network connectivity issues', 'error');
+                log('3. DNS resolution problems', 'error');
+                log('4. ISP/firewall blocking Vercel', 'error');
+            }
+        }
+
+        async function testNetworkBasics() {
+            document.getElementById('results').innerHTML = '';
+            log('🌐 Testing basic network connectivity...', 'info');
+            
+            const basicTests = [
+                {name: 'Google DNS', url: 'https://8.8.8.8'},
+                {name: 'Cloudflare', url: 'https://1.1.1.1'},
+                {name: 'Vercel Main Site', url: 'https://vercel.com'},
+                {name: 'GitHub', url: 'https://github.com'}
+            ];
+            
+            for (const test of basicTests) {
+                await testUrl(test.name, test.url);
+                await new Promise(resolve => setTimeout(resolve, 300));
+            }
+        }
+
+        function findAlternativeUrls() {
+            document.getElementById('results').innerHTML = '';
+            log('🔎 Generating alternative URL patterns...', 'info');
+            
+            const baseNames = ['clubops', 'frontend', 'backend', 'clubops-saas'];
+            const suffixes = [
+                'vercel.app',
+                'tony-telemacques-projects.vercel.app',
+                'telemacque-projects.vercel.app'
+            ];
+            
+            log('Try these alternative URLs manually:', 'info');
+            
+            baseNames.forEach(base => {
+                suffixes.forEach(suffix => {
+                    const url = `https://${base}.${suffix}`;
+                    log(`🔗 ${url}`, 'info');
+                });
+            });
+            
+            log('', 'info');
+            log('🔍 Also check your Vercel dashboard at https://vercel.com/dashboard', 'info');
+            log('Look for projects named: frontend, backend, clubops-saas', 'info');
+        }
+
+        function testSpecificUrl() {
+            const url = prompt('Enter URL to test:');
+            if (url) {
+                document.getElementById('results').innerHTML = '';
+                testUrl('Custom URL', url);
+            }
+        }
+
+        // Auto-run basic test on load
+        window.onload = function() {
+            log('🔌 ClubOps Connectivity Tester Ready', 'info');
+            log('Click "Test All Known URLs" to start diagnosis', 'info');
+        };
+    </script>
+</body>
+</html>

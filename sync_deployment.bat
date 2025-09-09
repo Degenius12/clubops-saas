@@ -1,0 +1,13 @@
+@echo off
+cd /d C:\Users\tonyt\ClubOps-SaaS
+echo Staging changes...
+git add .
+echo.
+echo Committing changes...
+git commit -m "Sync local with Vercel deployment - Update environment configs and add handoff documentation"
+echo.
+echo Pushing to GitHub/Vercel...
+git push origin main
+echo.
+echo Deployment status...
+echo Local repository synced with remote deployment.

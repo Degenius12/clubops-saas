@@ -1,5 +1,5 @@
-// ClubOps SaaS - Complete Vercel Serverless API
-// Premium club management backend with full functionality
+// ClubOps SaaS - Serverless API for Vercel
+// Complete backend functionality optimized for Vercel deployment
 
 require('dotenv').config();
 const express = require('express');
@@ -9,7 +9,23 @@ const { body, validationResult } = require('express-validator');
 
 const app = express();
 
-// Enhanced middleware
+// Database connection - Serverless optimized
+let prisma;
+try {
+  const { PrismaClient } = require('@prisma/client');
+  prisma = new PrismaClient({
+    datasources: {
+      db: {
+        url: process.env.DATABASE_URL
+      }
+    }
+  });
+} catch (error) {
+  console.log('Prisma not available, using mock data');
+  prisma = null;
+}
+
+// Enhanced middleware for production
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
@@ -22,8 +38,16 @@ app.use(helmet({
   }
 }));
 
+// CORS configuration for production
 app.use(cors({
-  origin: true, // Allow all origins temporarily
+  origin: [
+    process.env.FRONTEND_URL || process.env.CLIENT_URL,
+    "https://clubops-saas-platform.vercel.app",
+    "https://frontend-o9bhynpim-tony-telemacques-projects.vercel.app",
+    "https://frontend-6v4tpr1qa-tony-telemacques-projects.vercel.app",
+    "http://localhost:3000",
+    "http://localhost:5173"
+  ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
@@ -33,23 +57,23 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// Mock authentication middleware (enhanced)
-const mockAuth = (req, res, next) => {
-  const token = req.header('Authorization')?.replace('Bearer ', '');
-  
+// JWT Authentication middleware
+const authenticateToken = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
   if (!token) {
-    return res.status(401).json({ error: 'No token provided' });
+    return res.status(401).json({ error: 'Access token required' });
   }
 
-  // Mock user data
-  req.user = {
-    id: '1',
-    email: 'admin@clubops.com',
-    role: 'owner',
-    clubId: '1',
-    subscriptionTier: 'enterprise'
-  };
-  next();
+  try {
+    const jwt = require('jsonwebtoken');
+    const user = jwt.verify(token, process.env.JWT_SECRET || 'clubops-super-secure-jwt-key-2024');
+    req.user = user.user || user;
+    next();
+  } catch (error) {
+    return res.status(403).json({ error: 'Invalid or expired token' });
+  }
 };
 
 // Test users for authentication
@@ -57,15 +81,33 @@ const users = [
   {
     id: 1,
     email: 'admin@clubops.com',
-    password: '$2a$10$N9qo8uLOickgx2ZMRZoMye.IACBhGhLfhQPwjJJK7.C8xhA2mFOEC',
+    password: 'password', // In production, this would be hashed
     name: 'Admin User',
     role: 'owner',
     club_id: '1',
     subscription_tier: 'enterprise'
+  },
+  {
+    id: 2,
+    email: 'manager@clubops.com',
+    password: 'password',
+    name: 'Manager User',
+    role: 'manager',
+    club_id: '1',
+    subscription_tier: 'pro'
+  },
+  {
+    id: 3,
+    email: 'tonytele@gmail.com',
+    password: 'Admin1.0', // In production, this would be hashed
+    name: 'Tony Telemaque',
+    role: 'owner',
+    club_id: '3',
+    subscription_tier: 'enterprise'
   }
 ];
 
-// Enhanced mock dancer data with license management
+// Enhanced mock data that persists during execution
 let mockDancers = [
   {
     id: '1',
@@ -120,7 +162,6 @@ let mockDancers = [
   }
 ];
 
-// Mock VIP rooms data
 let mockVipRooms = [
   { 
     id: '1', 
@@ -164,7 +205,6 @@ let mockVipRooms = [
   }
 ];
 
-// Mock DJ queue data
 let mockDjQueue = {
   current: { 
     dancerId: '1', 
@@ -194,7 +234,7 @@ let mockDjQueue = {
 
 // ============= AUTHENTICATION ROUTES =============
 
-app.post('/auth/login', async (req, res) => {
+app.post('/api/auth/login', async (req, res) => {
   try {
     const { email, password } = req.body;
     
@@ -203,59 +243,120 @@ app.post('/auth/login', async (req, res) => {
     }
 
     const user = users.find(u => u.email === email);
-    if (!user) {
-      return res.status(400).json({ error: 'Invalid credentials' });
+    if (!user || user.password !== password) {
+      return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    // For demo, accept 'password' or any password with admin@clubops.com
-    if (email === 'admin@clubops.com' || password === 'password') {
-      const jwt = require('jsonwebtoken');
-      const token = jwt.sign(
-        { user: { id: user.id, email: user.email, role: user.role } },
-        'secret123',
-        { expiresIn: '24h' }
-      );
+    const jwt = require('jsonwebtoken');
+    const token = jwt.sign(
+      { user: { id: user.id, email: user.email, role: user.role, club_id: user.club_id } },
+      process.env.JWT_SECRET || 'clubops-super-secure-jwt-key-2024',
+      { expiresIn: '24h' }
+    );
 
-      res.json({
-        token,
-        user: {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          role: user.role,
-          club_id: user.club_id,
-          subscription_tier: user.subscription_tier
-        }
-      });
-    } else {
-      res.status(400).json({ error: 'Invalid credentials' });
-    }
+    res.json({
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        club_id: user.club_id,
+        subscription_tier: user.subscription_tier
+      }
+    });
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({ error: 'Login failed' });
   }
 });
 
+app.post('/api/auth/register', async (req, res) => {
+  try {
+    const { email, password, name, club_name } = req.body;
+    
+    if (!email || !password || !name || !club_name) {
+      return res.status(400).json({ error: 'All fields required' });
+    }
+
+    // Check if user already exists
+    const existingUser = users.find(u => u.email === email);
+    if (existingUser) {
+      return res.status(400).json({ error: 'User already exists' });
+    }
+
+    const newUser = {
+      id: users.length + 1,
+      email,
+      password, // In production, hash this
+      name,
+      role: 'owner',
+      club_id: (users.length + 1).toString(),
+      subscription_tier: 'free',
+      club_name
+    };
+
+    users.push(newUser);
+
+    const jwt = require('jsonwebtoken');
+    const token = jwt.sign(
+      { user: { id: newUser.id, email: newUser.email, role: newUser.role, club_id: newUser.club_id } },
+      process.env.JWT_SECRET || 'clubops-super-secure-jwt-key-2024',
+      { expiresIn: '24h' }
+    );
+
+    res.status(201).json({
+      token,
+      user: {
+        id: newUser.id,
+        email: newUser.email,
+        name: newUser.name,
+        role: newUser.role,
+        club_id: newUser.club_id,
+        subscription_tier: newUser.subscription_tier
+      }
+    });
+  } catch (error) {
+    console.error('Registration error:', error);
+    res.status(500).json({ error: 'Registration failed' });
+  }
+});
+
+// ============= DASHBOARD ROUTES =============
+
+app.get('/api/dashboard/stats', authenticateToken, (req, res) => {
+  const totalDancers = mockDancers.filter(d => d.isActive).length;
+  const activeDancers = mockDancers.filter(d => d.isActive).length;
+  const occupiedVipRooms = mockVipRooms.filter(r => r.isOccupied).length;
+  const licenseAlerts = mockDancers.filter(d => d.licenseWarning || d.licenseExpired).length;
+
+  res.json({
+    totalDancers,
+    activeDancers,
+    vipRoomsOccupied: occupiedVipRooms,
+    totalVipRooms: mockVipRooms.length,
+    dailyRevenue: 2850.00,
+    weeklyRevenue: 18750.00,
+    monthlyRevenue: 85400.00,
+    licenseAlerts,
+    barFeesOwed: mockDancers.filter(d => !d.barFeePaid).length
+  });
+});
+
 // ============= DANCER MANAGEMENT ROUTES =============
 
-// Get all dancers
-app.get('/dancers', mockAuth, async (req, res) => {
+app.get('/api/dancers', authenticateToken, (req, res) => {
   try {
-    res.json(mockDancers);
+    res.json(mockDancers.filter(d => d.isActive));
   } catch (error) {
     console.error('Get dancers error:', error);
     res.status(500).json({ error: 'Server error' });
   }
 });
 
-// Add new dancer
-app.post('/dancers', [
-  mockAuth,
+app.post('/api/dancers', [
+  authenticateToken,
   body('stageName').notEmpty().trim().withMessage('Stage name is required'),
-  body('legalName').optional().trim(),
-  body('email').optional().isEmail().normalizeEmail(),
-  body('phone').optional().trim(),
-  body('licenseNumber').optional().trim(),
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -277,7 +378,7 @@ app.post('/dancers', [
       licenseExpired: false,
       barFeePaid: false,
       contractSigned: true,
-      clubId: req.user.clubId,
+      clubId: req.user.club_id,
       createdAt: new Date().toISOString(),
       notes: req.body.notes || ''
     };
@@ -290,12 +391,7 @@ app.post('/dancers', [
   }
 });
 
-// Update dancer
-app.put('/dancers/:id', [
-  mockAuth,
-  body('stageName').optional().notEmpty().trim(),
-  body('legalName').optional().trim(),
-], async (req, res) => {
+app.put('/api/dancers/:id', authenticateToken, async (req, res) => {
   try {
     const dancerIndex = mockDancers.findIndex(d => d.id === req.params.id);
     if (dancerIndex === -1) {
@@ -315,50 +411,13 @@ app.put('/dancers/:id', [
   }
 });
 
-// Delete dancer (soft delete)
-app.delete('/dancers/:id', mockAuth, async (req, res) => {
-  try {
-    const dancerIndex = mockDancers.findIndex(d => d.id === req.params.id);
-    if (dancerIndex === -1) {
-      return res.status(404).json({ error: 'Dancer not found' });
-    }
-
-    mockDancers[dancerIndex].isActive = false;
-    res.json({ message: 'Dancer deactivated successfully' });
-  } catch (error) {
-    console.error('Delete dancer error:', error);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
-// ============= DASHBOARD ROUTES =============
-
-app.get('/dashboard/stats', mockAuth, (req, res) => {
-  const totalDancers = mockDancers.length;
-  const activeDancers = mockDancers.filter(d => d.isActive).length;
-  const occupiedVipRooms = mockVipRooms.filter(r => r.isOccupied).length;
-  const licenseAlerts = mockDancers.filter(d => d.licenseWarning || d.licenseExpired).length;
-
-  res.json({
-    totalDancers,
-    activeDancers,
-    vipRoomsOccupied: occupiedVipRooms,
-    totalVipRooms: mockVipRooms.length,
-    dailyRevenue: 2850.00,
-    weeklyRevenue: 18750.00,
-    monthlyRevenue: 85400.00,
-    licenseAlerts,
-    barFeesOwed: mockDancers.filter(d => !d.barFeePaid).length
-  });
-});
-
 // ============= VIP ROOM MANAGEMENT =============
 
-app.get('/api/vip-rooms', mockAuth, (req, res) => {
+app.get('/api/vip-rooms', authenticateToken, (req, res) => {
   res.json(mockVipRooms);
 });
 
-app.post('/api/vip-rooms/:id/checkin', mockAuth, async (req, res) => {
+app.post('/api/vip-rooms/:id/checkin', authenticateToken, async (req, res) => {
   try {
     const { dancerId } = req.body;
     const roomIndex = mockVipRooms.findIndex(r => r.id === req.params.id);
@@ -387,7 +446,7 @@ app.post('/api/vip-rooms/:id/checkin', mockAuth, async (req, res) => {
   }
 });
 
-app.post('/api/vip-rooms/:id/checkout', mockAuth, async (req, res) => {
+app.post('/api/vip-rooms/:id/checkout', authenticateToken, async (req, res) => {
   try {
     const roomIndex = mockVipRooms.findIndex(r => r.id === req.params.id);
     
@@ -413,11 +472,11 @@ app.post('/api/vip-rooms/:id/checkout', mockAuth, async (req, res) => {
 
 // ============= DJ QUEUE MANAGEMENT =============
 
-app.get('/api/dj-queue', mockAuth, (req, res) => {
+app.get('/api/dj-queue', authenticateToken, (req, res) => {
   res.json(mockDjQueue);
 });
 
-app.post('/api/dj-queue/add', mockAuth, async (req, res) => {
+app.post('/api/dj-queue/add', authenticateToken, async (req, res) => {
   try {
     const { dancerId, songTitle, artistName } = req.body;
     const dancer = mockDancers.find(d => d.id === dancerId);
@@ -442,7 +501,7 @@ app.post('/api/dj-queue/add', mockAuth, async (req, res) => {
   }
 });
 
-app.post('/api/dj-queue/next', mockAuth, async (req, res) => {
+app.post('/api/dj-queue/next', authenticateToken, async (req, res) => {
   try {
     if (mockDjQueue.queue.length > 0) {
       mockDjQueue.current = mockDjQueue.queue.shift();
@@ -458,7 +517,7 @@ app.post('/api/dj-queue/next', mockAuth, async (req, res) => {
 
 // ============= FINANCIAL ROUTES =============
 
-app.get('/api/financial/transactions', mockAuth, (req, res) => {
+app.get('/api/financial/transactions', authenticateToken, (req, res) => {
   const mockTransactions = [
     {
       id: '1',
@@ -488,50 +547,58 @@ app.get('/api/financial/transactions', mockAuth, (req, res) => {
 app.get('/health', (req, res) => {
   res.json({ 
     status: 'ok', 
-    message: 'ClubOps Complete API is running - CORS FIXED',
+    message: 'ClubOps API is running - Environment Fixed',
     timestamp: new Date().toISOString(),
-    version: '2.0.0-complete'
+    version: '2.1.0-production',
+    environment: process.env.NODE_ENV || 'development',
+    frontend_url: process.env.FRONTEND_URL || process.env.CLIENT_URL,
+    database_connected: !!process.env.DATABASE_URL
   });
 });
 
 app.get('/', (req, res) => {
   res.json({ 
-    message: 'ClubOps SaaS - Complete API', 
-    version: '2.0.0-complete',
+    message: 'ClubOps SaaS - Production API', 
+    version: '2.1.0-production',
+    environment: process.env.NODE_ENV || 'development',
+    status: 'operational',
     features: [
-      'Full Dancer Management',
-      'License Tracking & Alerts', 
+      'Complete Dancer Management',
+      'License Tracking & Compliance', 
       'VIP Room Management',
       'DJ Queue System',
       'Financial Tracking',
-      'Real-time Dashboard'
+      'Real-time Dashboard',
+      'Multi-tenant Authentication'
     ],
-    endpoints: [
-      'POST /auth/login',
-      'GET /dancers',
-      'POST /dancers', 
-      'PUT /dancers/:id',
-      'DELETE /dancers/:id',
-      'GET /dashboard/stats',
-      'GET /vip-rooms',
-      'POST /vip-rooms/:id/checkin',
-      'POST /vip-rooms/:id/checkout',
-      'GET /dj-queue',
-      'POST /dj-queue/add',
-      'POST /dj-queue/next',
-      'GET /financial/transactions'
-    ]
+    endpoints: {
+      auth: ['POST /api/auth/login', 'POST /api/auth/register'],
+      dancers: ['GET /api/dancers', 'POST /api/dancers', 'PUT /api/dancers/:id'],
+      dashboard: ['GET /api/dashboard/stats'],
+      vip: ['GET /api/vip-rooms', 'POST /api/vip-rooms/:id/checkin', 'POST /api/vip-rooms/:id/checkout'],
+      dj: ['GET /api/dj-queue', 'POST /api/dj-queue/add', 'POST /api/dj-queue/next'],
+      financial: ['GET /api/financial/transactions']
+    }
   });
 });
 
 // Error handling
 app.use((err, req, res, next) => {
   console.error('Error:', err);
-  res.status(500).json({ error: 'Internal server error' });
+  res.status(500).json({ 
+    error: 'Internal server error',
+    message: err.message,
+    timestamp: new Date().toISOString()
+  });
 });
 
+// 404 handler
 app.use('*', (req, res) => {
-  res.status(404).json({ error: 'Route not found', path: req.originalUrl });
+  res.status(404).json({ 
+    error: 'Route not found', 
+    path: req.originalUrl,
+    availableRoutes: ['/', '/health', '/api/auth/login', '/api/dashboard/stats']
+  });
 });
 
 module.exports = app;

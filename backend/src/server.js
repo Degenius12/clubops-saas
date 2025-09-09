@@ -37,7 +37,13 @@ const server = http.createServer(app);
 // Socket.IO for real-time features
 const io = new Server(server, {
   cors: {
-    origin: process.env.FRONTEND_URL || "http://localhost:3000",
+    origin: [
+      process.env.FRONTEND_URL || "http://localhost:3000",
+      "https://frontend-o9bhynpim-tony-telemacques-projects.vercel.app",
+      "https://frontend-6v4tpr1qa-tony-telemacques-projects.vercel.app",
+      "http://localhost:3000",
+      "http://localhost:5173"
+    ],
     methods: ["GET", "POST"]
   }
 });
@@ -56,7 +62,13 @@ app.use(helmet({
 }));
 
 app.use(cors({
-  origin: process.env.FRONTEND_URL || "http://localhost:3000",
+  origin: [
+    process.env.FRONTEND_URL || "http://localhost:3000",
+    "https://frontend-o9bhynpim-tony-telemacques-projects.vercel.app",
+    "https://frontend-6v4tpr1qa-tony-telemacques-projects.vercel.app",
+    "http://localhost:3000",
+    "http://localhost:5173"
+  ],
   credentials: true
 }));
 

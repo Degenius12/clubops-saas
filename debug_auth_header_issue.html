@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Frontend Auth Debug</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 20px; border: 1px solid #ddd; border-radius: 5px; }
+        button { padding: 10px 20px; margin: 10px 0; }
+        pre { background: #f8f9fa; padding: 10px; overflow-x: auto; }
+        .issue { background-color: #fff3cd; border-color: #ffeaa7; }
+        .solution { background-color: #d1ecf1; border-color: #bee5eb; }
+    </style>
+</head>
+<body>
+    <h1>🔧 ClubOps Frontend Auth Debug</h1>
+    
+    <div class="test-section issue">
+        <h2>❌ Current Issue</h2>
+        <p>The frontend is sending an Authorization header with login requests, even though the interceptor should prevent this.</p>
+        <pre>Headers: {
+  "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "Content-Type": "application/json"
+}</pre>
+        <p>This causes the backend to return a 400 error because login endpoints shouldn't have auth headers.</p>
+    </div>
+
+    <div class="test-section solution">
+        <h2>🔍 Debug Test</h2>
+        <p>Let's test the URL matching logic to see why the auth header is being added:</p>
+        <button onclick="testURLMatching()">Test URL Matching Logic</button>
+        <div id="urlTestResult"></div>
+    </div>
+
+    <div class="test-section solution">
+        <h2>✅ Solutions</h2>
+        <h3>Option 1: Clear localStorage token</h3>
+        <button onclick="clearToken()">Clear Stored Token</button>
+        <div id="tokenStatus"></div>
+        
+        <h3>Option 2: Test login without existing token</h3>
+        <button onclick="testCleanLogin()">Test Clean Login</button>
+        <div id="cleanLoginResult"></div>
+
+        <h3>Option 3: Create your user account</h3>
+        <button onclick="addYourAccount()">Add Your Account to Backend</button>
+        <div id="addAccountResult"></div>
+    </div>
+
+    <script>
+        function testURLMatching() {
+            const resultDiv = document.getElementById('urlTestResult');
+            
+            // Simulate the interceptor logic
+            const authEndpoints = ['/api/auth/login', '/api/auth/signup', '/api/auth/register', '/api/auth/forgot-password', '/api/auth/reset-password'];
+            const testURL = '/api/auth/login';
+            const isAuthEndpoint = authEndpoints.some(endpoint => testURL.includes(endpoint));
+            
+            const currentToken = localStorage.getItem('token');
+            
+            resultDiv.innerHTML = `
+                <h4>URL Matching Test Results:</h4>
+                <pre>
+Test URL: "${testURL}"
+Auth Endpoints: ${JSON.stringify(authEndpoints, null, 2)}
+Is Auth Endpoint: ${isAuthEndpoint}
+Current Token in localStorage: ${currentToken ? 'EXISTS' : 'NONE'}
+Should Add Authorization Header: ${!isAuthEndpoint && !!currentToken}
+                </pre>
+                <p><strong>Analysis:</strong> ${
+                    isAuthEndpoint 
+                        ? '✅ URL correctly matches auth endpoint - header should NOT be added'
+                        : '❌ URL does not match - header WILL be added'
+                }</p>
+            `;
+            
+            updateTokenStatus();
+        }
+
+        function clearToken() {
+            localStorage.removeItem('token');
+            updateTokenStatus();
+            document.getElementById('tokenStatus').innerHTML += '<p><strong>✅ Token cleared!</strong> Now try logging in again in your main app.</p>';
+        }
+
+        function updateTokenStatus() {
+            const token = localStorage.getItem('token');
+            const statusDiv = document.getElementById('tokenStatus');
+            statusDiv.innerHTML = `<p><strong>Current Token Status:</strong> ${token ? 'EXISTS' : 'CLEARED'}</p>`;
+            if (token) {
+                statusDiv.innerHTML += `<p><small>Token preview: ${token.substring(0, 50)}...</small></p>`;
+            }
+        }
+
+        function testCleanLogin() {
+            // Clear any existing token
+            localStorage.removeItem('token');
+            
+            // Test with valid backend credentials
+            const testData = {
+                email: 'admin@clubops.com',
+                password: 'password'
+            };
+            
+            fetch('http://localhost:3001/api/auth/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(testData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('cleanLoginResult').innerHTML = `
+                    <h4>✅ Clean Login Test Result:</h4>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                    <p><strong>Success!</strong> Now try logging in with your real app.</p>
+                `;
+            })
+            .catch(error => {
+                document.getElementById('cleanLoginResult').innerHTML = `
+                    <h4>❌ Clean Login Test Failed:</h4>
+                    <pre>${error.message}</pre>
+                    <p>This suggests the backend server is not running. Start it first with: <code>node api/index.js</code></p>
+                `;
+            });
+        }
+
+        function addYourAccount() {
+            document.getElementById('addAccountResult').innerHTML = `
+                <h4>📝 Manual Backend Update Required</h4>
+                <p>To add your account, you need to update the backend users array:</p>
+                <pre>// Add this to the users array in backend/api/index.js:
+{
+    id: 3,
+    email: 'tonytele@gmail.com',
+    password: 'Admin1.0', // In production, this would be hashed
+    name: 'Tony Telemaque',
+    role: 'owner',
+    club_id: '3',
+    subscription_tier: 'enterprise'
+}</pre>
+                <p><strong>Or</strong> use the existing test credentials:</p>
+                <ul>
+                    <li>Email: <code>admin@clubops.com</code></li>
+                    <li>Password: <code>password</code></li>
+                </ul>
+            `;
+        }
+
+        // Run tests on page load
+        window.onload = () => {
+            updateTokenStatus();
+            testURLMatching();
+        };
+    </script>
+</body>
+</html>

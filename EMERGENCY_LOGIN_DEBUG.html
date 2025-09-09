@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClubOps Emergency Login Debugger</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            background: #1a1a1a; 
+            color: #fff; 
+            padding: 20px; 
+        }
+        .debug-container { 
+            max-width: 800px; 
+            margin: 0 auto; 
+            background: #2a2a2a; 
+            padding: 20px; 
+            border-radius: 10px; 
+        }
+        .error-log { 
+            background: #000; 
+            padding: 15px; 
+            border-radius: 5px; 
+            margin: 10px 0; 
+            font-family: monospace; 
+            max-height: 400px; 
+            overflow-y: auto; 
+        }
+        .btn { 
+            background: #007bff; 
+            color: white; 
+            padding: 10px 20px; 
+            border: none; 
+            border-radius: 5px; 
+            cursor: pointer; 
+            margin: 5px; 
+        }
+        .btn:hover { background: #0056b3; }
+        .success { color: #28a745; }
+        .error { color: #dc3545; }
+        .warning { color: #ffc107; }
+        .info { color: #17a2b8; }
+    </style>
+</head>
+<body>
+    <div class="debug-container">
+        <h1>🚨 ClubOps Emergency Login Debugger</h1>
+        
+        <div>
+            <h3>📋 Step-by-Step Instructions:</h3>
+            <ol>
+                <li><strong>Access the Correct URL:</strong><br>
+                    <a href="https://frontend-o9bhynpim-tony-telemacques-projects.vercel.app" target="_blank" style="color: #28a745;">
+                        ✅ CORRECT FRONTEND URL (Click here)
+                    </a>
+                </li>
+                <li><strong>Install Error Capture:</strong> Click the button below to copy error capture code</li>
+                <li><strong>Open Developer Tools:</strong> Press F12 in the correct frontend</li>
+                <li><strong>Paste Error Capture Code:</strong> Paste in Console tab and press Enter</li>
+                <li><strong>Attempt Login:</strong> Use admin@eliteclub.com / admin123</li>
+                <li><strong>View Captured Errors:</strong> Return here to see all errors</li>
+            </ol>
+        </div>
+
+        <div>
+            <button class="btn" onclick="copyErrorCaptureCode()">📋 Copy Advanced Error Capture Code</button>
+            <button class="btn" onclick="checkUrls()">🌐 Test All URLs</button>
+            <button class="btn" onclick="showExpectedFlow()">📊 Show Expected Login Flow</button>
+        </div>
+
+        <div id="output" class="error-log">
+            <div class="info">🔍 Click "Copy Advanced Error Capture Code" to get started...</div>
+        </div>
+    </div>
+
+    <script>
+        let capturedErrors = [];
+        let networkRequests = [];
+
+        function copyErrorCaptureCode() {
+            const code = `
+// 🚨 CLUBOPS EMERGENCY ERROR CAPTURE SYSTEM 🚨
+console.log("🔧 Installing ClubOps Emergency Error Capture...");
+
+// Storage for all captured data
+window.clubopsDebug = {
+    errors: [],
+    networkRequests: [],
+    consoleMessages: [],
+    apiCalls: [],
+    startTime: new Date().toISOString()
+};
+
+// Override all console methods to capture everything
+const originalConsole = { ...console };
+['log', 'warn', 'error', 'info', 'debug'].forEach(method => {
+    console[method] = function(...args) {
+        window.clubopsDebug.consoleMessages.push({
+            type: method,
+            timestamp: new Date().toISOString(),
+            message: args.join(' '),
+            stack: method === 'error' ? new Error().stack : null
+        });
+        originalConsole[method].apply(console, args);
+    };
+});
+
+// Capture all network requests
+const originalFetch = window.fetch;
+window.fetch = function(...args) {
+    const url = args[0];
+    const options = args[1] || {};
+    
+    console.log(\`🌐 Network Request: \${url}\`);
+    console.log(\`🔧 Options:\`, options);
+    
+    window.clubopsDebug.networkRequests.push({
+        url,
+        options,
+        timestamp: new Date().toISOString(),
+        type: 'fetch'
+    });
+    
+    return originalFetch.apply(window, args)
+        .then(response => {
+            console.log(\`✅ Response: \${response.status} \${response.statusText}\`);
+            window.clubopsDebug.networkRequests[window.clubopsDebug.networkRequests.length - 1].response = {
+                status: response.status,
+                statusText: response.statusText,
+                ok: response.ok
+            };
+            return response;
+        })
+        .catch(error => {
+            console.error(\`❌ Network Error:\`, error);
+            window.clubopsDebug.errors.push({
+                type: 'network',
+                error: error.message,
+                url,
+                timestamp: new Date().toISOString()
+            });
+            throw error;
+        });
+};
+
+// Capture unhandled errors
+window.addEventListener('error', function(event) {
+    console.error('🚨 Unhandled Error:', event.error);
+    window.clubopsDebug.errors.push({
+        type: 'unhandled',
+        message: event.message,
+        filename: event.filename,
+        lineno: event.lineno,
+        colno: event.colno,
+        error: event.error ? event.error.stack : null,
+        timestamp: new Date().toISOString()
+    });
+});
+
+// Capture promise rejections
+window.addEventListener('unhandledrejection', function(event) {
+    console.error('🚨 Unhandled Promise Rejection:', event.reason);
+    window.clubopsDebug.errors.push({
+        type: 'promise',
+        reason: event.reason,
+        timestamp: new Date().toISOString()
+    });
+});
+
+// Override XMLHttpRequest if used
+const originalXHR = window.XMLHttpRequest;
+window.XMLHttpRequest = function() {
+    const xhr = new originalXHR();
+    const originalOpen = xhr.open;
+    const originalSend = xhr.send;
+    
+    xhr.open = function(method, url, ...args) {
+        console.log(\`🌐 XMLHttpRequest: \${method} \${url}\`);
+        window.clubopsDebug.networkRequests.push({
+            method,
+            url,
+            type: 'xhr',
+            timestamp: new Date().toISOString()
+        });
+        return originalOpen.apply(this, [method, url, ...args]);
+    };
+    
+    return xhr;
+};
+
+// Helper functions for analysis
+window.showClubopsDebug = function() {
+    console.log("📊 CLUBOPS DEBUG SUMMARY");
+    console.log("========================");
+    console.log("Total Errors:", window.clubopsDebug.errors.length);
+    console.log("Network Requests:", window.clubopsDebug.networkRequests.length);
+    console.log("Console Messages:", window.clubopsDebug.consoleMessages.length);
+    console.log("\\n🚨 ERRORS:");
+    window.clubopsDebug.errors.forEach((err, i) => {
+        console.log(\`\${i+1}.\`, err);
+    });
+    console.log("\\n🌐 NETWORK REQUESTS:");
+    window.clubopsDebug.networkRequests.forEach((req, i) => {
+        console.log(\`\${i+1}.\`, req);
+    });
+    return window.clubopsDebug;
+};
+
+window.exportClubopsDebug = function() {
+    const data = JSON.stringify(window.clubopsDebug, null, 2);
+    console.log("📤 EXPORT DATA (copy this):");
+    console.log(data);
+    return data;
+};
+
+console.log("✅ ClubOps Emergency Error Capture installed!");
+console.log("🔍 Now attempt login with admin@eliteclub.com / admin123");
+console.log("📊 After login attempt, run: showClubopsDebug()");
+console.log("📤 To export data, run: exportClubopsDebug()");
+`;
+
+            navigator.clipboard.writeText(code).then(() => {
+                document.getElementById('output').innerHTML = `
+                    <div class="success">✅ Error capture code copied to clipboard!</div>
+                    <div class="info">Now:</div>
+                    <div>1. Go to: <a href="https://frontend-o9bhynpim-tony-telemacques-projects.vercel.app" target="_blank" style="color: #28a745;">Correct Frontend URL</a></div>
+                    <div>2. Press F12 to open Developer Tools</div>
+                    <div>3. Go to Console tab</div>
+                    <div>4. Paste the code and press Enter</div>
+                    <div>5. Attempt login with admin@eliteclub.com / admin123</div>
+                    <div>6. Run: <code>showClubopsDebug()</code></div>
+                `;
+            });
+        }
+
+        function checkUrls() {
+            document.getElementById('output').innerHTML = `
+                <div class="info">🌐 URL Status Check:</div>
+                <div class="warning">❌ Wrong URL (user was accessing): https://clubops-saas-platform.vercel.app</div>
+                <div class="success">✅ Correct Frontend: https://frontend-o9bhynpim-tony-telemacques-projects.vercel.app</div>
+                <div class="success">✅ Correct Backend: https://clubops-backend-qgwp5goeh-tony-telemacques-projects.vercel.app</div>
+                <div class="warning">⚠️ Old Backend (was in config): https://clubops-backend-mhv2g1tuo-tony-telemacques-projects.vercel.app</div>
+            `;
+        }
+
+        function showExpectedFlow() {
+            document.getElementById('output').innerHTML = `
+                <div class="info">📊 Expected Login Flow:</div>
+                <div>1. Load: https://frontend-o9bhynpim-tony-telemacques-projects.vercel.app</div>
+                <div>2. User enters: admin@eliteclub.com / admin123</div>
+                <div>3. Frontend calls: https://clubops-backend-qgwp5goeh-tony-telemacques-projects.vercel.app/api/auth/login</div>
+                <div>4. Backend validates credentials</div>
+                <div>5. Backend returns JWT token</div>
+                <div>6. Frontend stores token and redirects to dashboard</div>
+                <div class="warning">🚨 If any step fails, our error capture will show exactly where!</div>
+            `;
+        }
+    </script>
+</body>
+</html>
