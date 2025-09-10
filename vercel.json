@@ -5,7 +5,8 @@
       "src": "frontend/package.json",
       "use": "@vercel/static-build",
       "config": {
-        "distDir": "frontend/dist"
+        "distDir": "frontend/dist",
+        "buildCommand": "cd frontend && npm run build"
       }
     }
   ],
@@ -18,14 +19,9 @@
   "rewrites": [
     {
       "source": "/(.*)",
-      "destination": "/index.html"
+      "destination": "/frontend/dist/index.html"
     }
   ],
-  "functions": {
-    "backend/api/*.js": {
-      "runtime": "nodejs18.x"
-    }
-  },
   "env": {
     "VITE_API_URL": "https://clubops-backend.vercel.app",
     "VITE_APP_NAME": "ClubOps"
