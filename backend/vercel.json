@@ -22,9 +22,10 @@
   ],
   "env": {
     "NODE_ENV": "production",
-    "CLIENT_URL": "https://clubops-saas-platform.vercel.app",
-    "FRONTEND_URL": "https://clubops-saas-platform.vercel.app",
+    "CLIENT_URL": "https://frontend-o9bhynpim-tony-telemacques-projects.vercel.app",
+    "FRONTEND_URL": "https://frontend-o9bhynpim-tony-telemacques-projects.vercel.app",
     "JWT_SECRET": "clubops-super-secure-jwt-key-2024-make-this-very-long-and-random-please",
-    "DATABASE_URL": "postgresql://neondb_owner:npg_a2IrCUykWc0p@ep-rough-star-adk34eay-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require"
+    "DATABASE_URL": "postgresql://neondb_owner:npg_a2IrCUykWc0p@ep-rough-star-adk34eay-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require",
+    "CORS_ORIGIN": "https://frontend-o9bhynpim-tony-telemacques-projects.vercel.app"
   }
 }
