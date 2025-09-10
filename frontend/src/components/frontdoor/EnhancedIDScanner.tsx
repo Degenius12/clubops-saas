@@ -77,9 +77,7 @@ const EnhancedIDScanner: React.FC = () => {
     try {
       // Use higher quality OCR settings
       const { data: { text, confidence } } = await Tesseract.recognize(imageSrc, 'eng', {
-        logger: m => console.log(m),
-        tessedit_pageseg_mode: Tesseract.PSM.SPARSE_TEXT,
-        tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 /-.',
+        logger: (m: any) => console.log(m),
       })
       
       console.log('Enhanced OCR Result:', text, 'Confidence:', confidence)
@@ -252,8 +250,7 @@ const EnhancedIDScanner: React.FC = () => {
   const capturePhoto = useCallback(() => {
     const imageSrc = webcamRef.current?.getScreenshot({
       width: 1920,
-      height: 1080,
-      screenshotQuality: 0.95
+      height: 1080
     })
     if (imageSrc) {
       setCapturedImage(imageSrc)

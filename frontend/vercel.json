@@ -7,7 +7,7 @@
   "outputDirectory": "dist",
   "framework": null,
   "env": {
-    "VITE_API_URL": "https://clubops-backend-qgwp5goeh-tony-telemacques-projects.vercel.app",
+    "VITE_API_URL": "https://clubops-backend.vercel.app",
     "VITE_APP_NAME": "ClubOps"
   }
 }

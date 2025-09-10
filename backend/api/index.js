@@ -45,6 +45,7 @@ app.use(cors({
     "https://clubops-saas-platform.vercel.app",
     "https://frontend-o9bhynpim-tony-telemacques-projects.vercel.app",
     "https://frontend-6v4tpr1qa-tony-telemacques-projects.vercel.app",
+    "https://frontend-bfte3afd2-tony-telemacques-projects.vercel.app",
     "http://localhost:3000",
     "http://localhost:5173"
   ],

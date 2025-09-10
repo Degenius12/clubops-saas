@@ -75,7 +75,7 @@ const FrontDoor: React.FC = () => {
     
     try {
       const { data: { text } } = await Tesseract.recognize(imageSrc, 'eng', {
-        logger: m => console.log(m)
+        logger: (m: any) => console.log(m)
       })
       
       console.log('OCR Result:', text)
