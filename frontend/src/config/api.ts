@@ -1,5 +1,19 @@
 // API Configuration
-export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+// Production URL is hardcoded to avoid Vercel environment variable issues
+const PRODUCTION_API_URL = 'https://clubops-backend.vercel.app';
+const DEV_API_URL = 'http://localhost:3001';
+
+// Detect production environment
+const isProduction = import.meta.env.PROD || 
+  (typeof window !== 'undefined' && window.location.hostname !== 'localhost');
+
+// Use hardcoded production URL in production, env var or localhost in dev
+export const API_BASE_URL = isProduction 
+  ? PRODUCTION_API_URL 
+  : (import.meta.env.VITE_API_URL || DEV_API_URL);
+
+// Log which URL is being used (helpful for debugging)
+console.log('🌐 API Configuration:', { isProduction, API_BASE_URL });
 
 // Create axios instance with base configuration
 import axios from 'axios';
@@ -9,8 +23,8 @@ const apiClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  withCredentials: true,
-  timeout: 10000, // 10 second timeout
+  withCredentials: false, // Changed to false for cross-origin requests
+  timeout: 15000, // 15 second timeout
 });
 
 // Add auth token to requests (exclude auth endpoints)
