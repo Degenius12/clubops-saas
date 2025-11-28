@@ -38,17 +38,18 @@ app.use(helmet({
   }
 }));
 
-// CORS configuration for production
+// CORS configuration for production - Updated with all current frontend URLs
 app.use(cors({
   origin: [
     process.env.FRONTEND_URL || process.env.CLIENT_URL,
+    "https://frontend-azure-omega-1cudama2io.vercel.app",
     "https://clubops-saas-platform.vercel.app",
     "https://frontend-o9bhynpim-tony-telemacques-projects.vercel.app",
     "https://frontend-6v4tpr1qa-tony-telemacques-projects.vercel.app",
     "https://frontend-bfte3afd2-tony-telemacques-projects.vercel.app",
     "http://localhost:3000",
     "http://localhost:5173"
-  ],
+  ].filter(Boolean),
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
@@ -82,7 +83,7 @@ const users = [
   {
     id: 1,
     email: 'admin@clubops.com',
-    password: 'password', // In production, this would be hashed
+    password: 'password',
     name: 'Admin User',
     role: 'owner',
     club_id: '1',
@@ -100,11 +101,20 @@ const users = [
   {
     id: 3,
     email: 'tonytele@gmail.com',
-    password: 'Admin1.0', // In production, this would be hashed
+    password: 'Admin1.0',
     name: 'Tony Telemaque',
     role: 'owner',
     club_id: '3',
     subscription_tier: 'enterprise'
+  },
+  {
+    id: 4,
+    email: 'demo@clubops.com',
+    password: 'Demo123!',
+    name: 'Demo User',
+    role: 'owner',
+    club_id: '4',
+    subscription_tier: 'pro'
   }
 ];
 
@@ -280,7 +290,6 @@ app.post('/api/auth/register', async (req, res) => {
       return res.status(400).json({ error: 'All fields required' });
     }
 
-    // Check if user already exists
     const existingUser = users.find(u => u.email === email);
     if (existingUser) {
       return res.status(400).json({ error: 'User already exists' });
@@ -289,7 +298,7 @@ app.post('/api/auth/register', async (req, res) => {
     const newUser = {
       id: users.length + 1,
       email,
-      password, // In production, hash this
+      password,
       name,
       role: 'owner',
       club_id: (users.length + 1).toString(),
@@ -506,7 +515,7 @@ app.post('/api/dj-queue/next', authenticateToken, async (req, res) => {
   try {
     if (mockDjQueue.queue.length > 0) {
       mockDjQueue.current = mockDjQueue.queue.shift();
-      mockDjQueue.current.timeRemaining = 180; // 3 minutes default
+      mockDjQueue.current.timeRemaining = 180;
     }
 
     res.json(mockDjQueue);
@@ -548,9 +557,9 @@ app.get('/api/financial/transactions', authenticateToken, (req, res) => {
 app.get('/health', (req, res) => {
   res.json({ 
     status: 'ok', 
-    message: 'ClubOps API is running - Environment Fixed',
+    message: 'ClubOps API is running - CORS Fixed',
     timestamp: new Date().toISOString(),
-    version: '2.1.0-production',
+    version: '2.2.0-production',
     environment: process.env.NODE_ENV || 'development',
     frontend_url: process.env.FRONTEND_URL || process.env.CLIENT_URL,
     database_connected: !!process.env.DATABASE_URL
@@ -560,7 +569,7 @@ app.get('/health', (req, res) => {
 app.get('/', (req, res) => {
   res.json({ 
     message: 'ClubOps SaaS - Production API', 
-    version: '2.1.0-production',
+    version: '2.2.0-production',
     environment: process.env.NODE_ENV || 'development',
     status: 'operational',
     features: [
