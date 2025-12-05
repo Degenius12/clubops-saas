@@ -24,16 +24,42 @@ const DancerManagement: React.FC = () => {
     dispatch(fetchDancers())
   }, [dispatch])
 
-  // Filter dancers based on search and status (with null-safe checks)
-  // Backend returns camelCase: stageName, legalName, email, isActive, licenseStatus
+  // Helper to get dancer name (handles both API formats)
+  const getDancerName = (dancer: any): string => {
+    return dancer?.legalName || dancer?.stageName || dancer?.name || dancer?.stage_name || 'Unknown'
+  }
+
+  // Helper to get stage name
+  const getStageName = (dancer: any): string => {
+    return dancer?.stageName || dancer?.stage_name || ''
+  }
+
+  // Helper to get dancer status
+  const getDancerStatus = (dancer: any): string => {
+    if (dancer?.isActive === true) return 'active'
+    if (dancer?.isActive === false) return 'inactive'
+    return dancer?.status || 'inactive'
+  }
+
+  // Helper to get compliance/license status
+  const getComplianceStatus = (dancer: any): string => {
+    const status = dancer?.licenseStatus || dancer?.complianceStatus || dancer?.compliance_status
+    // Map 'warning' to 'expiring' for display consistency
+    if (status === 'warning') return 'expiring'
+    return status || 'unknown'
+  }
+
+  // Filter dancers based on search and status
   const filteredDancers = (dancers || []).filter(dancer => {
-    if (!dancer) return false  // Skip null/undefined entries
-    const name = dancer.stageName || dancer.legalName || dancer.name || dancer.stage_name || ''
-    const email = dancer.email || ''
-    // Map isActive boolean to status string
-    const status = dancer.status || (dancer.isActive ? 'active' : 'inactive')
+    if (!dancer) return false
+    
+    const name = getDancerName(dancer)
+    const stageName = getStageName(dancer)
+    const email = dancer?.email || ''
+    const status = getDancerStatus(dancer)
     
     const matchesSearch = name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         stageName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          email.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesStatus = filterStatus === 'all' || status === filterStatus
     return matchesSearch && matchesStatus
@@ -42,7 +68,8 @@ const DancerManagement: React.FC = () => {
   const getComplianceColor = (status: string) => {
     switch (status) {
       case 'valid': return 'text-green-400 bg-green-900/30 border-green-500/50'
-      case 'expiring': return 'text-yellow-400 bg-yellow-900/30 border-yellow-500/50'
+      case 'expiring': 
+      case 'warning': return 'text-yellow-400 bg-yellow-900/30 border-yellow-500/50'
       case 'expired': return 'text-red-400 bg-red-900/30 border-red-500/50'
       default: return 'text-gray-400 bg-gray-900/30 border-gray-500/50'
     }
@@ -55,6 +82,17 @@ const DancerManagement: React.FC = () => {
       case 'on_break': return 'text-yellow-400 bg-yellow-900/30'
       default: return 'text-gray-400 bg-gray-900/30'
     }
+  }
+
+  // Calculate days until expiry
+  const getDaysUntilExpiry = (dancer: any): number | null => {
+    const expiryDate = dancer?.licenseExpiryDate || dancer?.license_expiry
+    if (!expiryDate) return null
+    const expiry = new Date(expiryDate)
+    const today = new Date()
+    const diffTime = expiry.getTime() - today.getTime()
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+    return diffDays
   }
 
   return (
@@ -135,78 +173,86 @@ const DancerManagement: React.FC = () => {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredDancers.map((dancer) => (
-            <div 
-              key={dancer.id} 
-              className="bg-dark-card/80 backdrop-blur-xl border border-white/10 rounded-xl p-6 hover:border-accent-blue/30 transition-all duration-300"
-            >
-              {/* Dancer Header */}
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center space-x-3">
-                  <div className="w-12 h-12 bg-gradient-to-r from-accent-blue to-accent-gold rounded-full flex items-center justify-center">
-                    <span className="text-white font-semibold text-lg">
-                      {(dancer.stageName || dancer.legalName || dancer.name || dancer.stage_name || '??').split(' ').map(n => n[0]).join('').toUpperCase()}
-                    </span>
+          {filteredDancers.map((dancer) => {
+            const dancerName = getDancerName(dancer)
+            const stageName = getStageName(dancer)
+            const dancerStatus = getDancerStatus(dancer)
+            const complianceStatus = getComplianceStatus(dancer)
+            const daysUntilExpiry = getDaysUntilExpiry(dancer)
+            
+            return (
+              <div 
+                key={dancer.id} 
+                className="bg-dark-card/80 backdrop-blur-xl border border-white/10 rounded-xl p-6 hover:border-accent-blue/30 transition-all duration-300"
+              >
+                {/* Dancer Header */}
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-12 h-12 bg-gradient-to-r from-accent-blue to-accent-gold rounded-full flex items-center justify-center">
+                      <span className="text-white font-semibold text-lg">
+                        {dancerName.split(' ').map(n => n[0] || '').join('').toUpperCase().slice(0, 2) || '??'}
+                      </span>
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-white">{stageName || dancerName}</h3>
+                      <p className="text-gray-400 text-sm">{stageName ? dancerName : ''}</p>
+                    </div>
+                  </div>
+
+                  {/* Status Badge */}
+                  <div className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(dancerStatus)}`}>
+                    {dancerStatus.replace('_', ' ').toUpperCase()}
+                  </div>
+                </div>
+
+                {/* Compliance Status */}
+                <div className="mb-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-gray-300">Compliance Status</span>
+                    {complianceStatus === 'valid' && <CheckCircleIcon className="h-4 w-4 text-green-400" />}
+                    {(complianceStatus === 'expiring' || complianceStatus === 'warning') && <ClockIcon className="h-4 w-4 text-yellow-400" />}
+                    {complianceStatus === 'expired' && <ExclamationTriangleIcon className="h-4 w-4 text-red-400" />}
+                  </div>
+                  
+                  <div className={`px-3 py-2 rounded-lg border text-xs font-medium ${getComplianceColor(complianceStatus)}`}>
+                    {complianceStatus === 'valid' && 'All documents valid'}
+                    {(complianceStatus === 'expiring' || complianceStatus === 'warning') && `License expires in ${daysUntilExpiry || '?'} days`}
+                    {complianceStatus === 'expired' && 'Documents expired - Action required'}
+                    {!['valid', 'expiring', 'warning', 'expired'].includes(complianceStatus) && 'Status unknown'}
+                  </div>
+                </div>
+
+                {/* Quick Stats */}
+                <div className="grid grid-cols-2 gap-4 mb-4 text-sm">
+                  <div>
+                    <p className="text-gray-400">Bar Fee</p>
+                    <p className="text-white font-medium">
+                      {dancer.barFeePaid ? '✓ Paid' : '✗ Not Paid'}
+                    </p>
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold text-white">{dancer.stageName || dancer.legalName || dancer.name || dancer.stage_name || 'Unknown'}</h3>
-                    <p className="text-gray-400 text-sm">{dancer.legalName || dancer.stageName || ''}</p>
+                    <p className="text-gray-400">Contract</p>
+                    <p className="text-white font-medium">
+                      {dancer.contractSigned ? '✓ Signed' : '✗ Pending'}
+                    </p>
                   </div>
                 </div>
 
-                {/* Status Badge */}
-                <div className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(dancer.status || (dancer.isActive ? 'active' : 'inactive'))}`}>
-                  {(dancer.status || (dancer.isActive ? 'active' : 'inactive')).replace('_', ' ').toUpperCase()}
-                </div>
-              </div>
-
-              {/* Compliance Status */}
-              <div className="mb-4">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-300">Compliance Status</span>
-                  {/* Use licenseExpired/licenseWarning from backend or fallback to old fields */}
-                  {!dancer.licenseExpired && !dancer.licenseWarning && <CheckCircleIcon className="h-4 w-4 text-green-400" />}
-                  {dancer.licenseWarning && !dancer.licenseExpired && <ClockIcon className="h-4 w-4 text-yellow-400" />}
-                  {dancer.licenseExpired && <ExclamationTriangleIcon className="h-4 w-4 text-red-400" />}
-                </div>
-                
-                <div className={`px-3 py-2 rounded-lg border text-xs font-medium ${
-                  dancer.licenseExpired ? 'text-red-400 bg-red-900/30 border-red-500/50' :
-                  dancer.licenseWarning ? 'text-yellow-400 bg-yellow-900/30 border-yellow-500/50' :
-                  'text-green-400 bg-green-900/30 border-green-500/50'
-                }`}>
-                  {dancer.licenseExpired && 'License expired - Action required'}
-                  {dancer.licenseWarning && !dancer.licenseExpired && 'License expiring soon'}
-                  {!dancer.licenseExpired && !dancer.licenseWarning && 'All documents valid'}
-                </div>
-              </div>
-
-              {/* Quick Stats */}
-              <div className="grid grid-cols-2 gap-4 mb-4 text-sm">
-                <div>
-                  <p className="text-gray-400">Check-ins Today</p>
-                  <p className="text-white font-medium">{dancer.todayCheckIns || 0}</p>
-                </div>
-                <div>
-                  <p className="text-gray-400">Total Earnings</p>
-                  <p className="text-white font-medium">${dancer.totalEarnings?.toLocaleString() || 0}</p>
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex space-x-2">
-                <button className="flex-1 bg-accent-blue/20 hover:bg-accent-blue/30 border border-accent-blue/30 text-accent-blue font-medium py-2 px-3 rounded-lg transition-colors text-sm">
-                  View Profile
-                </button>
-                
-                {(dancer.licenseExpired || dancer.licenseWarning) && (
-                  <button className="flex-1 bg-red-900/20 hover:bg-red-900/30 border border-red-500/30 text-red-300 font-medium py-2 px-3 rounded-lg transition-colors text-sm">
-                    Fix Compliance
+                {/* Action Buttons */}
+                <div className="flex space-x-2">
+                  <button className="flex-1 bg-accent-blue/20 hover:bg-accent-blue/30 border border-accent-blue/30 text-accent-blue font-medium py-2 px-3 rounded-lg transition-colors text-sm">
+                    View Profile
                   </button>
-                )}
+                  
+                  {complianceStatus !== 'valid' && (
+                    <button className="flex-1 bg-red-900/20 hover:bg-red-900/30 border border-red-500/30 text-red-300 font-medium py-2 px-3 rounded-lg transition-colors text-sm">
+                      Fix Compliance
+                    </button>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
 
@@ -217,21 +263,21 @@ const DancerManagement: React.FC = () => {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
           <div className="text-center">
             <div className="text-2xl font-bold text-green-400">
-              {(dancers || []).filter(d => d.isActive === true || (d.status || 'inactive') === 'active').length}
+              {(dancers || []).filter(d => getDancerStatus(d) === 'active').length}
             </div>
             <div className="text-sm text-gray-400">Active Now</div>
           </div>
           
           <div className="text-center">
             <div className="text-2xl font-bold text-yellow-400">
-              {(dancers || []).filter(d => d.licenseWarning && !d.licenseExpired).length}
+              {(dancers || []).filter(d => ['expiring', 'warning'].includes(getComplianceStatus(d))).length}
             </div>
             <div className="text-sm text-gray-400">Expiring Soon</div>
           </div>
           
           <div className="text-center">
             <div className="text-2xl font-bold text-red-400">
-              {(dancers || []).filter(d => d.licenseExpired).length}
+              {(dancers || []).filter(d => getComplianceStatus(d) === 'expired').length}
             </div>
             <div className="text-sm text-gray-400">Non-Compliant</div>
           </div>
@@ -248,5 +294,4 @@ const DancerManagement: React.FC = () => {
   )
 }
 
-export default DancerManagement/ /   F o r c e   r e d e p l o y   1 2 / 0 4 / 2 0 2 5   2 2 : 5 9 : 3 6  
- 
+export default DancerManagement
