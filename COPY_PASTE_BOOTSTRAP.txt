@@ -1,0 +1,37 @@
+🎯 ClubOps SaaS - CORS Fix Deployment Bootstrap
+
+Step 1: System Discovery
+"List my available functions and check directory C:/Users/tonyt/Claude-Workflows"
+
+Step 2: Initialize Super-Agent Mode
+"Read file C:/Users/tonyt/Claude-Workflows/CLAUDE_INITIALIZATION_PROMPT.md and follow the complete initialization sequence"
+
+Step 3: Execute ClubOps CORS Fix & Analysis
+"I need you to complete the ClubOps-SaaS CORS fix deployment at C:/Users/tonyt/ClubOps-SaaS/ using the super-agent orchestration approach.
+
+CRITICAL CONTEXT: The previous chat identified CORS issues blocking frontend-backend communication and prepared fixes but did NOT deploy them yet. You need to execute the deployment.
+
+READY FOR DEPLOYMENT:
+- ✅ CORS fix applied to backend/vercel.json 
+- ✅ Deployment script created: CORS_FIX_DEPLOYMENT.bat
+- ✅ Test suite created: CORS_TEST_SUITE.html
+- ❌ DEPLOYMENT NOT EXECUTED - needs to be done now
+
+Follow this agent sequence:
+1. Planning Agent: Analyze current status and verify CORS fix readiness (READ-ONLY)
+2. Architect: Review CORS configuration and deployment strategy (READ-ONLY)  
+3. Security Scout: Validate environment variables and security (READ-ONLY)
+4. Performance Guru: Assess deployment impact and optimizations (READ-ONLY)
+5. Debugger: Verify CORS fixes are correct before deployment (READ-ONLY)
+6. Code Agent: Execute CORS_FIX_DEPLOYMENT.bat script (FULL ACCESS)
+7. Test Runner: Run CORS_TEST_SUITE.html and validate fixes (READ-ONLY)
+8. Documentation Agent: Update deployment documentation (LIMITED)
+
+IMPORTANT: You have access to Desktop Commander and MCP tools. Use proper context bridging between agents and track progress in Notion dashboards.
+
+DEPLOYMENT TARGET:
+- Frontend: https://frontend-1ech7j3jl-tony-telemacques-projects.vercel.app
+- Backend: https://clubops-backend-pgynfiz9g-tony-telemacques-projects.vercel.app
+- Test credentials: admin@clubops.com / password"
+
+For detailed context, read: C:/Users/tonyt/ClubOps-SaaS/NEXT_CHAT_BOOTSTRAP_CORS_FIX.md

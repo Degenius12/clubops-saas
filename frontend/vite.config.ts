@@ -9,12 +9,12 @@ export default defineConfig({
     host: true,
     proxy: {
       '/api': {
-        target: 'https://clubops-backend-vercel-kmhv.vercel.app',
+        target: 'https://clubops-backend-pgynfiz9g-tony-telemacques-projects.vercel.app',
         changeOrigin: true,
         secure: true,
       },
       '/socket.io': {
-        target: 'https://clubops-backend-vercel-kmhv.vercel.app',
+        target: 'https://clubops-backend-pgynfiz9g-tony-telemacques-projects.vercel.app',
         changeOrigin: true,
         ws: true,
         secure: true,

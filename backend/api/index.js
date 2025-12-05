@@ -44,9 +44,7 @@ app.use(cors({
     process.env.FRONTEND_URL || process.env.CLIENT_URL,
     "https://frontend-azure-omega-1cudama2io.vercel.app",
     "https://clubops-saas-platform.vercel.app",
-    "https://frontend-o9bhynpim-tony-telemacques-projects.vercel.app",
-    "https://frontend-6v4tpr1qa-tony-telemacques-projects.vercel.app",
-    "https://frontend-bfte3afd2-tony-telemacques-projects.vercel.app",
+    "https://frontend-azure-omega-1cudama2io.vercel.app",
     "http://localhost:3000",
     "http://localhost:5173"
   ].filter(Boolean),
@@ -279,6 +277,28 @@ app.post('/api/auth/login', async (req, res) => {
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({ error: 'Login failed' });
+  }
+});
+
+// Get current user info
+app.get('/api/auth/me', authenticateToken, (req, res) => {
+  try {
+    const user = users.find(u => u.id === req.user.id);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json({
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+      club_id: user.club_id,
+      subscription_tier: user.subscription_tier
+    });
+  } catch (error) {
+    console.error('Get user error:', error);
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
@@ -582,7 +602,7 @@ app.get('/', (req, res) => {
       'Multi-tenant Authentication'
     ],
     endpoints: {
-      auth: ['POST /api/auth/login', 'POST /api/auth/register'],
+      auth: ['POST /api/auth/login', 'POST /api/auth/register', 'GET /api/auth/me'],
       dancers: ['GET /api/dancers', 'POST /api/dancers', 'PUT /api/dancers/:id'],
       dashboard: ['GET /api/dashboard/stats'],
       vip: ['GET /api/vip-rooms', 'POST /api/vip-rooms/:id/checkin', 'POST /api/vip-rooms/:id/checkout'],

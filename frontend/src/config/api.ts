@@ -13,7 +13,8 @@ export const API_BASE_URL = isProduction
   : (import.meta.env.VITE_API_URL || DEV_API_URL);
 
 // Log which URL is being used (helpful for debugging)
-console.log('🌐 API Configuration:', { isProduction, API_BASE_URL });
+console.log('API Base URL:', API_BASE_URL);
+console.log('Environment:', isProduction ? 'production' : 'development');
 
 // Create axios instance with base configuration
 import axios from 'axios';
@@ -26,6 +27,12 @@ const apiClient = axios.create({
   withCredentials: false, // Changed to false for cross-origin requests
   timeout: 15000, // 15 second timeout
 });
+
+// Log initialization
+console.log('ApiClient initialized');
+console.log('- API Base URL:', API_BASE_URL);
+console.log('- Environment:', isProduction ? 'production' : 'development');
+console.log('- Token found:', !!localStorage.getItem('token'));
 
 // Add auth token to requests (exclude auth endpoints)
 apiClient.interceptors.request.use((config) => {

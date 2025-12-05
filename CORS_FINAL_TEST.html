@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClubOps CORS Test - Final Deployment</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 900px; margin: 50px auto; padding: 20px; background: #f0f2f5; }
+        .container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h1 { color: #2c3e50; border-bottom: 3px solid #3498db; padding-bottom: 10px; }
+        .deployment-info { background: #ecf0f1; padding: 20px; border-radius: 8px; margin: 20px 0; }
+        .deployment-info h3 { margin-top: 0; color: #34495e; }
+        .url-set { background: white; padding: 15px; border-radius: 6px; margin: 10px 0; border: 2px solid #3498db; }
+        .url-set.active { border-color: #27ae60; background: #e8f8f5; }
+        .url-set.failed { border-color: #e74c3c; background: #ffeaa7; }
+        button { background: #3498db; color: white; padding: 12px 24px; border: none; border-radius: 6px; cursor: pointer; margin: 5px; font-size: 16px; }
+        button:hover { background: #2980b9; }
+        button.success { background: #27ae60; }
+        button.danger { background: #e74c3c; }
+        .results { margin-top: 20px; padding: 20px; background: #2c3e50; color: white; border-radius: 8px; font-family: monospace; max-height: 400px; overflow-y: auto; }
+        .success { color: #2ecc71; font-weight: bold; }
+        .error { color: #e74c3c; font-weight: bold; }
+        .info { color: #3498db; }
+        .warning { color: #f39c12; }
+        .test-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin: 20px 0; }
+        .status-indicator { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; }
+        .status-indicator.success { background: #2ecc71; }
+        .status-indicator.error { background: #e74c3c; }
+        .status-indicator.pending { background: #f39c12; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 ClubOps CORS Deployment Test Suite</h1>
+        
+        <div class="deployment-info">
+            <h3>📋 Available Deployments</h3>
+            
+            <div class="url-set" id="set1">
+                <h4><span class="status-indicator pending"></span>Deployment Set 1 (Original)</h4>
+                <p><strong>Backend:</strong> https://clubops-backend-pgynfiz9g-tony-telemacques-projects.vercel.app</p>
+                <p><strong>Frontend:</strong> https://frontend-1ech7j3jl-tony-telemacques-projects.vercel.app</p>
+                <div class="test-grid">
+                    <button onclick="testSet(1, 'health')">Test Health</button>
+                    <button onclick="testSet(1, 'login')">Test Login</button>
+                    <button onclick="testSet(1, 'full')">Full Test</button>
+                </div>
+            </div>
+
+            <div class="url-set" id="set2">
+                <h4><span class="status-indicator pending"></span>Deployment Set 2 (First Redeploy)</h4>
+                <p><strong>Backend:</strong> https://clubops-backend-1pkgn4g14-tony-telemacques-projects.vercel.app</p>
+                <p><strong>Frontend:</strong> https://frontend-bzl3aqg1j-tony-telemacques-projects.vercel.app</p>
+                <div class="test-grid">
+                    <button onclick="testSet(2, 'health')">Test Health</button>
+                    <button onclick="testSet(2, 'login')">Test Login</button>
+                    <button onclick="testSet(2, 'full')">Full Test</button>
+                </div>
+            </div>
+
+            <div class="url-set" id="set3">
+                <h4><span class="status-indicator pending"></span>Deployment Set 3 (Latest)</h4>
+                <p><strong>Backend:</strong> https://clubops-backend-5bwt74jl6-tony-telemacques-projects.vercel.app</p>
+                <p><strong>Frontend:</strong> https://frontend-m42vtg6at-tony-telemacques-projects.vercel.app</p>
+                <div class="test-grid">
+                    <button onclick="testSet(3, 'health')">Test Health</button>
+                    <button onclick="testSet(3, 'login')">Test Login</button>
+                    <button onclick="testSet(3, 'full')">Full Test</button>
+                </div>
+            </div>
+        </div>
+
+        <div style="margin: 20px 0;">
+            <button class="success" onclick="findWorkingDeployment()">🚀 Find Working Deployment</button>
+            <button class="danger" onclick="clearResults()">Clear Results</button>
+        </div>
+
+        <div class="results" id="results">
+            <div>Ready to test deployments...</div>
+        </div>
+    </div>
+
+    <script>
+        const deployments = {
+            1: {
+                name: 'Original',
+                backend: 'https://clubops-backend-pgynfiz9g-tony-telemacques-projects.vercel.app',
+                frontend: 'https://frontend-1ech7j3jl-tony-telemacques-projects.vercel.app'
+            },
+            2: {
+                name: 'First Redeploy',
+                backend: 'https://clubops-backend-1pkgn4g14-tony-telemacques-projects.vercel.app',
+                frontend: 'https://frontend-bzl3aqg1j-tony-telemacques-projects.vercel.app'
+            },
+            3: {
+                name: 'Latest',
+                backend: 'https://clubops-backend-5bwt74jl6-tony-telemacques-projects.vercel.app',
+                frontend: 'https://frontend-m42vtg6at-tony-telemacques-projects.vercel.app'
+            }
+        };
+
+        function log(message, type = 'info') {
+            const results = document.getElementById('results');
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type === 'success' ? 'success' : type === 'error' ? 'error' : type === 'warning' ? 'warning' : 'info';
+            results.innerHTML += `<div class="${className}">[${timestamp}] ${message}</div>`;
+            results.scrollTop = results.scrollHeight;
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '<div>Ready to test deployments...</div>';
+            document.querySelectorAll('.url-set').forEach(el => {
+                el.classList.remove('active', 'failed');
+                el.querySelector('.status-indicator').className = 'status-indicator pending';
+            });
+        }
+
+        function updateSetStatus(setId, status) {
+            const setEl = document.getElementById(`set${setId}`);
+            const indicator = setEl.querySelector('.status-indicator');
+            
+            setEl.classList.remove('active', 'failed');
+            indicator.classList.remove('success', 'error', 'pending');
+            
+            if (status === 'success') {
+                setEl.classList.add('active');
+                indicator.classList.add('success');
+            } else if (status === 'error') {
+                setEl.classList.add('failed');
+                indicator.classList.add('error');
+            } else {
+                indicator.classList.add('pending');
+            }
+        }
+
+        async function testSet(setId, testType) {
+            const deployment = deployments[setId];
+            log(`\\n=== Testing ${deployment.name} Deployment ===`, 'info');
+            log(`Backend: ${deployment.backend}`, 'info');
+            log(`Frontend: ${deployment.frontend}`, 'info');
+
+            if (testType === 'health' || testType === 'full') {
+                await testHealth(deployment.backend, setId);
+            }
+
+            if (testType === 'login' || testType === 'full') {
+                await testLogin(deployment.backend, deployment.frontend, setId);
+            }
+
+            if (testType === 'full') {
+                await testCORS(deployment.backend, deployment.frontend, setId);
+            }
+        }
+
+        async function testHealth(backendUrl, setId) {
+            try {
+                log(`Testing backend health...`, 'info');
+                const response = await fetch(`${backendUrl}/health`);
+                const data = await response.json();
+                
+                if (data.status === 'ok') {
+                    log(`✅ Backend is healthy: ${data.message}`, 'success');
+                    log(`Frontend URL in config: ${data.frontend_url}`, 'info');
+                    log(`Database connected: ${data.database_connected}`, 'info');
+                    
+                    // Check if frontend URL matches
+                    const expectedFrontend = deployments[setId].frontend;
+                    if (data.frontend_url !== expectedFrontend) {
+                        log(`⚠️ Frontend URL mismatch! Expected: ${expectedFrontend}`, 'warning');
+                        updateSetStatus(setId, 'error');
+                    } else {
+                        log(`✅ Frontend URL matches deployment!`, 'success');
+                        updateSetStatus(setId, 'success');
+                    }
+                } else {
+                    log(`❌ Backend unhealthy: ${JSON.stringify(data)}`, 'error');
+                    updateSetStatus(setId, 'error');
+                }
+            } catch (error) {
+                log(`❌ Health check failed: ${error.message}`, 'error');
+                updateSetStatus(setId, 'error');
+            }
+        }
+
+        async function testLogin(backendUrl, frontendUrl, setId) {
+            try {
+                log(`Testing login endpoint...`, 'info');
+                const response = await fetch(`${backendUrl}/api/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Origin': frontendUrl
+                    },
+                    body: JSON.stringify({
+                        email: 'admin@clubops.com',
+                        password: 'password'
+                    })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`✅ Login successful! Token received: ${data.token ? 'Yes' : 'No'}`, 'success');
+                    log(`User: ${data.user?.email || 'N/A'}`, 'info');
+                    updateSetStatus(setId, 'success');
+                } else {
+                    const text = await response.text();
+                    log(`❌ Login failed: ${response.status} - ${text}`, 'error');
+                    updateSetStatus(setId, 'error');
+                }
+            } catch (error) {
+                log(`❌ Login test failed: ${error.message}`, 'error');
+                updateSetStatus(setId, 'error');
+            }
+        }
+
+        async function testCORS(backendUrl, frontendUrl, setId) {
+            try {
+                log(`Testing CORS configuration...`, 'info');
+                const response = await fetch(`${backendUrl}/api/auth/register`, {
+                    method: 'OPTIONS',
+                    headers: {
+                        'Origin': frontendUrl,
+                        'Access-Control-Request-Method': 'POST',
+                        'Access-Control-Request-Headers': 'content-type'
+                    }
+                });
+
+                const corsHeader = response.headers.get('access-control-allow-origin');
+                if (corsHeader) {
+                    log(`✅ CORS header present: ${corsHeader}`, 'success');
+                    if (corsHeader === frontendUrl || corsHeader === '*') {
+                        log(`✅ CORS properly configured!`, 'success');
+                        updateSetStatus(setId, 'success');
+                    } else {
+                        log(`⚠️ CORS header doesn't match frontend URL`, 'warning');
+                        updateSetStatus(setId, 'error');
+                    }
+                } else {
+                    log(`❌ No CORS headers found`, 'error');
+                    updateSetStatus(setId, 'error');
+                }
+            } catch (error) {
+                log(`❌ CORS test failed: ${error.message}`, 'error');
+                updateSetStatus(setId, 'error');
+            }
+        }
+
+        async function findWorkingDeployment() {
+            log(`\\n🔍 SCANNING ALL DEPLOYMENTS FOR WORKING CONFIGURATION...`, 'info');
+            
+            for (const [id, deployment] of Object.entries(deployments)) {
+                log(`\\n=== Testing ${deployment.name} ===`, 'info');
+                
+                try {
+                    // Test health
+                    const healthResponse = await fetch(`${deployment.backend}/health`);
+                    if (!healthResponse.ok) {
+                        log(`❌ ${deployment.name}: Backend not responding`, 'error');
+                        updateSetStatus(id, 'error');
+                        continue;
+                    }
+                    
+                    const healthData = await healthResponse.json();
+                    log(`✅ ${deployment.name}: Backend is healthy`, 'success');
+                    
+                    // Test login with CORS
+                    const loginResponse = await fetch(`${deployment.backend}/api/auth/login`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Origin': deployment.frontend
+                        },
+                        body: JSON.stringify({
+                            email: 'admin@clubops.com',
+                            password: 'password'
+                        })
+                    });
+                    
+                    if (loginResponse.ok) {
+                        log(`✅ ${deployment.name}: CORS and Login working!`, 'success');
+                        log(`\\n🎯 WORKING DEPLOYMENT FOUND!`, 'success');
+                        log(`Frontend: ${deployment.frontend}`, 'success');
+                        log(`Backend: ${deployment.backend}`, 'success');
+                        updateSetStatus(id, 'success');
+                        
+                        // Open the working frontend
+                        log(`\\nOpening working frontend in 3 seconds...`, 'info');
+                        setTimeout(() => {
+                            window.open(deployment.frontend, '_blank');
+                        }, 3000);
+                        
+                        return;
+                    } else {
+                        log(`❌ ${deployment.name}: CORS or Login failed`, 'error');
+                        updateSetStatus(id, 'error');
+                    }
+                    
+                } catch (error) {
+                    log(`❌ ${deployment.name}: ${error.message}`, 'error');
+                    updateSetStatus(id, 'error');
+                }
+            }
+            
+            log(`\\n❌ No working deployment found. Manual configuration needed.`, 'error');
+        }
+
+        // Auto-scan on load
+        window.onload = () => {
+            log('Test suite loaded. Click "Find Working Deployment" to auto-scan all deployments.', 'info');
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClubOps CORS Validation - Phase 7</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 50px auto; padding: 20px; background: #1a1a2e; color: #eee; }
+        .test-section { background: #16213e; padding: 20px; margin: 20px 0; border-radius: 8px; border: 1px solid #0f3460; }
+        .success { color: #4caf50; font-weight: bold; }
+        .error { color: #f44336; font-weight: bold; }
+        .info { color: #2196f3; }
+        .warning { color: #ff9800; }
+        button { background: #0f3460; color: white; padding: 12px 24px; border: none; border-radius: 4px; cursor: pointer; margin: 5px; font-size: 16px; }
+        button:hover { background: #e94560; }
+        pre { background: #0f1e3d; padding: 15px; border-radius: 4px; font-size: 12px; overflow-x: auto; }
+        h1 { color: #e94560; }
+        h2 { color: #4caf50; }
+        .deployment-info { background: #0f3460; padding: 15px; border-radius: 8px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>🚀 ClubOps CORS Validation - Test Runner Phase 7</h1>
+    
+    <div class="test-section">
+        <h2>📊 Current Deployment Status</h2>
+        <div class="deployment-info">
+            <p><strong>Frontend URL:</strong> <span class="info">https://frontend-1cwhcnllo-tony-telemacques-projects.vercel.app</span></p>
+            <p><strong>Backend URL:</strong> <span class="info">https://clubops-backend-ouujm5efo-tony-telemacques-projects.vercel.app</span></p>
+            <p><strong>Deployment Time:</strong> <span class="info">${new Date().toLocaleString()}</span></p>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🧪 CORS Validation Tests</h2>
+        <button onclick="runFullTestSuite()">🔄 Run Full Test Suite</button>
+        <button onclick="testHealth()">💚 Test Health</button>
+        <button onclick="testLogin()">🔐 Test Login</button>
+        <button onclick="testDashboard()">📊 Test Dashboard</button>
+        <button onclick="clearResults()">🗑️ Clear Results</button>
+        
+        <div id="results" style="margin-top: 20px; max-height: 500px; overflow-y: auto;"></div>
+    </div>
+
+    <script>
+        // Updated backend URL from latest deployment
+        const BACKEND_URL = 'https://clubops-backend-ouujm5efo-tony-telemacques-projects.vercel.app';
+        const FRONTEND_URL = 'https://frontend-1cwhcnllo-tony-telemacques-projects.vercel.app';
+        
+        let testResults = {
+            total: 0,
+            passed: 0,
+            failed: 0
+        };
+        
+        function log(message, type = 'info') {
+            const results = document.getElementById('results');
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type === 'success' ? 'success' : type === 'error' ? 'error' : type === 'warning' ? 'warning' : 'info';
+            results.innerHTML += \`<div class="\${className}">[Phase 7 - \${timestamp}] \${message}</div>\`;
+            results.scrollTop = results.scrollHeight;
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+            testResults = { total: 0, passed: 0, failed: 0 };
+            log('🧹 Test results cleared', 'info');
+        }
+
+        async function testHealth() {
+            log('🏥 Testing backend health endpoint...', 'info');
+            testResults.total++;
+            
+            try {
+                const response = await fetch(\`\${BACKEND_URL}/health\`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    log('✅ Health check PASSED!', 'success');
+                    log(\`├─ Status: \${data.status}\`, 'info');
+                    log(\`├─ Environment: \${data.environment || 'production'}\`, 'info');
+                    log(\`├─ Frontend URL: \${data.frontend_url || 'Not configured'}\`, 'info');
+                    
+                    // Verify CORS configuration
+                    if (data.frontend_url && data.frontend_url === FRONTEND_URL) {
+                        log('✅ CORS configuration VERIFIED - URLs match!', 'success');
+                        testResults.passed++;
+                    } else if (data.frontend_url) {
+                        log(\`⚠️ CORS mismatch - Expected: \${FRONTEND_URL}, Got: \${data.frontend_url}\`, 'warning');
+                        testResults.failed++;
+                    }
+                    
+                    return true;
+                } else {
+                    log(\`❌ Health check failed: HTTP \${response.status}\`, 'error');
+                    testResults.failed++;
+                    return false;
+                }
+            } catch (error) {
+                log(\`❌ Health check error: \${error.message}\`, 'error');
+                if (error.message.includes('Failed to fetch')) {
+                    log('💡 Possible CORS blocking or backend not accessible', 'warning');
+                }
+                testResults.failed++;
+                return false;
+            }
+        }
+
+        async function testLogin() {
+            log('🔐 Testing login endpoint with test credentials...', 'info');
+            testResults.total++;
+            
+            try {
+                const response = await fetch(\`\${BACKEND_URL}/api/auth/login\`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        email: 'admin@clubops.com',
+                        password: 'password'
+                    })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log('✅ Login test PASSED!', 'success');
+                    log(\`├─ User: \${data.user.name} (\${data.user.email})\`, 'info');
+                    log(\`├─ Role: \${data.user.role}\`, 'info');
+                    log(\`├─ Token received: \${data.token ? 'Yes' : 'No'}\`, 'info');
+                    
+                    if (data.token) {
+                        localStorage.setItem('token', data.token);
+                        log('💾 Token stored for authenticated tests', 'info');
+                    }
+                    testResults.passed++;
+                    return data.token;
+                } else {
+                    const error = await response.json();
+                    log(\`❌ Login failed: \${error.error || response.status}\`, 'error');
+                    testResults.failed++;
+                    return null;
+                }
+            } catch (error) {
+                log(\`❌ Login CORS error: \${error.message}\`, 'error');
+                testResults.failed++;
+                return null;
+            }
+        }
+
+        async function testDashboard() {
+            log('📊 Testing authenticated dashboard endpoint...', 'info');
+            testResults.total++;
+            
+            const token = localStorage.getItem('token');
+            if (!token) {
+                log('⚠️ No token found - run login test first', 'warning');
+                return;
+            }
+            
+            try {
+                const response = await fetch(\`\${BACKEND_URL}/api/dashboard/summary\`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': \`Bearer \${token}\`
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log('✅ Dashboard test PASSED!', 'success');
+                    log(\`├─ Total dancers: \${data.totalDancers || 0}\`, 'info');
+                    log(\`├─ Active today: \${data.activeToday || 0}\`, 'info');
+                    log(\`└─ CORS working for authenticated requests!\`, 'success');
+                    testResults.passed++;
+                } else {
+                    log(\`❌ Dashboard test failed: HTTP \${response.status}\`, 'error');
+                    testResults.failed++;
+                }
+            } catch (error) {
+                log(\`❌ Dashboard CORS error: \${error.message}\`, 'error');
+                testResults.failed++;
+            }
+        }
+
+        async function runFullTestSuite() {
+            log('🚀 Starting full CORS validation suite...', 'info');
+            log('═══════════════════════════════════════', 'info');
+            
+            // Reset test results
+            testResults = { total: 0, passed: 0, failed: 0 };
+            
+            // Run tests in sequence
+            const healthOk = await testHealth();
+            
+            if (healthOk) {
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                const token = await testLogin();
+                
+                if (token) {
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    await testDashboard();
+                }
+            }
+            
+            // Summary
+            log('═══════════════════════════════════════', 'info');
+            log(\`📈 Test Summary: \${testResults.passed}/\${testResults.total} passed\`, 
+                testResults.failed === 0 ? 'success' : 'warning');
+            
+            if (testResults.failed === 0) {
+                log('🎉 ALL CORS TESTS PASSED! Deployment successful!', 'success');
+            } else {
+                log(\`⚠️ \${testResults.failed} tests failed - review logs above\`, 'warning');
+            }
+        }
+
+        // Display initialization message
+        window.onload = function() {
+            log('🚀 ClubOps CORS Validation Suite - Phase 7 Initialized', 'info');
+            log(\`📍 Backend: \${BACKEND_URL}\`, 'info');
+            log(\`📍 Frontend: \${FRONTEND_URL}\`, 'info');
+            log('👆 Click "Run Full Test Suite" to validate CORS configuration', 'info');
+        };
+    </script>
+</body>
+</html>

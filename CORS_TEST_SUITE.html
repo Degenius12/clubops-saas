@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClubOps CORS Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 50px auto; padding: 20px; }
+        .test-section { background: #f5f5f5; padding: 20px; margin: 20px 0; border-radius: 8px; }
+        .success { color: #28a745; }
+        .error { color: #dc3545; }
+        .info { color: #17a2b8; }
+        button { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin: 5px; }
+        button:hover { background: #0056b3; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 4px; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <h1>🔧 ClubOps CORS Test Suite</h1>
+    
+    <div class="test-section">
+        <h2>🎯 Current Configuration</h2>
+        <p><strong>Frontend URL:</strong> <span class="info">https://frontend-1ech7j3jl-tony-telemacques-projects.vercel.app</span></p>
+        <p><strong>Backend URL:</strong> <span class="info">https://clubops-backend-pgynfiz9g-tony-telemacques-projects.vercel.app</span></p>
+    </div>
+
+    <div class="test-section">
+        <h2>🧪 CORS Tests</h2>
+        <button onclick="testHealth()">Test Backend Health</button>
+        <button onclick="testLogin()">Test Login CORS</button>
+        <button onclick="testRegister()">Test Register CORS</button>
+        <button onclick="clearResults()">Clear Results</button>
+        
+        <div id="results" style="margin-top: 20px;"></div>
+    </div>
+
+    <script>
+        const BACKEND_URL = 'https://clubops-backend-pgynfiz9g-tony-telemacques-projects.vercel.app';
+        
+        function log(message, type = 'info') {
+            const results = document.getElementById('results');
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type === 'success' ? 'success' : type === 'error' ? 'error' : 'info';
+            results.innerHTML += `<div class="${className}">[${timestamp}] ${message}</div>`;
+            results.scrollTop = results.scrollHeight;
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+
+        async function testHealth() {
+            log('🔍 Testing backend health endpoint...', 'info');
+            try {
+                const response = await fetch(`${BACKEND_URL}/health`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    log('✅ Health check successful!', 'success');
+                    log(`📊 Status: ${data.status}`, 'info');
+                    log(`🌐 Frontend URL in backend: ${data.frontend_url}`, 'info');
+                    log(`🏗️ Environment: ${data.environment}`, 'info');
+                    
+                    if (data.frontend_url && data.frontend_url.includes('frontend-1ech7j3jl')) {
+                        log('✅ Frontend URL configuration is correct!', 'success');
+                    } else {
+                        log('⚠️ Frontend URL mismatch detected!', 'error');
+                    }
+                } else {
+                    log(`❌ Health check failed: ${response.status}`, 'error');
+                }
+            } catch (error) {
+                log(`❌ Health check error: ${error.message}`, 'error');
+                if (error.message.includes('CORS')) {
+                    log('💡 CORS error detected - deployment may be needed', 'error');
+                }
+            }
+        }
+
+        async function testLogin() {
+            log('🔐 Testing login endpoint CORS...', 'info');
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        email: 'admin@clubops.com',
+                        password: 'password'
+                    })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log('✅ Login CORS test successful!', 'success');
+                    log(`👤 Logged in as: ${data.user.name}`, 'info');
+                    localStorage.setItem('token', data.token);
+                    log('💾 Token stored for further tests', 'info');
+                } else {
+                    log(`⚠️ Login failed: ${response.status}`, 'error');
+                    const error = await response.json();
+                    log(`📝 Error: ${error.error}`, 'error');
+                }
+            } catch (error) {
+                log(`❌ Login CORS error: ${error.message}`, 'error');
+                if (error.message.includes('CORS')) {
+                    log('💥 CORS blocking detected! Check backend configuration.', 'error');
+                }
+            }
+        }
+
+        async function testRegister() {
+            log('📝 Testing register endpoint CORS...', 'info');
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/auth/register`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        email: 'test@example.com',
+                        password: 'testpass',
+                        name: 'Test User',
+                        club_name: 'Test Club'
+                    })
+                });
+                
+                if (response.ok || response.status === 400) {
+                    log('✅ Register CORS test successful!', 'success');
+                    if (response.status === 400) {
+                        log('ℹ️ Expected error (user exists) - CORS is working', 'info');
+                    }
+                } else {
+                    log(`⚠️ Register test failed: ${response.status}`, 'error');
+                }
+            } catch (error) {
+                log(`❌ Register CORS error: ${error.message}`, 'error');
+                if (error.message.includes('CORS')) {
+                    log('💥 CORS blocking detected! Check backend configuration.', 'error');
+                }
+            }
+        }
+
+        // Auto-run health check on page load
+        window.onload = function() {
+            log('🚀 ClubOps CORS Test Suite Loaded', 'info');
+            log('👆 Click the test buttons above to verify CORS configuration', 'info');
+            setTimeout(testHealth, 1000);
+        };
+    </script>
+</body>
+</html>
