@@ -38,16 +38,35 @@ app.use(helmet({
   }
 }));
 
-// CORS configuration for production - Updated with all current frontend URLs
+// CORS configuration for production - Dynamic origin handling for Vercel deployments
 app.use(cors({
-  origin: [
-    process.env.FRONTEND_URL || process.env.CLIENT_URL,
-    "https://frontend-azure-omega-1cudama2io.vercel.app",
-    "https://clubops-saas-platform.vercel.app",
-    "https://frontend-azure-omega-1cudama2io.vercel.app",
-    "http://localhost:3000",
-    "http://localhost:5173"
-  ].filter(Boolean),
+  origin: function(origin, callback) {
+    // Allow requests with no origin (mobile apps, curl, etc.)
+    if (!origin) return callback(null, true);
+    
+    // Allow all vercel preview deployments for Tony's projects
+    if (origin.includes('tony-telemacques-projects.vercel.app') ||
+        origin.includes('clubops') ||
+        origin.includes('localhost')) {
+      return callback(null, true);
+    }
+    
+    // Explicit allowed origins
+    const allowedOrigins = [
+      process.env.FRONTEND_URL,
+      process.env.CLIENT_URL,
+      "https://frontend-le2gjeahb-tony-telemacques-projects.vercel.app",
+      "https://clubops-saas-platform.vercel.app",
+      "http://localhost:3000",
+      "http://localhost:5173"
+    ].filter(Boolean);
+    
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    
+    return callback(null, false);
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],

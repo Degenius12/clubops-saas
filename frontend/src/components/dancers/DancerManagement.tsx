@@ -25,10 +25,12 @@ const DancerManagement: React.FC = () => {
   }, [dispatch])
 
   // Filter dancers based on search and status (with null-safe checks)
-  const filteredDancers = dancers.filter(dancer => {
-    const name = dancer.name || dancer.stage_name || ''
+  // Backend returns camelCase: stageName, legalName, email, isActive, licenseStatus
+  const filteredDancers = (dancers || []).filter(dancer => {
+    const name = dancer.stageName || dancer.legalName || dancer.name || dancer.stage_name || ''
     const email = dancer.email || ''
-    const status = dancer.status || 'inactive'
+    // Map isActive boolean to status string
+    const status = dancer.status || (dancer.isActive ? 'active' : 'inactive')
     
     const matchesSearch = name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          email.toLowerCase().includes(searchTerm.toLowerCase())
@@ -142,18 +144,18 @@ const DancerManagement: React.FC = () => {
                 <div className="flex items-center space-x-3">
                   <div className="w-12 h-12 bg-gradient-to-r from-accent-blue to-accent-gold rounded-full flex items-center justify-center">
                     <span className="text-white font-semibold text-lg">
-                      {(dancer.name || dancer.stage_name || '??').split(' ').map(n => n[0]).join('').toUpperCase()}
+                      {(dancer.stageName || dancer.legalName || dancer.name || dancer.stage_name || '??').split(' ').map(n => n[0]).join('').toUpperCase()}
                     </span>
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold text-white">{dancer.name || dancer.stage_name || 'Unknown'}</h3>
-                    <p className="text-gray-400 text-sm">{dancer.stage_name || ''}</p>
+                    <h3 className="text-lg font-semibold text-white">{dancer.stageName || dancer.legalName || dancer.name || dancer.stage_name || 'Unknown'}</h3>
+                    <p className="text-gray-400 text-sm">{dancer.legalName || dancer.stageName || ''}</p>
                   </div>
                 </div>
 
                 {/* Status Badge */}
-                <div className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(dancer.status || 'inactive')}`}>
-                  {(dancer.status || 'inactive').replace('_', ' ').toUpperCase()}
+                <div className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(dancer.status || (dancer.isActive ? 'active' : 'inactive'))}`}>
+                  {(dancer.status || (dancer.isActive ? 'active' : 'inactive')).replace('_', ' ').toUpperCase()}
                 </div>
               </div>
 
@@ -161,16 +163,20 @@ const DancerManagement: React.FC = () => {
               <div className="mb-4">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium text-gray-300">Compliance Status</span>
-                  {(dancer.complianceStatus || dancer.compliance_status) === 'valid' && <CheckCircleIcon className="h-4 w-4 text-green-400" />}
-                  {(dancer.complianceStatus || dancer.compliance_status) === 'expiring' && <ClockIcon className="h-4 w-4 text-yellow-400" />}
-                  {(dancer.complianceStatus || dancer.compliance_status) === 'expired' && <ExclamationTriangleIcon className="h-4 w-4 text-red-400" />}
+                  {/* Use licenseExpired/licenseWarning from backend or fallback to old fields */}
+                  {!dancer.licenseExpired && !dancer.licenseWarning && <CheckCircleIcon className="h-4 w-4 text-green-400" />}
+                  {dancer.licenseWarning && !dancer.licenseExpired && <ClockIcon className="h-4 w-4 text-yellow-400" />}
+                  {dancer.licenseExpired && <ExclamationTriangleIcon className="h-4 w-4 text-red-400" />}
                 </div>
                 
-                <div className={`px-3 py-2 rounded-lg border text-xs font-medium ${getComplianceColor(dancer.complianceStatus || dancer.compliance_status || 'unknown')}`}>
-                  {(dancer.complianceStatus || dancer.compliance_status) === 'valid' && 'All documents valid'}
-                  {(dancer.complianceStatus || dancer.compliance_status) === 'expiring' && `License expires in ${dancer.daysUntilExpiry || dancer.days_until_expiry || '?'} days`}
-                  {(dancer.complianceStatus || dancer.compliance_status) === 'expired' && 'Documents expired - Action required'}
-                  {!(dancer.complianceStatus || dancer.compliance_status) && 'Status unknown'}
+                <div className={`px-3 py-2 rounded-lg border text-xs font-medium ${
+                  dancer.licenseExpired ? 'text-red-400 bg-red-900/30 border-red-500/50' :
+                  dancer.licenseWarning ? 'text-yellow-400 bg-yellow-900/30 border-yellow-500/50' :
+                  'text-green-400 bg-green-900/30 border-green-500/50'
+                }`}>
+                  {dancer.licenseExpired && 'License expired - Action required'}
+                  {dancer.licenseWarning && !dancer.licenseExpired && 'License expiring soon'}
+                  {!dancer.licenseExpired && !dancer.licenseWarning && 'All documents valid'}
                 </div>
               </div>
 
@@ -192,7 +198,7 @@ const DancerManagement: React.FC = () => {
                   View Profile
                 </button>
                 
-                {(dancer.complianceStatus || dancer.compliance_status) !== 'valid' && (
+                {(dancer.licenseExpired || dancer.licenseWarning) && (
                   <button className="flex-1 bg-red-900/20 hover:bg-red-900/30 border border-red-500/30 text-red-300 font-medium py-2 px-3 rounded-lg transition-colors text-sm">
                     Fix Compliance
                   </button>
@@ -210,28 +216,28 @@ const DancerManagement: React.FC = () => {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
           <div className="text-center">
             <div className="text-2xl font-bold text-green-400">
-              {dancers.filter(d => (d.status || 'inactive') === 'active').length}
+              {(dancers || []).filter(d => d.isActive === true || (d.status || 'inactive') === 'active').length}
             </div>
             <div className="text-sm text-gray-400">Active Now</div>
           </div>
           
           <div className="text-center">
             <div className="text-2xl font-bold text-yellow-400">
-              {dancers.filter(d => (d.complianceStatus || d.compliance_status) === 'expiring').length}
+              {(dancers || []).filter(d => d.licenseWarning && !d.licenseExpired).length}
             </div>
             <div className="text-sm text-gray-400">Expiring Soon</div>
           </div>
           
           <div className="text-center">
             <div className="text-2xl font-bold text-red-400">
-              {dancers.filter(d => (d.complianceStatus || d.compliance_status) === 'expired').length}
+              {(dancers || []).filter(d => d.licenseExpired).length}
             </div>
             <div className="text-sm text-gray-400">Non-Compliant</div>
           </div>
           
           <div className="text-center">
             <div className="text-2xl font-bold text-accent-blue">
-              {dancers.length}
+              {(dancers || []).length}
             </div>
             <div className="text-sm text-gray-400">Total Dancers</div>
           </div>

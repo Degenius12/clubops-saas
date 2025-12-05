@@ -1,16 +1,15 @@
 // API Configuration
-// Production URL is hardcoded to avoid Vercel environment variable issues
-const PRODUCTION_API_URL = 'https://clubops-backend.vercel.app';
+// Use environment variable, with fallback to current production URL
+const PRODUCTION_API_URL = 'https://clubops-backend-8ttr5qcwc-tony-telemacques-projects.vercel.app';
 const DEV_API_URL = 'http://localhost:3001';
 
 // Detect production environment
 const isProduction = import.meta.env.PROD || 
   (typeof window !== 'undefined' && window.location.hostname !== 'localhost');
 
-// Use hardcoded production URL in production, env var or localhost in dev
-export const API_BASE_URL = isProduction 
-  ? PRODUCTION_API_URL 
-  : (import.meta.env.VITE_API_URL || DEV_API_URL);
+// Priority: VITE_API_URL env var > hardcoded production URL > dev URL
+export const API_BASE_URL = import.meta.env.VITE_API_URL || 
+  (isProduction ? PRODUCTION_API_URL : DEV_API_URL);
 
 // Log which URL is being used (helpful for debugging)
 console.log('API Base URL:', API_BASE_URL);
