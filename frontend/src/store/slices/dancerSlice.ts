@@ -56,7 +56,8 @@ export const fetchDancers = createAsyncThunk(
   'dancers/fetchAll',
   async () => {
     const response = await apiClient.get('/api/dancers')
-    return response.data
+    // Backend returns { dancers: [...], total: N } - extract the array
+    return response.data.dancers || response.data || []
   }
 )
 

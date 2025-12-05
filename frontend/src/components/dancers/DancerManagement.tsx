@@ -27,6 +27,7 @@ const DancerManagement: React.FC = () => {
   // Filter dancers based on search and status (with null-safe checks)
   // Backend returns camelCase: stageName, legalName, email, isActive, licenseStatus
   const filteredDancers = (dancers || []).filter(dancer => {
+    if (!dancer) return false  // Skip null/undefined entries
     const name = dancer.stageName || dancer.legalName || dancer.name || dancer.stage_name || ''
     const email = dancer.email || ''
     // Map isActive boolean to status string
