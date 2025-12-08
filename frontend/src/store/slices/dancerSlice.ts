@@ -15,6 +15,7 @@ export interface Dancer {
   check_in_time?: string
   bar_fee_paid: boolean
   bar_fee_amount: number
+  contract_signed: boolean
   created_at: string
   updated_at: string
   complianceStatus: 'valid' | 'expiring' | 'expired' | 'compliant' | 'warning' | 'expiring_soon'

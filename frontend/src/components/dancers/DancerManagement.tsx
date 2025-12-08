@@ -259,13 +259,13 @@ const DancerManagement: React.FC = () => {
                   <div>
                     <p className="text-gray-400">Bar Fee</p>
                     <p className="text-white font-medium">
-                      {dancer.barFeePaid ? '✓ Paid' : '✗ Not Paid'}
+                      {dancer.bar_fee_paid ? '✓ Paid' : '✗ Not Paid'}
                     </p>
                   </div>
                   <div>
                     <p className="text-gray-400">Contract</p>
                     <p className="text-white font-medium">
-                      {dancer.contractSigned ? '✓ Signed' : '✗ Pending'}
+                      {dancer.contract_signed ? '✓ Signed' : '✗ Pending'}
                     </p>
                   </div>
                 </div>
