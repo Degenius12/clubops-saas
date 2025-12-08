@@ -564,6 +564,103 @@ app.post('/api/dj-queue/next', authenticateToken, async (req, res) => {
   }
 });
 
+// ============= QUEUE ROUTES (Alias for /api/dj-queue) =============
+// Frontend uses /api/queue, so we add these aliases
+
+app.get('/api/queue', authenticateToken, (req, res) => {
+  res.json(mockDjQueue);
+});
+
+app.post('/api/queue', authenticateToken, async (req, res) => {
+  try {
+    const { tracks } = req.body;
+    
+    // If tracks array is provided, replace the queue
+    if (Array.isArray(tracks)) {
+      mockDjQueue.queue = tracks.map(track => ({
+        id: track.id || Math.random().toString(36).substr(2, 9),
+        dancerId: track.dancerId || null,
+        stageName: track.dancerName || track.stageName || 'Unknown',
+        songTitle: track.title || track.songTitle || 'Unknown Track',
+        artistName: track.artist || track.artistName || 'Unknown Artist',
+        duration: track.duration || 180,
+        stage: track.stage || 'Main Stage'
+      }));
+    }
+    
+    res.json(mockDjQueue);
+  } catch (error) {
+    console.error('Update queue error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.post('/api/queue/add', authenticateToken, async (req, res) => {
+  try {
+    const { dancerId, songTitle, artistName, title, artist, dancerName } = req.body;
+    
+    let stageName = dancerName;
+    if (dancerId) {
+      const dancer = mockDancers.find(d => d.id === dancerId);
+      if (dancer) stageName = dancer.stageName;
+    }
+
+    const queueEntry = {
+      id: Math.random().toString(36).substr(2, 9),
+      dancerId: dancerId || null,
+      stageName: stageName || 'Unknown',
+      songTitle: title || songTitle || 'Selected Song',
+      artistName: artist || artistName || 'Various Artists',
+      duration: req.body.duration || 180,
+      stage: 'Main Stage'
+    };
+
+    mockDjQueue.queue.push(queueEntry);
+    res.json(mockDjQueue);
+  } catch (error) {
+    console.error('Add to queue error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.post('/api/queue/next', authenticateToken, async (req, res) => {
+  try {
+    if (mockDjQueue.queue.length > 0) {
+      mockDjQueue.current = mockDjQueue.queue.shift();
+      mockDjQueue.current.timeRemaining = mockDjQueue.current.duration || 180;
+    }
+
+    res.json(mockDjQueue);
+  } catch (error) {
+    console.error('Next in queue error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.delete('/api/queue/:id', authenticateToken, async (req, res) => {
+  try {
+    const trackId = req.params.id;
+    mockDjQueue.queue = mockDjQueue.queue.filter(track => track.id !== trackId);
+    res.json(mockDjQueue);
+  } catch (error) {
+    console.error('Remove from queue error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.put('/api/queue/reorder', authenticateToken, async (req, res) => {
+  try {
+    const { queue } = req.body;
+    if (Array.isArray(queue)) {
+      mockDjQueue.queue = queue;
+    }
+    res.json(mockDjQueue);
+  } catch (error) {
+    console.error('Reorder queue error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // ============= FINANCIAL ROUTES =============
 
 app.get('/api/financial/transactions', authenticateToken, (req, res) => {
