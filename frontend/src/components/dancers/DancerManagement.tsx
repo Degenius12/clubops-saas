@@ -24,45 +24,70 @@ const DancerManagement: React.FC = () => {
     dispatch(fetchDancers())
   }, [dispatch])
 
-  // Helper to get dancer name (handles both API formats)
+  // Helper to get dancer name (handles both API formats) - BULLETPROOF
   const getDancerName = (dancer: any): string => {
-    return dancer?.legalName || dancer?.stageName || dancer?.name || dancer?.stage_name || 'Unknown'
+    try {
+      const name = dancer?.legalName || dancer?.stageName || dancer?.name || dancer?.stage_name
+      return name ? String(name) : 'Unknown'
+    } catch {
+      return 'Unknown'
+    }
   }
 
-  // Helper to get stage name
+  // Helper to get stage name - BULLETPROOF
   const getStageName = (dancer: any): string => {
-    return dancer?.stageName || dancer?.stage_name || ''
+    try {
+      const name = dancer?.stageName || dancer?.stage_name
+      return name ? String(name) : ''
+    } catch {
+      return ''
+    }
   }
 
-  // Helper to get dancer status
+  // Helper to get dancer status - BULLETPROOF
   const getDancerStatus = (dancer: any): string => {
-    if (dancer?.isActive === true) return 'active'
-    if (dancer?.isActive === false) return 'inactive'
-    return dancer?.status || 'inactive'
+    try {
+      if (dancer?.isActive === true) return 'active'
+      if (dancer?.isActive === false) return 'inactive'
+      return dancer?.status ? String(dancer.status) : 'inactive'
+    } catch {
+      return 'inactive'
+    }
   }
 
-  // Helper to get compliance/license status
+  // Helper to get compliance/license status - BULLETPROOF
   const getComplianceStatus = (dancer: any): string => {
-    const status = dancer?.licenseStatus || dancer?.complianceStatus || dancer?.compliance_status
-    // Map 'warning' to 'expiring' for display consistency
-    if (status === 'warning') return 'expiring'
-    return status || 'unknown'
+    try {
+      const status = dancer?.licenseStatus || dancer?.complianceStatus || dancer?.compliance_status
+      // Map 'warning' to 'expiring' for display consistency
+      if (status === 'warning') return 'expiring'
+      return status ? String(status) : 'unknown'
+    } catch {
+      return 'unknown'
+    }
   }
 
-  // Filter dancers based on search and status
+  // Filter dancers based on search and status - BULLETPROOF with try/catch
   const filteredDancers = (dancers || []).filter(dancer => {
-    if (!dancer) return false
-    
-    const name = getDancerName(dancer)
-    const stageName = getStageName(dancer)
-    const email = dancer?.email || ''
-    const status = getDancerStatus(dancer)
-    
-    const matchesSearch = name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         stageName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         email.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesStatus = filterStatus === 'all' || status === filterStatus
-    return matchesSearch && matchesStatus
+    try {
+      if (!dancer || typeof dancer !== 'object') return false
+      
+      const name = getDancerName(dancer)
+      const stageName = getStageName(dancer)
+      const email = dancer?.email ? String(dancer.email) : ''
+      const status = getDancerStatus(dancer)
+      
+      const searchLower = (searchTerm || '').toLowerCase()
+      const matchesSearch = 
+        name.toLowerCase().includes(searchLower) ||
+        stageName.toLowerCase().includes(searchLower) ||
+        email.toLowerCase().includes(searchLower)
+      const matchesStatus = filterStatus === 'all' || status === filterStatus
+      return matchesSearch && matchesStatus
+    } catch (err) {
+      console.error('Filter error for dancer:', dancer, err)
+      return false // Skip problematic entries instead of crashing
+    }
   })
 
   const getComplianceColor = (status: string) => {
@@ -190,7 +215,14 @@ const DancerManagement: React.FC = () => {
                   <div className="flex items-center space-x-3">
                     <div className="w-12 h-12 bg-gradient-to-r from-accent-blue to-accent-gold rounded-full flex items-center justify-center">
                       <span className="text-white font-semibold text-lg">
-                        {dancerName.split(' ').map(n => n[0] || '').join('').toUpperCase().slice(0, 2) || '??'}
+                        {(() => {
+                          try {
+                            const initials = dancerName.split(' ').map(n => (n && n[0]) || '').join('').toUpperCase().slice(0, 2)
+                            return initials || '??'
+                          } catch {
+                            return '??'
+                          }
+                        })()}
                       </span>
                     </div>
                     <div>
