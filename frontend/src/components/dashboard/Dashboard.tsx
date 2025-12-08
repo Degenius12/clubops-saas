@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
+import { Link } from 'react-router-dom'
 import { RootState, AppDispatch } from '../../store/store'
 import { fetchDancers } from '../../store/slices/dancerSlice'
 import { fetchVIPRooms } from '../../store/slices/vipSlice'
@@ -9,10 +10,13 @@ import {
   MusicalNoteIcon,
   BuildingStorefrontIcon,
   CurrencyDollarIcon,
-  ArrowTrendingUpIcon as TrendingUpIcon,
   ClockIcon,
   CheckCircleIcon,
-  ExclamationTriangleIcon
+  ExclamationTriangleIcon,
+  ArrowUpRightIcon,
+  PlusIcon,
+  PlayIcon,
+  SparklesIcon
 } from '@heroicons/react/24/outline'
 
 const Dashboard: React.FC = () => {
@@ -24,7 +28,6 @@ const Dashboard: React.FC = () => {
   const { user } = useSelector((state: RootState) => state.auth)
 
   useEffect(() => {
-    // Fetch dashboard data
     dispatch(fetchDancers())
     dispatch(fetchVIPRooms())
     dispatch(fetchRevenue({ period: 'today' }))
@@ -42,7 +45,9 @@ const Dashboard: React.FC = () => {
       value: activeDancers,
       total: dancers.length,
       icon: UsersIcon,
-      color: 'accent-blue',
+      iconBg: 'from-electric-500/20 to-electric-600/10',
+      iconColor: 'text-electric-400',
+      href: '/dancers',
       trend: { value: '+12%', positive: true }
     },
     {
@@ -50,23 +55,30 @@ const Dashboard: React.FC = () => {
       value: occupiedRooms,
       total: rooms.length,
       icon: BuildingStorefrontIcon,
-      color: 'accent-gold',
-      trend: { value: '85%', positive: true }
+      iconBg: 'from-gold-500/20 to-gold-600/10',
+      iconColor: 'text-gold-500',
+      href: '/vip',
+      trend: { value: '85% occ.', positive: true }
     },
     {
       name: 'DJ Queue',
       value: queueLength,
-      total: '∞',
+      total: null,
       icon: MusicalNoteIcon,
-      color: 'accent-red',
+      iconBg: 'from-royal-500/20 to-royal-600/10',
+      iconColor: 'text-royal-400',
+      href: '/queue',
       trend: { value: 'Live', positive: true }
     },
     {
       name: 'Today Revenue',
-      value: `$${todayRevenue?.toLocaleString() || 0}`,
+      value: todayRevenue || 0,
+      isCurrency: true,
       total: null,
       icon: CurrencyDollarIcon,
-      color: 'accent-green',
+      iconBg: 'from-status-success/20 to-status-success/10',
+      iconColor: 'text-status-success',
+      href: '/revenue',
       trend: { value: '+18%', positive: true }
     }
   ]
@@ -75,180 +87,264 @@ const Dashboard: React.FC = () => {
     { 
       id: 1, 
       type: 'compliance', 
-      message: 'License expiring in 3 days for Sarah M.', 
+      message: 'License expiring in 3 days', 
+      detail: 'Sarah M.',
       severity: 'warning',
-      time: '5 minutes ago'
+      time: '5m ago'
     },
     { 
       id: 2, 
       type: 'revenue', 
-      message: 'New payment received: $750', 
+      message: 'VIP Room payment received', 
+      detail: '$750',
       severity: 'success',
-      time: '12 minutes ago'
+      time: '12m ago'
     },
     { 
       id: 3, 
       type: 'system', 
       message: 'VIP Room 3 timer exceeded', 
+      detail: '+15 min over',
       severity: 'info',
-      time: '18 minutes ago'
+      time: '18m ago'
+    },
+    { 
+      id: 4, 
+      type: 'dancer', 
+      message: 'New dancer checked in', 
+      detail: 'Crystal R.',
+      severity: 'success',
+      time: '25m ago'
     }
   ]
 
+  const getSeverityStyles = (severity: string) => {
+    switch (severity) {
+      case 'warning':
+        return {
+          bg: 'bg-status-warning-muted',
+          border: 'border-status-warning-border',
+          icon: 'text-status-warning',
+          IconComponent: ExclamationTriangleIcon
+        }
+      case 'success':
+        return {
+          bg: 'bg-status-success-muted',
+          border: 'border-status-success-border',
+          icon: 'text-status-success',
+          IconComponent: CheckCircleIcon
+        }
+      default:
+        return {
+          bg: 'bg-status-info-muted',
+          border: 'border-status-info-border',
+          icon: 'text-status-info',
+          IconComponent: ClockIcon
+        }
+    }
+  }
+
   return (
-    <div className="space-y-8">
-      {/* Welcome Section */}
-      <div className="bg-gradient-to-r from-accent-blue/20 via-accent-gold/20 to-accent-red/20 rounded-2xl p-6 border border-white/10">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-white mb-2">
-              Welcome back, {user?.ownerName || 'Manager'}! 👋
-            </h1>
-            <p className="text-gray-300">
-              {user?.clubName || 'Your Club'} • {new Date().toLocaleDateString('en-US', { 
-                weekday: 'long', 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric' 
-              })}
-            </p>
-          </div>
-          
-          <div className="text-right">
-            <div className="text-2xl font-bold text-accent-gold">
-              {complianceIssues === 0 ? '✅' : '⚠️'}
-            </div>
-            <p className="text-sm text-gray-400">
-              {complianceIssues === 0 ? 'All Clear' : `${complianceIssues} Issues`}
-            </p>
-          </div>
+    <div className="space-y-6">
+      {/* Compact Welcome Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold text-text-primary">
+            Welcome back, {user?.ownerName?.split(' ')[0] || 'Manager'}
+          </h1>
+          <p className="text-sm text-text-tertiary mt-1">
+            {user?.clubName || 'Your Club'} • {new Date().toLocaleDateString('en-US', { 
+              weekday: 'long', 
+              month: 'short', 
+              day: 'numeric' 
+            })}
+          </p>
+        </div>
+        
+        {/* Compliance Status Badge */}
+        <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl ${
+          complianceIssues === 0 
+            ? 'bg-status-success-muted border border-status-success-border' 
+            : 'bg-status-warning-muted border border-status-warning-border animate-pulse'
+        }`}>
+          {complianceIssues === 0 ? (
+            <>
+              <CheckCircleIcon className="h-5 w-5 text-status-success" />
+              <span className="text-sm font-medium text-status-success">All Compliant</span>
+            </>
+          ) : (
+            <>
+              <ExclamationTriangleIcon className="h-5 w-5 text-status-warning" />
+              <span className="text-sm font-medium text-status-warning">{complianceIssues} Issues</span>
+            </>
+          )}
         </div>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat) => {
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {stats.map((stat, index) => {
           const Icon = stat.icon
           return (
-            <div 
+            <Link 
               key={stat.name} 
-              className="bg-dark-card/80 backdrop-blur-xl border border-white/10 rounded-xl p-6 hover:border-accent-blue/30 transition-all duration-300"
+              to={stat.href}
+              className="card-stat group animate-fade-in-up"
+              style={{ animationDelay: `${index * 50}ms` }}
             >
-              <div className="flex items-center justify-between mb-4">
-                <div className={`p-3 bg-${stat.color}/20 rounded-lg`}>
-                  <Icon className={`h-6 w-6 text-${stat.color}`} />
+              {/* Icon with Glow */}
+              <div className="flex items-start justify-between mb-4">
+                <div className={`relative p-3 rounded-xl bg-gradient-to-br ${stat.iconBg}`}>
+                  {/* Glow effect */}
+                  <div className={`absolute inset-0 rounded-xl ${stat.iconBg} blur-xl opacity-50`}></div>
+                  <Icon className={`relative h-5 w-5 ${stat.iconColor}`} />
                 </div>
-                <div className={`text-xs font-medium px-2 py-1 rounded-full ${
-                  stat.trend.positive 
-                    ? 'bg-green-900/30 text-green-400' 
-                    : 'bg-red-900/30 text-red-400'
-                }`}>
+                
+                {/* Trend Badge */}
+                <span className={`stat-change-${stat.trend.positive ? 'positive' : 'negative'}`}>
                   {stat.trend.value}
-                </div>
+                </span>
               </div>
               
-              <div className="space-y-2">
-                <h3 className="text-sm font-medium text-gray-400">{stat.name}</h3>
-                <div className="flex items-baseline space-x-2">
-                  <p className="text-2xl font-bold text-white">{stat.value}</p>
+              {/* Value */}
+              <div className="space-y-1">
+                <div className="flex items-baseline gap-1">
+                  <span className="stat-value">
+                    {stat.isCurrency ? `$${stat.value.toLocaleString()}` : stat.value}
+                  </span>
                   {stat.total && (
-                    <p className="text-sm text-gray-500">/ {stat.total}</p>
+                    <span className="text-sm text-text-tertiary">/ {stat.total}</span>
                   )}
                 </div>
+                <p className="stat-label flex items-center gap-1">
+                  {stat.name}
+                  <ArrowUpRightIcon className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </p>
               </div>
-            </div>
+            </Link>
           )
         })}
       </div>
 
-      {/* Main Dashboard Content */}
+      {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Recent Activity */}
-        <div className="lg:col-span-2">
-          <div className="bg-dark-card/80 backdrop-blur-xl border border-white/10 rounded-xl p-6">
-            <h2 className="text-xl font-semibold text-white mb-6">Recent Activity</h2>
-            
-            <div className="space-y-4">
-              {recentAlerts.map((alert) => (
+        <div className="lg:col-span-2 card-premium p-6 animate-fade-in-up" style={{ animationDelay: '200ms' }}>
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-lg font-semibold text-text-primary">Recent Activity</h2>
+            <button className="text-sm text-text-tertiary hover:text-gold-500 transition-colors">
+              View all
+            </button>
+          </div>
+          
+          <div className="space-y-3">
+            {recentAlerts.map((alert, index) => {
+              const styles = getSeverityStyles(alert.severity)
+              const AlertIcon = styles.IconComponent
+              return (
                 <div 
                   key={alert.id} 
-                  className="flex items-start space-x-4 p-4 bg-dark-bg/50 rounded-lg border border-white/5 hover:border-white/20 transition-colors"
+                  className={`
+                    flex items-center gap-4 p-4 rounded-xl
+                    ${styles.bg} border ${styles.border}
+                    hover:scale-[1.01] transition-all duration-200
+                    animate-fade-in
+                  `}
+                  style={{ animationDelay: `${300 + index * 50}ms` }}
                 >
-                  <div className={`p-2 rounded-lg ${
-                    alert.severity === 'warning' ? 'bg-yellow-900/30' :
-                    alert.severity === 'success' ? 'bg-green-900/30' :
-                    'bg-blue-900/30'
-                  }`}>
-                    {alert.severity === 'warning' && <ExclamationTriangleIcon className="h-5 w-5 text-yellow-400" />}
-                    {alert.severity === 'success' && <CheckCircleIcon className="h-5 w-5 text-green-400" />}
-                    {alert.severity === 'info' && <ClockIcon className="h-5 w-5 text-blue-400" />}
+                  <div className={`p-2 rounded-lg ${styles.bg}`}>
+                    <AlertIcon className={`h-5 w-5 ${styles.icon}`} />
                   </div>
                   
                   <div className="flex-1 min-w-0">
-                    <p className="text-white font-medium">{alert.message}</p>
-                    <p className="text-gray-400 text-sm mt-1">{alert.time}</p>
+                    <p className="text-sm font-medium text-text-primary">{alert.message}</p>
+                    <p className="text-xs text-text-secondary mt-0.5">{alert.detail}</p>
                   </div>
+                  
+                  <span className="text-xs text-text-tertiary whitespace-nowrap">{alert.time}</span>
                 </div>
-              ))}
-            </div>
-            
-            <div className="mt-6 pt-4 border-t border-white/10">
-              <button className="text-accent-blue hover:text-accent-gold transition-colors text-sm font-medium">
-                View all activity →
-              </button>
-            </div>
+              )
+            })}
           </div>
         </div>
 
-        {/* Quick Actions */}
+        {/* Right Column */}
         <div className="space-y-6">
-          {/* Quick Stats */}
-          <div className="bg-dark-card/80 backdrop-blur-xl border border-white/10 rounded-xl p-6">
-            <h3 className="text-lg font-semibold text-white mb-4">Quick Stats</h3>
+          {/* Revenue Summary */}
+          <div className="card-premium p-6 animate-fade-in-up" style={{ animationDelay: '250ms' }}>
+            <div className="flex items-center gap-2 mb-4">
+              <SparklesIcon className="h-5 w-5 text-gold-500" />
+              <h3 className="text-lg font-semibold text-text-primary">Revenue</h3>
+            </div>
             
             <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <span className="text-gray-400">This Month</span>
-                <span className="text-white font-medium">${monthlyRevenue?.toLocaleString() || 0}</span>
-              </div>
-              
-              <div className="flex justify-between items-center">
-                <span className="text-gray-400">Avg. per Day</span>
-                <span className="text-white font-medium">
-                  ${Math.round((monthlyRevenue || 0) / new Date().getDate()).toLocaleString()}
+              <div className="flex justify-between items-baseline">
+                <span className="text-sm text-text-secondary">This Month</span>
+                <span className="text-2xl font-bold font-mono text-text-primary tabular-nums">
+                  ${(monthlyRevenue || 0).toLocaleString()}
                 </span>
               </div>
               
-              <div className="flex justify-between items-center">
-                <span className="text-gray-400">Total Dancers</span>
-                <span className="text-white font-medium">{dancers.length}</span>
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-text-tertiary">Daily Average</span>
+                <span className="text-text-secondary font-mono tabular-nums">
+                  ${Math.round((monthlyRevenue || 0) / Math.max(new Date().getDate(), 1)).toLocaleString()}
+                </span>
               </div>
               
-              <div className="h-2 bg-dark-bg rounded-full overflow-hidden">
-                <div 
-                  className="h-full bg-gradient-to-r from-accent-blue to-accent-gold transition-all duration-500"
-                  style={{ width: `${Math.min((activeDancers / dancers.length) * 100, 100)}%` }}
-                />
+              {/* Progress Bar */}
+              <div className="space-y-2">
+                <div className="flex justify-between text-xs">
+                  <span className="text-text-tertiary">Monthly Goal</span>
+                  <span className="text-text-secondary">{Math.min(Math.round(((monthlyRevenue || 0) / 50000) * 100), 100)}%</span>
+                </div>
+                <div className="h-2 bg-midnight-800 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-gradient-to-r from-gold-500 to-gold-600 rounded-full transition-all duration-1000 ease-out"
+                    style={{ width: `${Math.min(((monthlyRevenue || 0) / 50000) * 100, 100)}%` }}
+                  />
+                </div>
               </div>
             </div>
           </div>
 
           {/* Quick Actions */}
-          <div className="bg-dark-card/80 backdrop-blur-xl border border-white/10 rounded-xl p-6">
-            <h3 className="text-lg font-semibold text-white mb-4">Quick Actions</h3>
+          <div className="card-premium p-6 animate-fade-in-up" style={{ animationDelay: '300ms' }}>
+            <h3 className="text-lg font-semibold text-text-primary mb-4">Quick Actions</h3>
             
             <div className="space-y-3">
-              <button className="w-full p-3 bg-accent-blue/20 hover:bg-accent-blue/30 border border-accent-blue/30 rounded-lg text-accent-blue font-medium transition-all duration-200 hover:scale-105">
-                Add New Dancer
-              </button>
+              <Link 
+                to="/dancers" 
+                className="flex items-center gap-3 p-3 rounded-xl bg-electric-500/10 border border-electric-500/20 hover:border-electric-500/40 hover:bg-electric-500/15 transition-all duration-200 group touch-target"
+              >
+                <div className="p-2 rounded-lg bg-electric-500/20">
+                  <PlusIcon className="h-4 w-4 text-electric-400" />
+                </div>
+                <span className="text-sm font-medium text-electric-400">Add New Dancer</span>
+                <ArrowUpRightIcon className="h-4 w-4 text-electric-400 ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
+              </Link>
               
-              <button className="w-full p-3 bg-accent-gold/20 hover:bg-accent-gold/30 border border-accent-gold/30 rounded-lg text-accent-gold font-medium transition-all duration-200 hover:scale-105">
-                Manage VIP Rooms
-              </button>
+              <Link 
+                to="/vip" 
+                className="flex items-center gap-3 p-3 rounded-xl bg-gold-500/10 border border-gold-500/20 hover:border-gold-500/40 hover:bg-gold-500/15 transition-all duration-200 group touch-target"
+              >
+                <div className="p-2 rounded-lg bg-gold-500/20">
+                  <BuildingStorefrontIcon className="h-4 w-4 text-gold-500" />
+                </div>
+                <span className="text-sm font-medium text-gold-500">Manage VIP Rooms</span>
+                <ArrowUpRightIcon className="h-4 w-4 text-gold-500 ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
+              </Link>
               
-              <button className="w-full p-3 bg-accent-red/20 hover:bg-accent-red/30 border border-accent-red/30 rounded-lg text-accent-red font-medium transition-all duration-200 hover:scale-105">
-                View DJ Queue
-              </button>
+              <Link 
+                to="/queue" 
+                className="flex items-center gap-3 p-3 rounded-xl bg-royal-500/10 border border-royal-500/20 hover:border-royal-500/40 hover:bg-royal-500/15 transition-all duration-200 group touch-target"
+              >
+                <div className="p-2 rounded-lg bg-royal-500/20">
+                  <PlayIcon className="h-4 w-4 text-royal-400" />
+                </div>
+                <span className="text-sm font-medium text-royal-400">Open DJ Queue</span>
+                <ArrowUpRightIcon className="h-4 w-4 text-royal-400 ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
+              </Link>
             </div>
           </div>
         </div>

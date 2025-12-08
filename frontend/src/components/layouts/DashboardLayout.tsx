@@ -16,7 +16,9 @@ import {
   Bars3Icon,
   XMarkIcon,
   BellIcon,
-  MagnifyingGlassIcon
+  MagnifyingGlassIcon,
+  ChevronLeftIcon,
+  ArrowRightOnRectangleIcon
 } from '@heroicons/react/24/outline'
 
 interface DashboardLayoutProps {
@@ -25,6 +27,7 @@ interface DashboardLayoutProps {
 
 const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const location = useLocation()
   const navigate = useNavigate()
   const dispatch = useDispatch<AppDispatch>()
@@ -52,73 +55,130 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   const isCurrentPath = (path: string) => location.pathname === path
 
   return (
-    <div className="min-h-screen bg-dark-bg flex">
+    <div className="min-h-screen bg-midnight-900 flex">
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
-        <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />
+        <div 
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden transition-opacity duration-300" 
+          onClick={() => setSidebarOpen(false)} 
+        />
       )}
 
       {/* Sidebar */}
-      <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-dark-card/95 backdrop-blur-xl border-r border-white/10 transform transition-transform duration-200 ease-in-out lg:translate-x-0 lg:static lg:inset-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-        <div className="flex items-center justify-between h-16 px-6 border-b border-white/10">
-          <h1 className="text-xl font-bold text-gradient-premium">ClubOps</h1>
+      <div 
+        className={`
+          fixed inset-y-0 left-0 z-50 
+          ${sidebarCollapsed ? 'w-[72px]' : 'w-64'} 
+          bg-gradient-to-b from-midnight-900 via-midnight-900 to-midnight-950
+          border-r border-white/[0.06]
+          transform transition-all duration-300 ease-out
+          lg:translate-x-0 lg:static lg:inset-0 
+          ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+        `}
+      >
+        {/* Logo Header */}
+        <div className={`flex items-center ${sidebarCollapsed ? 'justify-center' : 'justify-between'} h-16 px-4 border-b border-white/[0.06]`}>
+          {!sidebarCollapsed && (
+            <h1 className="text-xl font-bold text-gradient-gold tracking-tight">ClubOps</h1>
+          )}
+          {sidebarCollapsed && (
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-gold-500 to-gold-600 flex items-center justify-center">
+              <span className="text-midnight-900 font-bold text-sm">C</span>
+            </div>
+          )}
+          
+          {/* Mobile close button */}
           <button
             onClick={() => setSidebarOpen(false)}
-            className="lg:hidden p-2 rounded-lg hover:bg-white/10 transition-colors"
+            className="lg:hidden p-2 rounded-lg hover:bg-white/[0.04] transition-colors touch-target"
           >
-            <XMarkIcon className="h-5 w-5" />
+            <XMarkIcon className="h-5 w-5 text-text-secondary" />
+          </button>
+          
+          {/* Desktop collapse button */}
+          <button
+            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            className={`hidden lg:flex p-2 rounded-lg hover:bg-white/[0.04] transition-all duration-200 ${sidebarCollapsed ? 'rotate-180' : ''}`}
+          >
+            <ChevronLeftIcon className="h-4 w-4 text-text-tertiary" />
           </button>
         </div>
 
-        <nav className="mt-6 px-3">
+        {/* Navigation */}
+        <nav className="mt-4 px-3 flex-1 overflow-y-auto scrollbar-hide">
           {/* Main Navigation */}
           <div className="space-y-1">
-            <p className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
-              Club Management
-            </p>
-            {navigation.map((item) => {
+            {!sidebarCollapsed && (
+              <p className="nav-section-label mb-2">Club Management</p>
+            )}
+            {navigation.map((item, index) => {
               const Icon = item.icon
+              const isActive = isCurrentPath(item.href)
               return (
                 <Link
                   key={item.name}
                   to={item.href}
-                  className={`group flex items-center px-3 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
-                    isCurrentPath(item.href)
-                      ? 'bg-gradient-to-r from-accent-blue/20 to-accent-gold/20 text-accent-blue border border-accent-blue/30'
-                      : 'text-gray-300 hover:text-white hover:bg-white/10'
-                  }`}
+                  title={sidebarCollapsed ? item.name : undefined}
+                  className={`
+                    group flex items-center ${sidebarCollapsed ? 'justify-center' : ''} 
+                    px-3 py-2.5 rounded-xl text-sm font-medium
+                    transition-all duration-200 touch-target
+                    animate-fade-in
+                    ${isActive 
+                      ? 'bg-gradient-to-r from-gold-500/10 to-transparent text-gold-500 border-l-2 border-gold-500' 
+                      : 'text-text-secondary hover:text-text-primary hover:bg-white/[0.04]'
+                    }
+                  `}
+                  style={{ animationDelay: `${index * 50}ms` }}
                 >
-                  <Icon className="mr-3 h-5 w-5 flex-shrink-0" />
-                  {item.name}
-                  {isCurrentPath(item.href) && (
-                    <div className="ml-auto w-2 h-2 bg-accent-blue rounded-full"></div>
+                  <Icon className={`${sidebarCollapsed ? '' : 'mr-3'} h-5 w-5 flex-shrink-0 transition-colors ${isActive ? 'text-gold-500' : 'text-text-tertiary group-hover:text-text-secondary'}`} />
+                  {!sidebarCollapsed && (
+                    <>
+                      <span>{item.name}</span>
+                      {isActive && (
+                        <div className="ml-auto w-1.5 h-1.5 bg-gold-500 rounded-full animate-pulse"></div>
+                      )}
+                    </>
                   )}
                 </Link>
               )
             })}
           </div>
 
+          {/* Divider */}
+          <div className="my-6 border-t border-white/[0.04]"></div>
+
           {/* SaaS Navigation */}
-          <div className="mt-8 space-y-1">
-            <p className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
-              SaaS Management
-            </p>
-            {saasNavigation.map((item) => {
+          <div className="space-y-1">
+            {!sidebarCollapsed && (
+              <p className="nav-section-label mb-2">SaaS Management</p>
+            )}
+            {saasNavigation.map((item, index) => {
               const Icon = item.icon
+              const isActive = isCurrentPath(item.href)
               return (
                 <Link
                   key={item.name}
                   to={item.href}
-                  className={`group flex items-center px-3 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
-                    isCurrentPath(item.href)
-                      ? 'bg-gradient-to-r from-accent-gold/20 to-accent-red/20 text-accent-gold border border-accent-gold/30'
-                      : 'text-gray-300 hover:text-white hover:bg-white/10'
-                  }`}
+                  title={sidebarCollapsed ? item.name : undefined}
+                  className={`
+                    group flex items-center ${sidebarCollapsed ? 'justify-center' : ''} 
+                    px-3 py-2.5 rounded-xl text-sm font-medium
+                    transition-all duration-200 touch-target
+                    ${isActive 
+                      ? 'bg-gradient-to-r from-royal-500/10 to-transparent text-royal-400 border-l-2 border-royal-500' 
+                      : 'text-text-secondary hover:text-text-primary hover:bg-white/[0.04]'
+                    }
+                  `}
                 >
-                  <Icon className="mr-3 h-5 w-5 flex-shrink-0" />
-                  {item.name}
-                  {isCurrentPath(item.href) && (
-                    <div className="ml-auto w-2 h-2 bg-accent-gold rounded-full"></div>
+                  <Icon className={`${sidebarCollapsed ? '' : 'mr-3'} h-5 w-5 flex-shrink-0 transition-colors ${isActive ? 'text-royal-400' : 'text-text-tertiary group-hover:text-text-secondary'}`} />
+                  {!sidebarCollapsed && (
+                    <>
+                      <span>{item.name}</span>
+                      {isActive && (
+                        <div className="ml-auto w-1.5 h-1.5 bg-royal-500 rounded-full animate-pulse"></div>
+                      )}
+                    </>
                   )}
                 </Link>
               )
@@ -126,89 +186,111 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
           </div>
 
           {/* Settings */}
-          <div className="mt-8 pt-6 border-t border-white/10">
+          <div className="mt-6 pt-4 border-t border-white/[0.04]">
             <Link
               to="/settings"
-              className={`group flex items-center px-3 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
-                isCurrentPath('/settings')
-                  ? 'bg-gradient-to-r from-accent-red/20 to-accent-blue/20 text-accent-red border border-accent-red/30'
-                  : 'text-gray-300 hover:text-white hover:bg-white/10'
-              }`}
+              title={sidebarCollapsed ? 'Settings' : undefined}
+              className={`
+                group flex items-center ${sidebarCollapsed ? 'justify-center' : ''} 
+                px-3 py-2.5 rounded-xl text-sm font-medium
+                transition-all duration-200 touch-target
+                ${isCurrentPath('/settings') 
+                  ? 'bg-gradient-to-r from-electric-500/10 to-transparent text-electric-400 border-l-2 border-electric-500' 
+                  : 'text-text-secondary hover:text-text-primary hover:bg-white/[0.04]'
+                }
+              `}
             >
-              <CogIcon className="mr-3 h-5 w-5 flex-shrink-0" />
-              Settings
-              {isCurrentPath('/settings') && (
-                <div className="ml-auto w-2 h-2 bg-accent-red rounded-full"></div>
-              )}
+              <CogIcon className={`${sidebarCollapsed ? '' : 'mr-3'} h-5 w-5 flex-shrink-0 transition-colors ${isCurrentPath('/settings') ? 'text-electric-400' : 'text-text-tertiary group-hover:text-text-secondary'}`} />
+              {!sidebarCollapsed && <span>Settings</span>}
             </Link>
           </div>
         </nav>
 
         {/* User Profile Section */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-white/10 bg-dark-card/50">
-          <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-gradient-to-r from-accent-blue to-accent-gold rounded-full flex items-center justify-center">
-              <UserCircleIcon className="h-5 w-5 text-white" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-white truncate">{user?.email || 'User'}</p>
-              <p className="text-xs text-gray-400 truncate">{user?.clubName || 'Club'}</p>
-            </div>
+        <div className={`border-t border-white/[0.06] p-3 ${sidebarCollapsed ? 'flex justify-center' : ''}`}>
+          {sidebarCollapsed ? (
             <button
               onClick={handleLogout}
-              className="p-2 text-gray-400 hover:text-white transition-colors"
+              className="w-10 h-10 rounded-xl bg-gradient-to-br from-gold-500/20 to-gold-600/10 flex items-center justify-center hover:from-gold-500/30 hover:to-gold-600/20 transition-all duration-200 touch-target"
               title="Logout"
             >
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
-              </svg>
+              <UserCircleIcon className="h-5 w-5 text-gold-500" />
             </button>
-          </div>
+          ) : (
+            <div className="flex items-center space-x-3 p-2 rounded-xl bg-white/[0.02] hover:bg-white/[0.04] transition-colors">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-gold-500 to-gold-600 flex items-center justify-center flex-shrink-0">
+                <UserCircleIcon className="h-5 w-5 text-midnight-900" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-text-primary truncate">{user?.email || 'User'}</p>
+                <p className="text-xs text-text-tertiary truncate">{user?.clubName || 'Club'}</p>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="p-2 text-text-tertiary hover:text-text-primary hover:bg-white/[0.04] rounded-lg transition-all duration-150 touch-target"
+                title="Logout"
+              >
+                <ArrowRightOnRectangleIcon className="h-4 w-4" />
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Main content */}
-      <div className="flex-1 lg:pl-0">
+      {/* Main content area */}
+      <div className="flex-1 flex flex-col min-h-screen lg:pl-0">
         {/* Top bar */}
-        <div className="bg-dark-card/80 backdrop-blur-xl border-b border-white/10 px-6 py-4">
-          <div className="flex items-center justify-between">
+        <header className="sticky top-0 z-30 bg-midnight-900/80 backdrop-blur-xl border-b border-white/[0.06]">
+          <div className="flex items-center justify-between px-4 md:px-6 py-3">
             <div className="flex items-center space-x-4">
+              {/* Mobile menu button */}
               <button
                 onClick={() => setSidebarOpen(true)}
-                className="lg:hidden p-2 rounded-lg hover:bg-white/10 transition-colors"
+                className="lg:hidden p-2 rounded-xl hover:bg-white/[0.04] transition-colors touch-target"
               >
-                <Bars3Icon className="h-5 w-5" />
+                <Bars3Icon className="h-5 w-5 text-text-secondary" />
               </button>
 
               {/* Search */}
-              <div className="relative max-w-xs">
+              <div className="relative hidden sm:block">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
+                  <MagnifyingGlassIcon className="h-4 w-4 text-text-tertiary" />
                 </div>
                 <input
                   type="text"
-                  className="block w-full pl-10 pr-3 py-2 bg-dark-bg/50 border border-white/10 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent-blue focus:border-transparent"
-                  placeholder="Search..."
+                  className="search-input w-64 text-sm"
+                  placeholder="Search dancers, songs..."
                 />
               </div>
             </div>
 
-            <div className="flex items-center space-x-4">
-              {/* Notifications */}
-              <button className="relative p-2 text-gray-400 hover:text-white transition-colors">
-                <BellIcon className="h-5 w-5" />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-accent-red rounded-full"></span>
+            <div className="flex items-center space-x-2">
+              {/* Mobile search button */}
+              <button className="sm:hidden btn-icon touch-target">
+                <MagnifyingGlassIcon className="h-5 w-5" />
               </button>
 
-              {/* User menu placeholder */}
-              <div className="w-8 h-8 bg-gradient-to-r from-accent-blue to-accent-gold rounded-full"></div>
+              {/* Notifications */}
+              <button className="relative btn-icon touch-target">
+                <BellIcon className="h-5 w-5" />
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-status-danger rounded-full ring-2 ring-midnight-900"></span>
+              </button>
+
+              {/* User avatar (mobile) */}
+              <div className="lg:hidden w-9 h-9 rounded-xl bg-gradient-to-br from-gold-500 to-gold-600 flex items-center justify-center">
+                <span className="text-midnight-900 font-semibold text-sm">
+                  {user?.email?.charAt(0).toUpperCase() || 'U'}
+                </span>
+              </div>
             </div>
           </div>
-        </div>
+        </header>
 
         {/* Page content */}
-        <main className="flex-1 p-6">
-          {children}
+        <main className="flex-1 p-4 md:p-6 overflow-auto">
+          <div className="page-enter">
+            {children}
+          </div>
         </main>
       </div>
     </div>
