@@ -122,9 +122,9 @@ const VIPRooms: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 animate-fade-in">
         <div>
-          <h1 className="text-2xl font-semibold text-text-primary">VIP Rooms</h1>
+          <h1 className="text-2xl font-semibold text-text-primary">VIP Booth</h1>
           <p className="text-sm text-text-tertiary mt-1">
-            Monitor room status, timers, and revenue
+            Monitor booth status, timers, and revenue
           </p>
         </div>
         
@@ -204,9 +204,9 @@ const VIPRooms: React.FC = () => {
               <BuildingStorefrontIcon className="h-12 w-12 text-text-tertiary" />
             </div>
           </div>
-          <h3 className="text-lg font-medium text-text-primary mb-2">No VIP Rooms</h3>
+          <h3 className="text-lg font-medium text-text-primary mb-2">No VIP Booths</h3>
           <p className="text-text-tertiary mb-6 max-w-sm mx-auto">
-            VIP rooms will appear here once configured
+            VIP booths will appear here once configured
           </p>
         </div>
       ) : (

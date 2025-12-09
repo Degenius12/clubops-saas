@@ -37,7 +37,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
     { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
     { name: 'Dancers', href: '/dancers', icon: UsersIcon },
     { name: 'DJ Queue', href: '/queue', icon: MusicalNoteIcon },
-    { name: 'VIP Rooms', href: '/vip', icon: BuildingStorefrontIcon },
+    { name: 'VIP Booth', href: '/vip', icon: BuildingStorefrontIcon },
     { name: 'Revenue', href: '/revenue', icon: CurrencyDollarIcon },
   ]
 
@@ -284,7 +284,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                          text-text-primary placeholder-text-tertiary
                          focus:outline-none focus:border-gold-500/30 focus:ring-1 focus:ring-gold-500/20
                          transition-all duration-200"
-                placeholder="Search dancers, rooms..."
+                placeholder="Search dancers, booths..."
               />
             </div>
           </div>

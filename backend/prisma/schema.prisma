@@ -1,5 +1,6 @@
 // ClubOps SaaS - Prisma Schema
 // Multi-tenant database schema with subscription management
+// Version 2.0 - Added fraud prevention, user roles, VIP Booth tracking
 
 generator client {
   provider = "prisma-client-js"
@@ -11,83 +12,310 @@ datasource db {
 }
 
 // ==============================================
+// ENUMS FOR TYPE SAFETY
+// ==============================================
+
+enum UserRole {
+  OWNER
+  MANAGER
+  DOOR_STAFF
+  VIP_HOST
+  DJ
+  BARTENDER
+}
+
+enum ShiftStatus {
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum CheckInStatus {
+  CHECKED_IN
+  CHECKED_OUT
+  NO_SHOW
+}
+
+enum VipSessionStatus {
+  ACTIVE
+  COMPLETED
+  DISPUTED
+  CANCELLED
+}
+
+enum VerificationStatus {
+  VERIFIED
+  MISMATCH
+  PENDING_REVIEW
+  OVERRIDE_APPROVED
+}
+
+enum PaymentStatus {
+  PAID
+  PENDING
+  DEFERRED
+  WAIVED
+  DISPUTED
+}
+
+enum AlertSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum AlertStatus {
+  OPEN
+  ACKNOWLEDGED
+  RESOLVED
+  DISMISSED
+}
+
+// ==============================================
 // MULTI-TENANT FOUNDATION
 // ==============================================
 
 model Club {
-  id                String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  name              String   @db.VarChar(255)
-  subdomain         String   @unique @db.VarChar(50)
-  subscriptionTier  String   @default("free") @map("subscription_tier") @db.VarChar(20)
-  subscriptionStatus String  @default("active") @map("subscription_status") @db.VarChar(20)
-  settings          Json     @default("{}")
-  createdAt         DateTime @default(now()) @map("created_at")
-  updatedAt         DateTime @default(now()) @updatedAt @map("updated_at")
+  id                 String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  name               String   @db.VarChar(255)
+  subdomain          String   @unique @db.VarChar(50)
+  subscriptionTier   String   @default("free") @map("subscription_tier") @db.VarChar(20)
+  subscriptionStatus String   @default("active") @map("subscription_status") @db.VarChar(20)
+  
+  // Club Settings
+  settings           Json     @default("{}")
+  barFeeAmount       Decimal  @default(50.00) @map("bar_fee_amount") @db.Decimal(10, 2)
+  vipSongRate        Decimal  @default(30.00) @map("vip_song_rate") @db.Decimal(10, 2)
+  avgSongDuration    Int      @default(210) @map("avg_song_duration") // seconds (3.5 min)
+  
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @default(now()) @updatedAt @map("updated_at")
 
   // Relations
-  users               ClubUser[]
-  dancers             Dancer[]
-  djQueue             DjQueue[]
-  musicLibrary        MusicLibrary[]
-  vipRooms            VipRoom[]
-  vipSessions         VipSession[]
+  users                ClubUser[]
+  dancers              Dancer[]
+  djQueue              DjQueue[]
+  musicLibrary         MusicLibrary[]
+  vipBooths            VipBooth[]
+  vipSessions          VipSession[]
   financialTransactions FinancialTransaction[]
-  subscriptions       Subscription[]
-  usageAnalytics      UsageAnalytics[]
-  paymentMethods      PaymentMethod[]
+  subscriptions        Subscription[]
+  usageAnalytics       UsageAnalytics[]
+  paymentMethods       PaymentMethod[]
+  shifts               Shift[]
+  dancerCheckIns       DancerCheckIn[]
+  songPlayLogs         SongPlayLog[]
+  auditLogs            AuditLog[]
+  verificationAlerts   VerificationAlert[]
+  anomalyReports       AnomalyReport[]
+  cashDrawers          CashDrawer[]
 
   @@map("clubs")
 }
 
+// ==============================================
+// USER & ROLE MANAGEMENT
+// ==============================================
+
 model ClubUser {
-  id          String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  clubId      String    @map("club_id") @db.Uuid
-  email       String    @db.VarChar(255)
-  passwordHash String   @map("password_hash") @db.VarChar(255)
-  role        String    @db.VarChar(50)
-  firstName   String?   @map("first_name") @db.VarChar(100)
-  lastName    String?   @map("last_name") @db.VarChar(100)
-  isActive    Boolean   @default(true) @map("is_active")
-  lastLogin   DateTime? @map("last_login")
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @default(now()) @updatedAt @map("updated_at")
+  id           String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  clubId       String    @map("club_id") @db.Uuid
+  email        String    @db.VarChar(255)
+  passwordHash String    @map("password_hash") @db.VarChar(255)
+  role         UserRole  @default(MANAGER)
+  firstName    String?   @map("first_name") @db.VarChar(100)
+  lastName     String?   @map("last_name") @db.VarChar(100)
+  phone        String?   @db.VarChar(20)
+  pin          String?   @db.VarChar(6) // 4-6 digit PIN for quick actions
+  isActive     Boolean   @default(true) @map("is_active")
+  lastLogin    DateTime? @map("last_login")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @default(now()) @updatedAt @map("updated_at")
 
   // Relations
-  club Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
-  recordedTransactions FinancialTransaction[]
+  club                   Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  recordedTransactions   FinancialTransaction[]
+  shifts                 Shift[]
+  performedCheckIns      DancerCheckIn[] @relation("CheckInPerformedBy")
+  vipSessionsStarted     VipSession[] @relation("VipStartedBy")
+  vipSessionsEnded       VipSession[] @relation("VipEndedBy")
+  auditLogsCreated       AuditLog[]
+  alertsAcknowledged     VerificationAlert[] @relation("AlertAcknowledgedBy")
+  alertsResolved         VerificationAlert[] @relation("AlertResolvedBy")
+  cashDrawers            CashDrawer[]
+  overridesApproved      VipSession[] @relation("OverrideApprovedBy")
 
   @@unique([clubId, email])
   @@map("club_users")
 }
 
 // ==============================================
-// CORE BUSINESS MODELS
+// SHIFT MANAGEMENT
+// ==============================================
+
+model Shift {
+  id            String      @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  clubId        String      @map("club_id") @db.Uuid
+  userId        String      @map("user_id") @db.Uuid
+  role          UserRole    // Role during this shift
+  status        ShiftStatus @default(ACTIVE)
+  startedAt     DateTime    @default(now()) @map("started_at")
+  endedAt       DateTime?   @map("ended_at")
+  
+  // Shift Summary (calculated at end)
+  totalCheckIns     Int?    @map("total_check_ins")
+  totalVipSessions  Int?    @map("total_vip_sessions")
+  totalCollected    Decimal? @map("total_collected") @db.Decimal(10, 2)
+  totalDeferred     Decimal? @map("total_deferred") @db.Decimal(10, 2)
+  discrepancyCount  Int?    @map("discrepancy_count")
+  
+  notes         String?
+  createdAt     DateTime    @default(now()) @map("created_at")
+
+  // Relations
+  club          Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  user          ClubUser @relation(fields: [userId], references: [id])
+  cashDrawer    CashDrawer?
+  checkIns      DancerCheckIn[]
+  vipSessions   VipSession[]
+
+  @@map("shifts")
+}
+
+// ==============================================
+// CASH DRAWER MANAGEMENT
+// ==============================================
+
+model CashDrawer {
+  id                String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  clubId            String   @map("club_id") @db.Uuid
+  shiftId           String   @unique @map("shift_id") @db.Uuid
+  userId            String   @map("user_id") @db.Uuid
+  station           String   @db.VarChar(20) // DOOR, VIP, BAR
+  
+  // Opening
+  openingBalance    Decimal  @map("opening_balance") @db.Decimal(10, 2)
+  openedAt          DateTime @default(now()) @map("opened_at")
+  
+  // Closing
+  closingBalance    Decimal? @map("closing_balance") @db.Decimal(10, 2)
+  closedAt          DateTime? @map("closed_at")
+  
+  // Reconciliation
+  expectedBalance   Decimal? @map("expected_balance") @db.Decimal(10, 2)
+  actualBalance     Decimal? @map("actual_balance") @db.Decimal(10, 2)
+  variance          Decimal? @db.Decimal(10, 2)
+  varianceExplained String?  @map("variance_explained")
+  
+  // Verification
+  verifiedBy        String?  @map("verified_by") @db.Uuid
+  verifiedAt        DateTime? @map("verified_at")
+  
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  // Relations
+  club   Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  shift  Shift @relation(fields: [shiftId], references: [id])
+  user   ClubUser @relation(fields: [userId], references: [id])
+
+  @@map("cash_drawers")
+}
+
+// ==============================================
+// DANCER MANAGEMENT
 // ==============================================
 
 model Dancer {
-  id               String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  clubId           String    @map("club_id") @db.Uuid
-  stageName        String    @map("stage_name") @db.VarChar(100)
-  legalName        String?   @map("legal_name") @db.VarChar(200)
-  phone            String?   @db.VarChar(20)
-  email            String?   @db.VarChar(255)
-  licenseNumber    String?   @map("license_number") @db.VarChar(100)
+  id                String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  clubId            String    @map("club_id") @db.Uuid
+  stageName         String    @map("stage_name") @db.VarChar(100)
+  legalName         String?   @map("legal_name") @db.VarChar(200)
+  phone             String?   @db.VarChar(20)
+  email             String?   @db.VarChar(255)
+  
+  // License/Compliance
+  licenseNumber     String?   @map("license_number") @db.VarChar(100)
   licenseExpiryDate DateTime? @map("license_expiry_date") @db.Date
-  licenseStatus    String    @default("valid") @map("license_status") @db.VarChar(20)
-  emergencyContact Json      @default("{}") @map("emergency_contact")
-  preferredMusic   Json      @default("[]") @map("preferred_music")
-  isActive         Boolean   @default(true) @map("is_active")
-  createdAt        DateTime  @default(now()) @map("created_at")
-  updatedAt        DateTime  @default(now()) @updatedAt @map("updated_at")
+  licenseStatus     String    @default("valid") @map("license_status") @db.VarChar(20)
+  
+  // ID Verification (from initial scan)
+  idScannedAt       DateTime? @map("id_scanned_at")
+  idType            String?   @map("id_type") @db.VarChar(20) // DRIVERS_LICENSE, STATE_ID, PASSPORT
+  idNumber          String?   @map("id_number") @db.VarChar(50) // Encrypted
+  idState           String?   @map("id_state") @db.VarChar(2)
+  dateOfBirth       DateTime? @map("date_of_birth") @db.Date
+  
+  // QR Badge
+  qrBadgeCode       String?   @unique @map("qr_badge_code") @db.VarChar(50)
+  qrBadgeIssuedAt   DateTime? @map("qr_badge_issued_at")
+  
+  // Photo for verification
+  photoUrl          String?   @map("photo_url") @db.VarChar(500)
+  
+  emergencyContact  Json      @default("{}") @map("emergency_contact")
+  preferredMusic    Json      @default("[]") @map("preferred_music")
+  isActive          Boolean   @default(true) @map("is_active")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @default(now()) @updatedAt @map("updated_at")
 
   // Relations
-  club Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
-  djQueue DjQueue[]
-  vipSessions VipSession[]
+  club                  Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  djQueue               DjQueue[]
+  vipSessions           VipSession[]
   financialTransactions FinancialTransaction[]
+  checkIns              DancerCheckIn[]
 
   @@map("dancers")
 }
+
+// ==============================================
+// DANCER CHECK-IN (Door Staff)
+// ==============================================
+
+model DancerCheckIn {
+  id              String        @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  clubId          String        @map("club_id") @db.Uuid
+  dancerId        String        @map("dancer_id") @db.Uuid
+  shiftId         String?       @map("shift_id") @db.Uuid
+  performedById   String        @map("performed_by_id") @db.Uuid
+  
+  // Check-in details
+  status          CheckInStatus @default(CHECKED_IN)
+  checkInMethod   String        @map("check_in_method") @db.VarChar(20) // QR_SCAN, NAME_SEARCH, ID_SCAN
+  checkedInAt     DateTime      @default(now()) @map("checked_in_at")
+  checkedOutAt    DateTime?     @map("checked_out_at")
+  
+  // Bar Fee
+  barFeeAmount    Decimal       @map("bar_fee_amount") @db.Decimal(10, 2)
+  barFeeStatus    PaymentStatus @default(PENDING) @map("bar_fee_status")
+  barFeePaidAt    DateTime?     @map("bar_fee_paid_at")
+  barFeeWaivedBy  String?       @map("bar_fee_waived_by") @db.Uuid // Manager who waived
+  barFeeWaivedReason String?    @map("bar_fee_waived_reason")
+  
+  // License verification at check-in
+  licenseVerified Boolean       @default(false) @map("license_verified")
+  licenseAlert    String?       @map("license_alert") // EXPIRED, EXPIRING_SOON, etc.
+  
+  // Dancer confirmation (mobile app)
+  dancerConfirmed   Boolean     @default(false) @map("dancer_confirmed")
+  dancerConfirmedAt DateTime?   @map("dancer_confirmed_at")
+  
+  notes           String?
+  createdAt       DateTime      @default(now()) @map("created_at")
+
+  // Relations
+  club        Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  dancer      Dancer @relation(fields: [dancerId], references: [id])
+  shift       Shift? @relation(fields: [shiftId], references: [id])
+  performedBy ClubUser @relation("CheckInPerformedBy", fields: [performedById], references: [id])
+
+  @@map("dancer_check_ins")
+}
+
+// ==============================================
+// DJ QUEUE & MUSIC
+// ==============================================
 
 model DjQueue {
   id              String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
@@ -104,86 +332,308 @@ model DjQueue {
   updatedAt       DateTime  @default(now()) @updatedAt @map("updated_at")
 
   // Relations
-  club Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  club   Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
   dancer Dancer @relation(fields: [dancerId], references: [id], onDelete: Cascade)
 
   @@map("dj_queue")
 }
 
 model MusicLibrary {
-  id            String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  clubId        String   @map("club_id") @db.Uuid
-  title         String   @db.VarChar(255)
-  artist        String?  @db.VarChar(255)
-  album         String?  @db.VarChar(255)
-  durationSeconds Int?   @map("duration_seconds")
-  filePath      String?  @map("file_path") @db.VarChar(500)
-  fileSize      BigInt?  @map("file_size")
-  fileFormat    String?  @map("file_format") @db.VarChar(10)
-  metadata      Json     @default("{}")
-  createdAt     DateTime @default(now()) @map("created_at")
+  id              String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  clubId          String   @map("club_id") @db.Uuid
+  title           String   @db.VarChar(255)
+  artist          String?  @db.VarChar(255)
+  album           String?  @db.VarChar(255)
+  durationSeconds Int?     @map("duration_seconds")
+  filePath        String?  @map("file_path") @db.VarChar(500)
+  fileSize        BigInt?  @map("file_size")
+  fileFormat      String?  @map("file_format") @db.VarChar(10)
+  metadata        Json     @default("{}")
+  createdAt       DateTime @default(now()) @map("created_at")
 
   // Relations
-  club Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  club         Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  songPlayLogs SongPlayLog[]
 
   @@map("music_library")
 }
 
-model VipRoom {
-  id          String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  clubId      String    @map("club_id") @db.Uuid
-  roomName    String    @map("room_name") @db.VarChar(50)
-  capacity    Int       @default(4)
-  hourlyRate  Decimal?  @map("hourly_rate") @db.Decimal(10, 2)
-  isAvailable Boolean   @default(true) @map("is_available")
-  createdAt   DateTime  @default(now()) @map("created_at")
+// Song Play Log - For VIP verification
+model SongPlayLog {
+  id            String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  clubId        String   @map("club_id") @db.Uuid
+  songId        String?  @map("song_id") @db.Uuid
+  songTitle     String   @map("song_title") @db.VarChar(255)
+  songArtist    String?  @map("song_artist") @db.VarChar(255)
+  playedAt      DateTime @default(now()) @map("played_at")
+  durationSecs  Int      @map("duration_secs")
+  
+  // Used for VIP song counting verification
+  createdAt     DateTime @default(now()) @map("created_at")
 
   // Relations
   club Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  song MusicLibrary? @relation(fields: [songId], references: [id])
+
+  @@index([clubId, playedAt])
+  @@map("song_play_logs")
+}
+
+// ==============================================
+// VIP BOOTH MANAGEMENT (Renamed from VIP Rooms)
+// ==============================================
+
+model VipBooth {
+  id          String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  clubId      String   @map("club_id") @db.Uuid
+  boothName   String   @map("booth_name") @db.VarChar(50)
+  boothNumber Int      @map("booth_number")
+  capacity    Int      @default(4)
+  songRate    Decimal? @map("song_rate") @db.Decimal(10, 2) // Override club default
+  isAvailable Boolean  @default(true) @map("is_available")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // Relations
+  club     Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
   sessions VipSession[]
 
-  @@map("vip_rooms")
+  @@unique([clubId, boothNumber])
+  @@map("vip_booths")
 }
 
 model VipSession {
-  id              String    @id @default(dbgenerated("uuid_generate_v4")) @db.Uuid
-  clubId          String    @map("club_id") @db.Uuid
-  roomId          String    @map("room_id") @db.Uuid
-  dancerId        String    @map("dancer_id") @db.Uuid
-  customerName    String?   @map("customer_name") @db.VarChar(100)
-  startedAt       DateTime  @default(now()) @map("started_at")
-  endedAt         DateTime? @map("ended_at")
-  durationMinutes Int?      @map("duration_minutes")
-  amountCharged   Decimal?  @map("amount_charged") @db.Decimal(10, 2)
-  status          String    @default("active") @db.VarChar(20)
+  id                String           @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  clubId            String           @map("club_id") @db.Uuid
+  boothId           String           @map("booth_id") @db.Uuid
+  dancerId          String           @map("dancer_id") @db.Uuid
+  shiftId           String?          @map("shift_id") @db.Uuid
+  
+  // Session Staff
+  startedById       String           @map("started_by_id") @db.Uuid
+  endedById         String?          @map("ended_by_id") @db.Uuid
+  
+  // Customer Info (optional)
+  customerName      String?          @map("customer_name") @db.VarChar(100)
+  customerPhone     String?          @map("customer_phone") @db.VarChar(20)
+  customerAgreed    Boolean          @default(true) @map("customer_agreed")
+  
+  // Timing
+  startedAt         DateTime         @default(now()) @map("started_at")
+  endedAt           DateTime?        @map("ended_at")
+  durationMinutes   Int?             @map("duration_minutes")
+  
+  // Song Tracking - CRITICAL FOR FRAUD PREVENTION
+  songCountManual   Int              @default(0) @map("song_count_manual") // VIP Host count
+  songCountDjSync   Int?             @map("song_count_dj_sync") // From DJ system
+  songCountByTime   Int?             @map("song_count_by_time") // Calculated from duration
+  songCountFinal    Int?             @map("song_count_final") // Used for billing
+  
+  // Verification
+  verificationStatus VerificationStatus @default(PENDING_REVIEW) @map("verification_status")
+  discrepancyAmount  Int?             @map("discrepancy_amount") // Diff between sources
+  
+  // Customer Confirmation
+  customerConfirmed   Boolean         @default(false) @map("customer_confirmed")
+  customerConfirmedAt DateTime?       @map("customer_confirmed_at")
+  customerDisputed    Boolean         @default(false) @map("customer_disputed")
+  disputeReason       String?         @map("dispute_reason")
+  
+  // Financial
+  songRate          Decimal          @map("song_rate") @db.Decimal(10, 2)
+  houseFeeOwed      Decimal?         @map("house_fee_owed") @db.Decimal(10, 2)
+  houseFeeStatus    PaymentStatus    @default(PENDING) @map("house_fee_status")
+  houseFeePaidAt    DateTime?        @map("house_fee_paid_at")
+  paymentMethod     String?          @map("payment_method") @db.VarChar(20) // CASH, CARD, DEFERRED
+  
+  // Override handling
+  wasOverridden     Boolean          @default(false) @map("was_overridden")
+  overrideById      String?          @map("override_by_id") @db.Uuid
+  overrideReason    String?          @map("override_reason")
+  overrideAt        DateTime?        @map("override_at")
+  originalSongCount Int?             @map("original_song_count")
+  
+  // Photo timestamps (fraud prevention)
+  startPhotoUrl     String?          @map("start_photo_url") @db.VarChar(500)
+  endPhotoUrl       String?          @map("end_photo_url") @db.VarChar(500)
+  
+  status            VipSessionStatus @default(ACTIVE)
+  notes             String?
+  createdAt         DateTime         @default(now()) @map("created_at")
+  updatedAt         DateTime         @default(now()) @updatedAt @map("updated_at")
 
   // Relations
-  club Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
-  room VipRoom @relation(fields: [roomId], references: [id])
-  dancer Dancer @relation(fields: [dancerId], references: [id])
+  club        Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  booth       VipBooth @relation(fields: [boothId], references: [id])
+  dancer      Dancer @relation(fields: [dancerId], references: [id])
+  shift       Shift? @relation(fields: [shiftId], references: [id])
+  startedBy   ClubUser @relation("VipStartedBy", fields: [startedById], references: [id])
+  endedBy     ClubUser? @relation("VipEndedBy", fields: [endedById], references: [id])
+  overrideBy  ClubUser? @relation("OverrideApprovedBy", fields: [overrideById], references: [id])
 
   @@map("vip_sessions")
 }
 
+// ==============================================
+// FINANCIAL TRANSACTIONS
+// ==============================================
+
 model FinancialTransaction {
-  id              String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  clubId          String    @map("club_id") @db.Uuid
-  dancerId        String?   @map("dancer_id") @db.Uuid
-  transactionType String    @map("transaction_type") @db.VarChar(30)
-  amount          Decimal   @db.Decimal(10, 2)
+  id              String        @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  clubId          String        @map("club_id") @db.Uuid
+  dancerId        String?       @map("dancer_id") @db.Uuid
+  transactionType String        @map("transaction_type") @db.VarChar(30)
+  category        String?       @db.VarChar(30) // BAR_FEE, VIP_HOUSE_FEE, COVER_CHARGE, TIP, etc.
+  amount          Decimal       @db.Decimal(10, 2)
   description     String?
-  paymentMethod   String    @default("cash") @map("payment_method") @db.VarChar(20)
-  isPaid          Boolean   @default(false) @map("is_paid")
-  dueDate         DateTime? @map("due_date") @db.Date
-  recordedBy      String?   @map("recorded_by") @db.Uuid
-  createdAt       DateTime  @default(now()) @map("created_at")
+  paymentMethod   String        @default("cash") @map("payment_method") @db.VarChar(20)
+  status          PaymentStatus @default(PENDING)
+  dueDate         DateTime?     @map("due_date") @db.Date
+  paidAt          DateTime?     @map("paid_at")
+  
+  // Reference to source
+  sourceType      String?       @map("source_type") @db.VarChar(30) // CHECK_IN, VIP_SESSION, COVER
+  sourceId        String?       @map("source_id") @db.Uuid
+  
+  recordedBy      String?       @map("recorded_by") @db.Uuid
+  createdAt       DateTime      @default(now()) @map("created_at")
 
   // Relations
-  club Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
-  dancer Dancer? @relation(fields: [dancerId], references: [id])
+  club           Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  dancer         Dancer? @relation(fields: [dancerId], references: [id])
   recordedByUser ClubUser? @relation(fields: [recordedBy], references: [id])
 
   @@map("financial_transactions")
+}
+
+// ==============================================
+// FRAUD PREVENTION - AUDIT & VERIFICATION
+// ==============================================
+
+// Immutable Audit Log
+model AuditLog {
+  id            String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  clubId        String   @map("club_id") @db.Uuid
+  userId        String?  @map("user_id") @db.Uuid
+  
+  // Action details
+  action        String   @db.VarChar(50) // CREATE, UPDATE, DELETE, OVERRIDE, LOGIN, etc.
+  entityType    String   @map("entity_type") @db.VarChar(50) // VIP_SESSION, CHECK_IN, etc.
+  entityId      String?  @map("entity_id") @db.Uuid
+  
+  // Data snapshot
+  previousData  Json?    @map("previous_data")
+  newData       Json?    @map("new_data")
+  changesSummary String? @map("changes_summary")
+  
+  // Context
+  ipAddress     String?  @map("ip_address") @db.VarChar(45)
+  userAgent     String?  @map("user_agent") @db.VarChar(500)
+  sessionId     String?  @map("session_id") @db.VarChar(100)
+  
+  // Hash chain for immutability verification
+  previousHash  String?  @map("previous_hash") @db.VarChar(64)
+  currentHash   String   @map("current_hash") @db.VarChar(64)
+  
+  // Flags
+  isHighRisk    Boolean  @default(false) @map("is_high_risk")
+  flaggedReason String?  @map("flagged_reason")
+  
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  // Relations
+  club Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  user ClubUser? @relation(fields: [userId], references: [id])
+
+  @@index([clubId, createdAt])
+  @@index([entityType, entityId])
+  @@map("audit_logs")
+}
+
+// Verification Alerts
+model VerificationAlert {
+  id              String        @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  clubId          String        @map("club_id") @db.Uuid
+  
+  // Alert details
+  alertType       String        @map("alert_type") @db.VarChar(50)
+  // VIP_SONG_MISMATCH, CHECK_IN_MISMATCH, CASH_VARIANCE, PATTERN_DETECTED, etc.
+  severity        AlertSeverity @default(MEDIUM)
+  status          AlertStatus   @default(OPEN)
+  
+  // Reference
+  entityType      String        @map("entity_type") @db.VarChar(50)
+  entityId        String?       @map("entity_id") @db.Uuid
+  
+  // Details
+  title           String        @db.VarChar(255)
+  description     String
+  expectedValue   String?       @map("expected_value")
+  actualValue     String?       @map("actual_value")
+  discrepancy     String?
+  
+  // Involved parties
+  involvedUserId  String?       @map("involved_user_id") @db.Uuid
+  involvedDancerId String?      @map("involved_dancer_id") @db.Uuid
+  
+  // Resolution
+  acknowledgedById String?      @map("acknowledged_by_id") @db.Uuid
+  acknowledgedAt   DateTime?    @map("acknowledged_at")
+  resolvedById     String?      @map("resolved_by_id") @db.Uuid
+  resolvedAt       DateTime?    @map("resolved_at")
+  resolution       String?
+  
+  // Owner visibility
+  visibleToOwnerOnly Boolean   @default(false) @map("visible_to_owner_only")
+  
+  createdAt       DateTime      @default(now()) @map("created_at")
+
+  // Relations
+  club          Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  acknowledgedBy ClubUser? @relation("AlertAcknowledgedBy", fields: [acknowledgedById], references: [id])
+  resolvedBy     ClubUser? @relation("AlertResolvedBy", fields: [resolvedById], references: [id])
+
+  @@index([clubId, status, severity])
+  @@map("verification_alerts")
+}
+
+// Statistical Anomaly Reports
+model AnomalyReport {
+  id              String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  clubId          String   @map("club_id") @db.Uuid
+  
+  // Report period
+  reportDate      DateTime @map("report_date") @db.Date
+  periodStart     DateTime @map("period_start")
+  periodEnd       DateTime @map("period_end")
+  
+  // Analysis type
+  analysisType    String   @map("analysis_type") @db.VarChar(50)
+  // VIP_ATTENDANT_VARIANCE, DOOR_STAFF_VARIANCE, DANCER_CORRELATION, etc.
+  
+  // Findings
+  findingsSummary String   @map("findings_summary")
+  dataPoints      Json     @map("data_points") // Detailed statistical data
+  anomaliesFound  Int      @map("anomalies_found")
+  
+  // Flagged individuals
+  flaggedUserIds  String[] @map("flagged_user_ids") @db.Uuid
+  flaggedDancerIds String[] @map("flagged_dancer_ids") @db.Uuid
+  
+  // Severity
+  overallRisk     AlertSeverity @default(LOW) @map("overall_risk")
+  
+  // Owner-only access
+  ownerViewed     Boolean  @default(false) @map("owner_viewed")
+  ownerViewedAt   DateTime? @map("owner_viewed_at")
+  
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  // Relations
+  club Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
+
+  @@unique([clubId, reportDate, analysisType])
+  @@map("anomaly_reports")
 }
 
 // ==============================================
@@ -191,16 +641,16 @@ model FinancialTransaction {
 // ==============================================
 
 model Subscription {
-  id                     String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  clubId                 String   @map("club_id") @db.Uuid
-  stripeSubscriptionId   String?  @unique @map("stripe_subscription_id") @db.VarChar(255)
-  status                 String   @default("active") @db.VarChar(20)
-  currentPeriodStart     DateTime @map("current_period_start")
-  currentPeriodEnd       DateTime @map("current_period_end")
-  trialEnd               DateTime? @map("trial_end")
-  cancelAtPeriodEnd      Boolean  @default(false) @map("cancel_at_period_end")
-  createdAt              DateTime @default(now()) @map("created_at")
-  updatedAt              DateTime @default(now()) @updatedAt @map("updated_at")
+  id                   String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  clubId               String   @map("club_id") @db.Uuid
+  stripeSubscriptionId String?  @unique @map("stripe_subscription_id") @db.VarChar(255)
+  status               String   @default("active") @db.VarChar(20)
+  currentPeriodStart   DateTime @map("current_period_start")
+  currentPeriodEnd     DateTime @map("current_period_end")
+  trialEnd             DateTime? @map("trial_end")
+  cancelAtPeriodEnd    Boolean  @default(false) @map("cancel_at_period_end")
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @default(now()) @updatedAt @map("updated_at")
 
   // Relations
   club Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
@@ -209,13 +659,13 @@ model Subscription {
 }
 
 model UsageAnalytics {
-  id          String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  clubId      String    @map("club_id") @db.Uuid
-  eventType   String    @map("event_type") @db.VarChar(50)
-  eventData   Json      @default("{}") @map("event_data")
-  userId      String?   @map("user_id") @db.Uuid
-  sessionId   String?   @map("session_id") @db.VarChar(100)
-  createdAt   DateTime  @default(now()) @map("created_at")
+  id        String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  clubId    String   @map("club_id") @db.Uuid
+  eventType String   @map("event_type") @db.VarChar(50)
+  eventData Json     @default("{}") @map("event_data")
+  userId    String?  @map("user_id") @db.Uuid
+  sessionId String?  @map("session_id") @db.VarChar(100)
+  createdAt DateTime @default(now()) @map("created_at")
 
   // Relations
   club Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
@@ -237,14 +687,14 @@ model FeatureFlag {
 }
 
 model PaymentMethod {
-  id                     String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  clubId                 String   @map("club_id") @db.Uuid
-  stripePaymentMethodId  String   @map("stripe_payment_method_id") @db.VarChar(255)
-  type                   String   @db.VarChar(20)
-  cardLast4              String?  @map("card_last4") @db.VarChar(4)
-  cardBrand              String?  @map("card_brand") @db.VarChar(20)
-  isDefault              Boolean  @default(false) @map("is_default")
-  createdAt              DateTime @default(now()) @map("created_at")
+  id                    String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  clubId                String   @map("club_id") @db.Uuid
+  stripePaymentMethodId String   @map("stripe_payment_method_id") @db.VarChar(255)
+  type                  String   @db.VarChar(20)
+  cardLast4             String?  @map("card_last4") @db.VarChar(4)
+  cardBrand             String?  @map("card_brand") @db.VarChar(20)
+  isDefault             Boolean  @default(false) @map("is_default")
+  createdAt             DateTime @default(now()) @map("created_at")
 
   // Relations
   club Club @relation(fields: [clubId], references: [id], onDelete: Cascade)

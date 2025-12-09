@@ -27,7 +27,7 @@ const initialState: VipState = {
   rooms: [
     { 
       id: '1', 
-      name: 'VIP Room 1', 
+      name: 'VIP Booth 1', 
       status: 'occupied', 
       dancer_name: 'Diamond Rose', 
       start_time: '2024-08-26T18:00:00Z', 
@@ -42,7 +42,7 @@ const initialState: VipState = {
     },
     { 
       id: '2', 
-      name: 'VIP Room 2', 
+      name: 'VIP Booth 2', 
       status: 'occupied', 
       dancer_name: 'Samantha Lee', 
       start_time: '2024-08-26T19:30:00Z', 
@@ -57,7 +57,7 @@ const initialState: VipState = {
     },
     { 
       id: '3', 
-      name: 'VIP Room 3', 
+      name: 'VIP Booth 3', 
       status: 'available', 
       hourly_rate: 200,
       hourlyRate: 200
@@ -75,9 +75,9 @@ export const fetchVIPRooms = createAsyncThunk(
     // Mock API call - replace with actual API
     return {
       rooms: [
-        { id: '1', name: 'VIP Room 1', status: 'occupied' as const, dancer_name: 'Diamond Rose', start_time: '2024-08-26T18:00:00Z', elapsed_time: 1122, hourly_rate: 200 },
-        { id: '2', name: 'VIP Room 2', status: 'occupied' as const, dancer_name: 'Samantha Lee', start_time: '2024-08-26T19:30:00Z', elapsed_time: 735, hourly_rate: 200 },
-        { id: '3', name: 'VIP Room 3', status: 'available' as const, hourly_rate: 200 }
+        { id: '1', name: 'VIP Booth 1', status: 'occupied' as const, dancer_name: 'Diamond Rose', start_time: '2024-08-26T18:00:00Z', elapsed_time: 1122, hourly_rate: 200 },
+        { id: '2', name: 'VIP Booth 2', status: 'occupied' as const, dancer_name: 'Samantha Lee', start_time: '2024-08-26T19:30:00Z', elapsed_time: 735, hourly_rate: 200 },
+        { id: '3', name: 'VIP Booth 3', status: 'available' as const, hourly_rate: 200 }
       ]
     }
   }
@@ -168,7 +168,7 @@ const vipSlice = createSlice({
       .addCase(fetchVIPRooms.rejected, (state, action) => {
         state.isLoading = false
         state.loading = false
-        state.error = action.error.message || 'Failed to fetch VIP rooms'
+        state.error = action.error.message || 'Failed to fetch VIP booths'
       })
       .addCase(updateRoomStatus.fulfilled, (state, action) => {
         const room = state.rooms.find(r => r.id === action.payload.roomId)

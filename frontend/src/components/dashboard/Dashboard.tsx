@@ -90,7 +90,7 @@ const Dashboard: React.FC = () => {
       trend: { value: '+12%', positive: true }
     },
     {
-      name: 'VIP Rooms',
+      name: 'VIP Booth',
       value: occupiedRooms,
       total: rooms.length,
       icon: BuildingStorefrontIcon,
@@ -137,7 +137,7 @@ const Dashboard: React.FC = () => {
     { 
       id: 2, 
       type: 'revenue', 
-      message: 'VIP Room payment received', 
+      message: 'VIP Booth payment received', 
       detail: '$750',
       severity: 'success',
       time: '12m ago'
@@ -145,7 +145,7 @@ const Dashboard: React.FC = () => {
     { 
       id: 3, 
       type: 'system', 
-      message: 'VIP Room 3 timer exceeded', 
+      message: 'VIP Booth 3 timer exceeded', 
       detail: '+15 min over',
       severity: 'info',
       time: '18m ago'
