@@ -16,7 +16,7 @@ import RegisterPage from './components/auth/RegisterPage'
 import Dashboard from './components/dashboard/Dashboard'
 import DancerManagement from './components/dancers/DancerManagement'
 import DJQueue from './components/queue/DJQueue'
-import VIPRooms from './components/vip/VIPRooms'
+import VIPBooths from './components/vip/VIPBooths'
 import Revenue from './components/revenue/Revenue'
 import Settings from './components/settings/Settings'
 
@@ -94,7 +94,7 @@ function App() {
         <Route path="/vip" element={
           <ProtectedRoute>
             <DashboardLayout>
-              <VIPRooms />
+              <VIPBooths />
             </DashboardLayout>
           </ProtectedRoute>
         } />

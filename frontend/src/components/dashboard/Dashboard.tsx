@@ -424,7 +424,7 @@ const Dashboard: React.FC = () => {
                 <div className="p-1.5 sm:p-2 rounded-lg bg-gold-500/20">
                   <BuildingStorefrontIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gold-500" />
                 </div>
-                <span className="text-xs sm:text-sm font-medium text-gold-500">Manage VIP Rooms</span>
+                <span className="text-xs sm:text-sm font-medium text-gold-500">Manage VIP Booths</span>
                 <ArrowUpRightIcon className="h-3.5 w-3.5 text-gold-500 ml-auto opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
               </Link>
               

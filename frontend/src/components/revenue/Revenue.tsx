@@ -121,7 +121,7 @@ const Revenue: React.FC = () => {
 
   const revenueBreakdown = [
     { 
-      category: 'VIP Rooms', 
+      category: 'VIP Booth', 
       amount: (todayRevenue || 2847) * 0.55, 
       percentage: 55, 
       color: 'bg-gold-500',
@@ -155,12 +155,12 @@ const Revenue: React.FC = () => {
   ]
 
   const recentTransactions = [
-    { id: 1, type: 'VIP Room 3', category: 'vip', amount: 180, time: '2:45 PM', dancer: 'Luna' },
+    { id: 1, type: 'VIP Booth 3', category: 'vip', amount: 180, time: '2:45 PM', dancer: 'Luna' },
     { id: 2, type: 'Bar Fee', category: 'bar', amount: 85, time: '2:30 PM', dancer: 'Crystal' },
     { id: 3, type: 'Cover Charge', category: 'cover', amount: 25, time: '2:15 PM', dancer: null },
-    { id: 4, type: 'VIP Room 1', category: 'vip', amount: 240, time: '1:45 PM', dancer: 'Diamond' },
+    { id: 4, type: 'VIP Booth 1', category: 'vip', amount: 240, time: '1:45 PM', dancer: 'Diamond' },
     { id: 5, type: 'Bar Fee', category: 'bar', amount: 120, time: '1:30 PM', dancer: 'Luna' },
-    { id: 6, type: 'VIP Room 2', category: 'vip', amount: 360, time: '1:00 PM', dancer: 'Crystal' }
+    { id: 6, type: 'VIP Booth 2', category: 'vip', amount: 360, time: '1:00 PM', dancer: 'Crystal' }
   ]
 
   const getCategoryStyle = (category: string) => {

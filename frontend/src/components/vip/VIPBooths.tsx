@@ -19,7 +19,7 @@ import {
   SparklesIcon
 } from '@heroicons/react/24/outline'
 
-const VIPRooms: React.FC = () => {
+const VIPBooths: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>()
   const { rooms, loading, error } = useSelector((state: RootState) => state.vip)
   
@@ -122,7 +122,7 @@ const VIPRooms: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 animate-fade-in">
         <div>
-          <h1 className="text-2xl font-semibold text-text-primary">VIP Booth</h1>
+          <h1 className="text-2xl font-semibold text-text-primary">VIP Booths</h1>
           <p className="text-sm text-text-tertiary mt-1">
             Monitor booth status, timers, and revenue
           </p>
@@ -463,4 +463,4 @@ const VIPRooms: React.FC = () => {
   )
 }
 
-export default VIPRooms
+export default VIPBooths

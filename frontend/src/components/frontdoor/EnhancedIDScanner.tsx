@@ -218,7 +218,7 @@ const EnhancedIDScanner: React.FC = () => {
       photo: capturedImage || undefined,
       visits: Math.floor(Math.random() * 50) + 1,
       totalSpent: Math.floor(Math.random() * 10000) + 500,
-      notes: 'Regular customer, prefers VIP Room 2',
+      notes: 'Regular customer, prefers VIP Booth 2',
       incidents: generateMockIncidents(),
       entertainmentLicense: idData.idType === 'entertainment_license' ? {
         number: idData.licenseNumber || 'ENT-' + Math.random().toString(36).substr(2, 9).toUpperCase(),

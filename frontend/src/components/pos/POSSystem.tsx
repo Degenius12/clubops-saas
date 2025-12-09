@@ -26,8 +26,8 @@ const POSSystem: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'entrance' | 'bar' | 'vip'>('entrance')
   const [transactions, setTransactions] = useState<POSTransaction[]>([])
   const [booths, setBooths] = useState<BoothConfig[]>([
-    { id: '1', name: 'VIP Room 1', rate: 100, isActive: false },
-    { id: '2', name: 'VIP Room 2', rate: 100, isActive: false },
+    { id: '1', name: 'VIP Booth 1', rate: 100, isActive: false },
+    { id: '2', name: 'VIP Booth 2', rate: 100, isActive: false },
     { id: '3', name: 'Champagne Room', rate: 200, isActive: false },
     { id: '4', name: 'Private Suite A', rate: 300, isActive: false },
     { id: '5', name: 'Private Suite B', rate: 300, isActive: false },
@@ -252,7 +252,7 @@ const POSSystem: React.FC = () => {
   const VIPRoomPOS = () => (
     <div className="space-y-6">
       <div className="bg-dark-card rounded-xl p-6">
-        <h3 className="text-xl font-semibold mb-4">VIP Room Management</h3>
+        <h3 className="text-xl font-semibold mb-4">VIP Booth Management</h3>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
           {booths.map((booth) => (
@@ -457,7 +457,7 @@ const POSSystem: React.FC = () => {
           >
             <div className="flex items-center space-x-2">
               <CreditCard size={20} />
-              <span>VIP Rooms</span>
+              <span>VIP Booth</span>
             </div>
           </button>
         </div>

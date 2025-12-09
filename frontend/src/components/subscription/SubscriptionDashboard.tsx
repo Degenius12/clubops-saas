@@ -44,14 +44,14 @@ const SubscriptionDashboard: React.FC = () => {
         { name: 'Basic dancer management', included: true },
         { name: 'Simple reporting', included: true },
         { name: 'Email support', included: true },
-        { name: 'VIP room tracking', included: false },
+        { name: 'VIP booth tracking', included: false },
         { name: 'Advanced analytics', included: false },
         { name: 'Multi-location support', included: false },
         { name: 'API access', included: false }
       ],
       limits: {
         dancers: 5,
-        vipRooms: 0,
+        vipBooths: 0,
         monthlyReports: 1,
         storage: '1GB'
       }
@@ -67,7 +67,7 @@ const SubscriptionDashboard: React.FC = () => {
       features: [
         { name: 'Up to 25 dancers', included: true },
         { name: 'Full dancer management', included: true },
-        { name: 'VIP room tracking', included: true },
+        { name: 'VIP booth tracking', included: true },
         { name: 'Revenue analytics', included: true },
         { name: 'Priority email support', included: true },
         { name: 'Advanced analytics', included: false },
@@ -76,7 +76,7 @@ const SubscriptionDashboard: React.FC = () => {
       ],
       limits: {
         dancers: 25,
-        vipRooms: 5,
+        vipBooths: 5,
         monthlyReports: 10,
         storage: '10GB'
       }
@@ -92,7 +92,7 @@ const SubscriptionDashboard: React.FC = () => {
       features: [
         { name: 'Up to 100 dancers', included: true },
         { name: 'Full dancer management', included: true },
-        { name: 'Unlimited VIP rooms', included: true },
+        { name: 'Unlimited VIP booths', included: true },
         { name: 'Advanced analytics', included: true },
         { name: 'Revenue forecasting', included: true },
         { name: 'Priority phone support', included: true },
@@ -101,7 +101,7 @@ const SubscriptionDashboard: React.FC = () => {
       ],
       limits: {
         dancers: 100,
-        vipRooms: 'unlimited',
+        vipBooths: 'unlimited',
         monthlyReports: 'unlimited',
         storage: '100GB'
       }
@@ -126,7 +126,7 @@ const SubscriptionDashboard: React.FC = () => {
       ],
       limits: {
         dancers: 'unlimited',
-        vipRooms: 'unlimited',
+        vipBooths: 'unlimited',
         monthlyReports: 'unlimited',
         storage: '1TB'
       }
@@ -232,17 +232,17 @@ const SubscriptionDashboard: React.FC = () => {
               <CurrencyDollarIcon className="h-6 w-6 text-accent-gold" />
             </div>
             <div>
-              <h3 className="text-sm font-medium text-gray-400">VIP Rooms</h3>
+              <h3 className="text-sm font-medium text-gray-400">VIP Booths</h3>
               <p className="text-xl font-bold text-white">
-                {usage?.vipRooms || 0} / {currentPlanData.limits.vipRooms === 'unlimited' ? '∞' : currentPlanData.limits.vipRooms}
+                {usage?.vipBooths || 0} / {currentPlanData.limits.vipBooths === 'unlimited' ? '∞' : currentPlanData.limits.vipBooths}
               </p>
               <div className="w-full bg-dark-bg/50 rounded-full h-2 mt-2">
                 <div 
                   className="h-full bg-accent-gold rounded-full transition-all duration-500"
                   style={{ 
-                    width: currentPlanData.limits.vipRooms === 'unlimited' 
+                    width: currentPlanData.limits.vipBooths === 'unlimited' 
                       ? '30%' 
-                      : `${Math.min(((usage?.vipRooms || 0) / (typeof currentPlanData.limits.vipRooms === 'number' ? currentPlanData.limits.vipRooms : 1)) * 100, 100)}%` 
+                      : `${Math.min(((usage?.vipBooths || 0) / (typeof currentPlanData.limits.vipBooths === 'number' ? currentPlanData.limits.vipBooths : 1)) * 100, 100)}%` 
                   }}
                 />
               </div>

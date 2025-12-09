@@ -37,7 +37,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
     { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
     { name: 'Dancers', href: '/dancers', icon: UsersIcon },
     { name: 'DJ Queue', href: '/queue', icon: MusicalNoteIcon },
-    { name: 'VIP Booth', href: '/vip', icon: BuildingStorefrontIcon },
+    { name: 'VIP Booths', href: '/vip', icon: BuildingStorefrontIcon },
     { name: 'Revenue', href: '/revenue', icon: CurrencyDollarIcon },
   ]
 

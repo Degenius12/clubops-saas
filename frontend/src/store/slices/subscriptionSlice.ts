@@ -30,7 +30,7 @@ const initialState: SubscriptionState = {
     licenseAlerts: true,
     basicReporting: true,
     djQueue: false,
-    vipRooms: false,
+    vipBooths: false,
     advancedAnalytics: false,
     multiUser: false,
     apiAccess: false,
@@ -95,10 +95,10 @@ const subscriptionSlice = createSlice({
           state.features = { ...state.features, djQueue: true }
           break
         case 'pro':
-          state.features = { ...state.features, djQueue: true, vipRooms: true, advancedAnalytics: true }
+          state.features = { ...state.features, djQueue: true, vipBooths: true, advancedAnalytics: true }
           break
         case 'enterprise':
-          state.features = { ...state.features, djQueue: true, vipRooms: true, advancedAnalytics: true, multiUser: true, apiAccess: true }
+          state.features = { ...state.features, djQueue: true, vipBooths: true, advancedAnalytics: true, multiUser: true, apiAccess: true }
           break
         default:
           break
