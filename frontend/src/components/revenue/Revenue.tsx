@@ -1,15 +1,53 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { RootState, AppDispatch } from '../../store/store'
 import { fetchRevenue } from '../../store/slices/revenueSlice'
 import {
   CurrencyDollarIcon,
-  ArrowTrendingUpIcon as TrendingUpIcon,
-  ArrowTrendingDownIcon as TrendingDownIcon,
+  ArrowTrendingUpIcon,
+  ArrowTrendingDownIcon,
   CalendarDaysIcon,
   ChartBarIcon,
-  ArrowUpIcon
+  ArrowUpIcon,
+  ArrowDownTrayIcon,
+  FunnelIcon,
+  ClockIcon,
+  BuildingStorefrontIcon,
+  TicketIcon,
+  SparklesIcon,
+  BanknotesIcon
 } from '@heroicons/react/24/outline'
+
+// Animated counter hook
+const useAnimatedCounter = (end: number, duration: number = 800) => {
+  const [count, setCount] = useState(0)
+  const countRef = useRef(0)
+  const startTimeRef = useRef<number | null>(null)
+
+  useEffect(() => {
+    countRef.current = 0
+    startTimeRef.current = null
+    
+    const animate = (timestamp: number) => {
+      if (!startTimeRef.current) startTimeRef.current = timestamp
+      const progress = Math.min((timestamp - startTimeRef.current) / duration, 1)
+      const easeOut = 1 - Math.pow(1 - progress, 3)
+      const current = Math.floor(easeOut * end)
+      
+      setCount(current)
+      
+      if (progress < 1) {
+        requestAnimationFrame(animate)
+      } else {
+        setCount(end)
+      }
+    }
+    
+    requestAnimationFrame(animate)
+  }, [end, duration])
+
+  return count
+}
 
 const Revenue: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>()
@@ -18,271 +56,462 @@ const Revenue: React.FC = () => {
     weeklyRevenue, 
     monthlyRevenue, 
     yearlyRevenue,
-    revenueHistory,
     loading 
   } = useSelector((state: RootState) => state.revenue)
   
   const [selectedPeriod, setSelectedPeriod] = useState('today')
+  const [showExportModal, setShowExportModal] = useState(false)
+
+  // Animated values
+  const animatedToday = useAnimatedCounter(todayRevenue || 2847)
+  const animatedWeekly = useAnimatedCounter(weeklyRevenue || 18420)
+  const animatedMonthly = useAnimatedCounter(monthlyRevenue || 48500)
+  const animatedYearly = useAnimatedCounter(yearlyRevenue || 385000)
 
   useEffect(() => {
     dispatch(fetchRevenue({ period: selectedPeriod }))
   }, [dispatch, selectedPeriod])
 
-  const revenueData = [
+  const revenueCards = [
     {
       title: 'Today',
-      amount: todayRevenue || 0,
+      amount: animatedToday,
+      rawAmount: todayRevenue || 2847,
       change: '+12.5%',
-      changeType: 'increase',
+      positive: true,
       period: 'vs yesterday',
       icon: CurrencyDollarIcon,
-      color: 'accent-blue'
+      gradient: 'from-electric-500 to-electric-600',
+      glow: 'shadow-glow-cyan'
     },
     {
       title: 'This Week',
-      amount: weeklyRevenue || 0,
+      amount: animatedWeekly,
+      rawAmount: weeklyRevenue || 18420,
       change: '+8.2%',
-      changeType: 'increase',
+      positive: true,
       period: 'vs last week',
       icon: CalendarDaysIcon,
-      color: 'accent-gold'
+      gradient: 'from-gold-500 to-gold-600',
+      glow: 'shadow-glow-gold'
     },
     {
       title: 'This Month',
-      amount: monthlyRevenue || 0,
+      amount: animatedMonthly,
+      rawAmount: monthlyRevenue || 48500,
       change: '+15.7%',
-      changeType: 'increase',
+      positive: true,
       period: 'vs last month',
       icon: ChartBarIcon,
-      color: 'accent-red'
+      gradient: 'from-royal-500 to-royal-600',
+      glow: 'shadow-glow-purple'
     },
     {
       title: 'This Year',
-      amount: yearlyRevenue || 0,
+      amount: animatedYearly,
+      rawAmount: yearlyRevenue || 385000,
       change: '+22.1%',
-      changeType: 'increase',
+      positive: true,
       period: 'vs last year',
-      icon: TrendingUpIcon,
-      color: 'accent-green'
+      icon: ArrowTrendingUpIcon,
+      gradient: 'from-success-500 to-success-600',
+      glow: 'shadow-glow-success'
     }
   ]
 
   const revenueBreakdown = [
-    { category: 'VIP Rooms', amount: (todayRevenue || 0) * 0.6, percentage: 60, color: 'accent-red' },
-    { category: 'Bar Sales', amount: (todayRevenue || 0) * 0.25, percentage: 25, color: 'accent-gold' },
-    { category: 'Cover Charges', amount: (todayRevenue || 0) * 0.10, percentage: 10, color: 'accent-blue' },
-    { category: 'Other', amount: (todayRevenue || 0) * 0.05, percentage: 5, color: 'accent-green' }
+    { 
+      category: 'VIP Rooms', 
+      amount: (todayRevenue || 2847) * 0.55, 
+      percentage: 55, 
+      color: 'bg-gold-500',
+      textColor: 'text-gold-400',
+      icon: BuildingStorefrontIcon
+    },
+    { 
+      category: 'Bar Fees', 
+      amount: (todayRevenue || 2847) * 0.28, 
+      percentage: 28, 
+      color: 'bg-royal-500',
+      textColor: 'text-royal-400',
+      icon: BanknotesIcon
+    },
+    { 
+      category: 'Cover Charges', 
+      amount: (todayRevenue || 2847) * 0.12, 
+      percentage: 12, 
+      color: 'bg-electric-500',
+      textColor: 'text-electric-400',
+      icon: TicketIcon
+    },
+    { 
+      category: 'Tips & Other', 
+      amount: (todayRevenue || 2847) * 0.05, 
+      percentage: 5, 
+      color: 'bg-success-500',
+      textColor: 'text-success-400',
+      icon: SparklesIcon
+    }
   ]
 
+  const recentTransactions = [
+    { id: 1, type: 'VIP Room 3', category: 'vip', amount: 180, time: '2:45 PM', dancer: 'Luna' },
+    { id: 2, type: 'Bar Fee', category: 'bar', amount: 85, time: '2:30 PM', dancer: 'Crystal' },
+    { id: 3, type: 'Cover Charge', category: 'cover', amount: 25, time: '2:15 PM', dancer: null },
+    { id: 4, type: 'VIP Room 1', category: 'vip', amount: 240, time: '1:45 PM', dancer: 'Diamond' },
+    { id: 5, type: 'Bar Fee', category: 'bar', amount: 120, time: '1:30 PM', dancer: 'Luna' },
+    { id: 6, type: 'VIP Room 2', category: 'vip', amount: 360, time: '1:00 PM', dancer: 'Crystal' }
+  ]
+
+  const getCategoryStyle = (category: string) => {
+    switch (category) {
+      case 'vip': return { bg: 'bg-gold-500/10', text: 'text-gold-400', border: 'border-gold-500/20' }
+      case 'bar': return { bg: 'bg-royal-500/10', text: 'text-royal-400', border: 'border-royal-500/20' }
+      case 'cover': return { bg: 'bg-electric-500/10', text: 'text-electric-400', border: 'border-electric-500/20' }
+      default: return { bg: 'bg-zinc-500/10', text: 'text-zinc-400', border: 'border-zinc-500/20' }
+    }
+  }
+
+  const monthlyGoal = 50000
+  const goalProgress = ((monthlyRevenue || 48500) / monthlyGoal) * 100
+  const daysRemaining = 30 - new Date().getDate()
+  const dailyTarget = daysRemaining > 0 ? (monthlyGoal - (monthlyRevenue || 48500)) / daysRemaining : 0
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-white">Revenue Dashboard</h1>
-          <p className="text-gray-400 mt-1">
+          <h1 className="text-2xl lg:text-3xl font-bold text-text-primary">
+            Revenue Dashboard
+          </h1>
+          <p className="text-text-secondary mt-1">
             Track financial performance and revenue analytics
           </p>
         </div>
         
-        <div className="flex items-center space-x-2">
-          <select
-            value={selectedPeriod}
-            onChange={(e) => setSelectedPeriod(e.target.value)}
-            className="bg-dark-card border border-white/20 rounded-lg text-white px-4 py-2 focus:outline-none focus:ring-2 focus:ring-accent-blue"
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Period Selector */}
+          <div className="relative">
+            <select
+              value={selectedPeriod}
+              onChange={(e) => setSelectedPeriod(e.target.value)}
+              className="input-premium pr-10 appearance-none cursor-pointer"
+            >
+              <option value="today">Today</option>
+              <option value="week">This Week</option>
+              <option value="month">This Month</option>
+              <option value="year">This Year</option>
+            </select>
+            <FunnelIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-tertiary pointer-events-none" />
+          </div>
+
+          {/* Export Button */}
+          <button 
+            onClick={() => setShowExportModal(true)}
+            className="btn-secondary flex items-center gap-2"
           >
-            <option value="today">Today</option>
-            <option value="week">This Week</option>
-            <option value="month">This Month</option>
-            <option value="year">This Year</option>
-          </select>
+            <ArrowDownTrayIcon className="w-4 h-4" />
+            <span>Export</span>
+          </button>
         </div>
       </div>
 
       {/* Revenue Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {revenueData.map((item) => {
-          const Icon = item.icon
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {revenueCards.map((card, index) => {
+          const Icon = card.icon
           return (
             <div 
-              key={item.title}
-              className="bg-dark-card/80 backdrop-blur-xl border border-white/10 rounded-xl p-6 hover:border-accent-blue/30 transition-all duration-300"
+              key={card.title}
+              className={`card-premium p-5 hover:${card.glow} transition-all duration-300`}
+              style={{ animationDelay: `${index * 100}ms` }}
             >
-              <div className="flex items-center justify-between mb-4">
-                <div className={`p-3 bg-${item.color}/20 rounded-lg`}>
-                  <Icon className={`h-6 w-6 text-${item.color}`} />
+              <div className="flex items-start justify-between mb-4">
+                <div className={`p-2.5 rounded-xl bg-gradient-to-br ${card.gradient}`}>
+                  <Icon className="w-5 h-5 text-white" />
                 </div>
-                <div className={`flex items-center text-xs font-medium px-2 py-1 rounded-full ${
-                  item.changeType === 'increase' 
-                    ? 'bg-green-900/30 text-green-400' 
-                    : 'bg-red-900/30 text-red-400'
+                <div className={`flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full ${
+                  card.positive 
+                    ? 'bg-success-500/10 text-success-400' 
+                    : 'bg-danger-500/10 text-danger-400'
                 }`}>
-                  {item.changeType === 'increase' ? (
-                    <ArrowUpIcon className="h-3 w-3 mr-1" />
+                  {card.positive ? (
+                    <ArrowUpIcon className="w-3 h-3" />
                   ) : (
-                    <TrendingDownIcon className="h-3 w-3 mr-1" />
+                    <ArrowTrendingDownIcon className="w-3 h-3" />
                   )}
-                  {item.change}
+                  {card.change}
                 </div>
               </div>
               
-              <div className="space-y-2">
-                <h3 className="text-sm font-medium text-gray-400">{item.title}</h3>
-                <p className="text-2xl font-bold text-white">
-                  ${item.amount.toLocaleString()}
+              <div>
+                <p className="text-sm text-text-secondary mb-1">{card.title}</p>
+                <p className="text-2xl font-bold text-text-primary font-mono tabular-nums">
+                  ${card.amount.toLocaleString()}
                 </p>
-                <p className="text-xs text-gray-500">{item.period}</p>
+                <p className="text-xs text-text-muted mt-1">{card.period}</p>
               </div>
             </div>
           )
         })}
       </div>
 
-      {/* Revenue Breakdown */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Breakdown Chart */}
-        <div className="bg-dark-card/80 backdrop-blur-xl border border-white/10 rounded-xl p-6">
-          <h2 className="text-xl font-semibold text-white mb-6">Revenue Breakdown</h2>
+      {/* Revenue Breakdown & Live Metrics */}
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+        {/* Revenue Breakdown - 3 cols */}
+        <div className="lg:col-span-3 card-premium p-6">
+          <h2 className="text-lg font-semibold text-text-primary mb-6">Revenue Breakdown</h2>
           
+          {/* Visual Bar Chart */}
+          <div className="mb-6">
+            <div className="flex h-8 rounded-xl overflow-hidden bg-midnight-900">
+              {revenueBreakdown.map((item, index) => (
+                <div 
+                  key={item.category}
+                  className={`${item.color} transition-all duration-700 ease-out relative group`}
+                  style={{ 
+                    width: `${item.percentage}%`,
+                    animationDelay: `${index * 150}ms`
+                  }}
+                >
+                  <div className="absolute inset-0 bg-white/0 group-hover:bg-white/10 transition-colors" />
+                </div>
+              ))}
+            </div>
+          </div>
+          
+          {/* Breakdown List */}
           <div className="space-y-4">
-            {revenueBreakdown.map((item) => (
-              <div key={item.category} className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-300 font-medium">{item.category}</span>
-                  <div className="text-right">
-                    <span className="text-white font-medium">${item.amount.toFixed(0)}</span>
-                    <span className="text-gray-400 text-sm ml-2">({item.percentage}%)</span>
+            {revenueBreakdown.map((item) => {
+              const Icon = item.icon
+              return (
+                <div key={item.category} className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2 rounded-lg ${item.color}/10`}>
+                      <Icon className={`w-4 h-4 ${item.textColor}`} />
+                    </div>
+                    <div>
+                      <p className="text-text-primary font-medium">{item.category}</p>
+                      <p className="text-xs text-text-muted">{item.percentage}% of total</p>
+                    </div>
                   </div>
+                  <p className="text-text-primary font-semibold font-mono">
+                    ${item.amount.toFixed(0)}
+                  </p>
                 </div>
-                <div className="w-full bg-dark-bg/50 rounded-full h-2 overflow-hidden">
-                  <div 
-                    className={`h-full bg-${item.color} transition-all duration-500`}
-                    style={{ width: `${item.percentage}%` }}
-                  />
-                </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         </div>
 
-        {/* Live Metrics */}
-        <div className="bg-dark-card/80 backdrop-blur-xl border border-white/10 rounded-xl p-6">
-          <h2 className="text-xl font-semibold text-white mb-6">Live Metrics</h2>
-          
-          <div className="space-y-6">
-            <div className="bg-dark-bg/50 rounded-lg p-4">
-              <h3 className="text-sm font-medium text-gray-400 mb-2">Revenue Per Hour</h3>
-              <div className="text-2xl font-bold text-accent-blue">
-                ${((todayRevenue || 0) / new Date().getHours() || 0).toFixed(0)}
+        {/* Live Metrics - 2 cols */}
+        <div className="lg:col-span-2 space-y-4">
+          {/* Revenue Per Hour */}
+          <div className="card-premium p-5">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="p-2 rounded-lg bg-electric-500/10">
+                <ClockIcon className="w-5 h-5 text-electric-400" />
               </div>
-              <div className="text-xs text-gray-500 mt-1">Average since opening</div>
+              <div>
+                <p className="text-sm text-text-secondary">Revenue Per Hour</p>
+                <p className="text-xl font-bold text-electric-400 font-mono">
+                  ${Math.round((todayRevenue || 2847) / Math.max(new Date().getHours(), 1))}
+                </p>
+              </div>
             </div>
+            <p className="text-xs text-text-muted">Average since opening</p>
+          </div>
 
-            <div className="bg-dark-bg/50 rounded-lg p-4">
-              <h3 className="text-sm font-medium text-gray-400 mb-2">Peak Hour Revenue</h3>
-              <div className="text-2xl font-bold text-accent-gold">
-                ${Math.max(150, (todayRevenue || 0) * 0.3).toFixed(0)}
+          {/* Peak Hour */}
+          <div className="card-premium p-5">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="p-2 rounded-lg bg-gold-500/10">
+                <SparklesIcon className="w-5 h-5 text-gold-400" />
               </div>
-              <div className="text-xs text-gray-500 mt-1">Between 10-11 PM</div>
+              <div>
+                <p className="text-sm text-text-secondary">Peak Hour Revenue</p>
+                <p className="text-xl font-bold text-gold-400 font-mono">
+                  ${Math.round((todayRevenue || 2847) * 0.35)}
+                </p>
+              </div>
             </div>
+            <p className="text-xs text-text-muted">10:00 PM - 11:00 PM</p>
+          </div>
 
-            <div className="bg-dark-bg/50 rounded-lg p-4">
-              <h3 className="text-sm font-medium text-gray-400 mb-2">Average Transaction</h3>
-              <div className="text-2xl font-bold text-accent-red">
-                ${((todayRevenue || 0) / 12 || 45).toFixed(0)}
+          {/* Avg Transaction */}
+          <div className="card-premium p-5">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="p-2 rounded-lg bg-royal-500/10">
+                <BanknotesIcon className="w-5 h-5 text-royal-400" />
               </div>
-              <div className="text-xs text-gray-500 mt-1">Per customer visit</div>
+              <div>
+                <p className="text-sm text-text-secondary">Avg Transaction</p>
+                <p className="text-xl font-bold text-royal-400 font-mono">
+                  ${Math.round((todayRevenue || 2847) / 24)}
+                </p>
+              </div>
             </div>
+            <p className="text-xs text-text-muted">Per customer today</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Monthly Goal */}
+      <div className="card-premium p-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+          <div>
+            <h2 className="text-lg font-semibold text-text-primary">Monthly Goal Progress</h2>
+            <p className="text-sm text-text-secondary">December 2025</p>
+          </div>
+          <div className="text-right">
+            <p className="text-2xl font-bold text-gold-400 font-mono">
+              ${(monthlyRevenue || 48500).toLocaleString()}
+            </p>
+            <p className="text-sm text-text-muted">of ${monthlyGoal.toLocaleString()} goal</p>
+          </div>
+        </div>
+
+        {/* Progress Bar */}
+        <div className="relative mb-6">
+          <div className="h-4 bg-midnight-900 rounded-full overflow-hidden">
+            <div 
+              className="h-full bg-gradient-to-r from-gold-600 via-gold-500 to-gold-400 rounded-full transition-all duration-1000 ease-out relative"
+              style={{ width: `${Math.min(goalProgress, 100)}%` }}
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer" />
+            </div>
+          </div>
+          <div 
+            className="absolute -top-1 w-1 h-6 bg-white/50 rounded-full"
+            style={{ left: `${Math.min(goalProgress, 100)}%`, transform: 'translateX(-50%)' }}
+          />
+        </div>
+
+        {/* Stats Grid */}
+        <div className="grid grid-cols-3 gap-4">
+          <div className="text-center p-3 bg-midnight-900/50 rounded-xl">
+            <p className="text-2xl font-bold text-text-primary font-mono">{goalProgress.toFixed(1)}%</p>
+            <p className="text-xs text-text-muted">Achieved</p>
+          </div>
+          <div className="text-center p-3 bg-midnight-900/50 rounded-xl">
+            <p className="text-2xl font-bold text-warning-400 font-mono">{daysRemaining}</p>
+            <p className="text-xs text-text-muted">Days Left</p>
+          </div>
+          <div className="text-center p-3 bg-midnight-900/50 rounded-xl">
+            <p className="text-2xl font-bold text-electric-400 font-mono">
+              ${dailyTarget > 0 ? Math.round(dailyTarget).toLocaleString() : '0'}
+            </p>
+            <p className="text-xs text-text-muted">Daily Target</p>
           </div>
         </div>
       </div>
 
       {/* Recent Transactions */}
-      <div className="bg-dark-card/80 backdrop-blur-xl border border-white/10 rounded-xl p-6">
+      <div className="card-premium p-6">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-semibold text-white">Recent Transactions</h2>
-          <button className="text-accent-blue hover:text-accent-gold transition-colors text-sm">
+          <h2 className="text-lg font-semibold text-text-primary">Recent Transactions</h2>
+          <button className="text-sm text-gold-400 hover:text-gold-300 transition-colors">
             View All →
           </button>
         </div>
         
-        <div className="space-y-4">
-          {/* Mock transaction data */}
-          {[
-            { id: 1, type: 'VIP Room 3', amount: 180, time: '2:45 PM', customer: 'Anonymous' },
-            { id: 2, type: 'Bar Sale', amount: 85, time: '2:30 PM', customer: 'John D.' },
-            { id: 3, type: 'Cover Charge', amount: 25, time: '2:15 PM', customer: 'Guest' },
-            { id: 4, type: 'VIP Room 1', amount: 240, time: '1:45 PM', customer: 'Michael R.' },
-            { id: 5, type: 'Bar Sale', amount: 120, time: '1:30 PM', customer: 'Sarah M.' }
-          ].map((transaction) => (
-            <div 
-              key={transaction.id}
-              className="flex items-center justify-between p-4 bg-dark-bg/50 rounded-lg border border-white/5 hover:border-white/20 transition-colors"
-            >
-              <div className="flex items-center space-x-4">
-                <div className="w-10 h-10 bg-gradient-to-r from-accent-blue to-accent-gold rounded-full flex items-center justify-center">
-                  <CurrencyDollarIcon className="h-5 w-5 text-white" />
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-white/5">
+                <th className="text-left text-xs font-medium text-text-muted uppercase tracking-wider pb-3">Type</th>
+                <th className="text-left text-xs font-medium text-text-muted uppercase tracking-wider pb-3">Dancer</th>
+                <th className="text-left text-xs font-medium text-text-muted uppercase tracking-wider pb-3">Time</th>
+                <th className="text-right text-xs font-medium text-text-muted uppercase tracking-wider pb-3">Amount</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-white/5">
+              {recentTransactions.map((tx) => {
+                const style = getCategoryStyle(tx.category)
+                return (
+                  <tr key={tx.id} className="group hover:bg-white/[0.02] transition-colors">
+                    <td className="py-3">
+                      <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium ${style.bg} ${style.text} border ${style.border}`}>
+                        {tx.type}
+                      </span>
+                    </td>
+                    <td className="py-3 text-text-secondary">
+                      {tx.dancer || '—'}
+                    </td>
+                    <td className="py-3 text-text-muted text-sm">
+                      {tx.time}
+                    </td>
+                    <td className="py-3 text-right">
+                      <span className="text-success-400 font-semibold font-mono">
+                        +${tx.amount}
+                      </span>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Export Modal */}
+      {showExportModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div 
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => setShowExportModal(false)}
+          />
+          <div className="relative bg-midnight-900 border border-white/10 rounded-2xl p-6 w-full max-w-md animate-scale-in">
+            <h3 className="text-xl font-semibold text-text-primary mb-4">Export Revenue Data</h3>
+            
+            <div className="space-y-3 mb-6">
+              <button className="w-full p-4 text-left bg-midnight-950 hover:bg-white/5 border border-white/10 rounded-xl transition-colors group">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-success-500/10 rounded-lg group-hover:bg-success-500/20 transition-colors">
+                    <ArrowDownTrayIcon className="w-5 h-5 text-success-400" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-text-primary">Export as CSV</p>
+                    <p className="text-sm text-text-muted">Spreadsheet format</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-white font-medium">{transaction.type}</p>
-                  <p className="text-gray-400 text-sm">{transaction.customer} • {transaction.time}</p>
-                </div>
-              </div>
+              </button>
               
-              <div className="text-right">
-                <p className="text-green-400 font-bold">+${transaction.amount}</p>
-              </div>
+              <button className="w-full p-4 text-left bg-midnight-950 hover:bg-white/5 border border-white/10 rounded-xl transition-colors group">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-danger-500/10 rounded-lg group-hover:bg-danger-500/20 transition-colors">
+                    <ArrowDownTrayIcon className="w-5 h-5 text-danger-400" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-text-primary">Export as PDF</p>
+                    <p className="text-sm text-text-muted">Printable report</p>
+                  </div>
+                </div>
+              </button>
+              
+              <button className="w-full p-4 text-left bg-midnight-950 hover:bg-white/5 border border-white/10 rounded-xl transition-colors group">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-royal-500/10 rounded-lg group-hover:bg-royal-500/20 transition-colors">
+                    <ArrowDownTrayIcon className="w-5 h-5 text-royal-400" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-text-primary">Export as JSON</p>
+                    <p className="text-sm text-text-muted">Raw data format</p>
+                  </div>
+                </div>
+              </button>
             </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Financial Goals */}
-      <div className="bg-dark-card/80 backdrop-blur-xl border border-white/10 rounded-xl p-6">
-        <h2 className="text-xl font-semibold text-white mb-6">Monthly Goals</h2>
-        
-        <div className="space-y-6">
-          <div>
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-gray-300">Monthly Target</span>
-              <span className="text-white font-medium">$25,000</span>
-            </div>
-            <div className="w-full bg-dark-bg/50 rounded-full h-3 overflow-hidden">
-              <div 
-                className="h-full bg-gradient-to-r from-accent-blue to-accent-gold transition-all duration-500"
-                style={{ width: `${Math.min(((monthlyRevenue || 0) / 25000) * 100, 100)}%` }}
-              />
-            </div>
-            <div className="flex justify-between items-center mt-2 text-sm">
-              <span className="text-gray-400">
-                ${(monthlyRevenue || 0).toLocaleString()} achieved
-              </span>
-              <span className="text-accent-gold">
-                {(((monthlyRevenue || 0) / 25000) * 100).toFixed(1)}%
-              </span>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-3 gap-4 text-center">
-            <div className="bg-dark-bg/50 rounded-lg p-3">
-              <div className="text-lg font-bold text-white">{new Date().getDate()}</div>
-              <div className="text-xs text-gray-400">Days Elapsed</div>
-            </div>
-            <div className="bg-dark-bg/50 rounded-lg p-3">
-              <div className="text-lg font-bold text-accent-gold">
-                ${Math.round((25000 - (monthlyRevenue || 0))).toLocaleString()}
-              </div>
-              <div className="text-xs text-gray-400">Remaining</div>
-            </div>
-            <div className="bg-dark-bg/50 rounded-lg p-3">
-              <div className="text-lg font-bold text-accent-blue">
-                ${Math.round((25000 - (monthlyRevenue || 0)) / (30 - new Date().getDate()) || 0).toLocaleString()}
-              </div>
-              <div className="text-xs text-gray-400">Daily Target</div>
-            </div>
+            
+            <button 
+              onClick={() => setShowExportModal(false)}
+              className="w-full btn-ghost"
+            >
+              Cancel
+            </button>
           </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }
