@@ -5,14 +5,20 @@ import { updateUser } from '../../store/slices/authSlice'
 import {
   UserCircleIcon,
   BellIcon,
-  CogIcon,
+  Cog6ToothIcon,
   ShieldCheckIcon,
   PaintBrushIcon,
-  LanguageIcon,
+  GlobeAltIcon,
   DevicePhoneMobileIcon,
   KeyIcon,
   TrashIcon,
-  CheckIcon
+  CheckIcon,
+  ChevronRightIcon,
+  CreditCardIcon,
+  BuildingStorefrontIcon,
+  CloudIcon,
+  LinkIcon,
+  ExclamationTriangleIcon
 } from '@heroicons/react/24/outline'
 
 const Settings: React.FC = () => {
@@ -20,13 +26,15 @@ const Settings: React.FC = () => {
   const { user } = useSelector((state: RootState) => state.auth)
   
   const [activeTab, setActiveTab] = useState('profile')
+  const [saveSuccess, setSaveSuccess] = useState(false)
+  
   const [profileData, setProfileData] = useState({
-    ownerName: user?.ownerName || '',
-    email: user?.email || '',
-    phoneNumber: user?.phoneNumber || '',
-    clubName: user?.clubName || '',
-    address: '',
-    timezone: 'America/New_York'
+    ownerName: user?.ownerName || 'Club Manager',
+    email: user?.email || 'admin@clubops.com',
+    phoneNumber: user?.phoneNumber || '(555) 123-4567',
+    clubName: user?.clubName || 'Your Club',
+    address: '123 Entertainment Blvd, Las Vegas, NV 89101',
+    timezone: 'America/Los_Angeles'
   })
   
   const [notifications, setNotifications] = useState({
@@ -35,7 +43,9 @@ const Settings: React.FC = () => {
     systemUpdates: true,
     marketingEmails: false,
     complianceAlerts: true,
-    revenueReports: true
+    revenueReports: true,
+    dancerCheckIns: true,
+    vipAlerts: true
   })
 
   const [preferences, setPreferences] = useState({
@@ -48,15 +58,18 @@ const Settings: React.FC = () => {
   })
 
   const tabs = [
-    { id: 'profile', name: 'Profile', icon: UserCircleIcon },
-    { id: 'notifications', name: 'Notifications', icon: BellIcon },
-    { id: 'preferences', name: 'Preferences', icon: CogIcon },
-    { id: 'security', name: 'Security', icon: ShieldCheckIcon },
-    { id: 'appearance', name: 'Appearance', icon: PaintBrushIcon }
+    { id: 'profile', name: 'Profile', icon: UserCircleIcon, description: 'Personal & club info' },
+    { id: 'notifications', name: 'Notifications', icon: BellIcon, description: 'Alert preferences' },
+    { id: 'preferences', name: 'Preferences', icon: Cog6ToothIcon, description: 'System settings' },
+    { id: 'security', name: 'Security', icon: ShieldCheckIcon, description: 'Account protection' },
+    { id: 'integrations', name: 'Integrations', icon: LinkIcon, description: 'Connected services' },
+    { id: 'appearance', name: 'Appearance', icon: PaintBrushIcon, description: 'Look & feel' }
   ]
 
   const handleProfileSave = () => {
     dispatch(updateUser(profileData))
+    setSaveSuccess(true)
+    setTimeout(() => setSaveSuccess(false), 3000)
   }
 
   const handleNotificationToggle = (key: string) => {
@@ -73,37 +86,74 @@ const Settings: React.FC = () => {
     }))
   }
 
+  // Toggle Switch Component
+  const Toggle = ({ enabled, onChange }: { enabled: boolean; onChange: () => void }) => (
+    <button
+      onClick={onChange}
+      className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-gold-500/50 focus:ring-offset-2 focus:ring-offset-midnight-950 ${
+        enabled ? 'bg-gold-500' : 'bg-midnight-700'
+      }`}
+    >
+      <span
+        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
+          enabled ? 'translate-x-5' : 'translate-x-0.5'
+        }`}
+      />
+    </button>
+  )
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-white">Settings</h1>
-          <p className="text-gray-400 mt-1">
+          <h1 className="text-2xl lg:text-3xl font-bold text-text-primary">Settings</h1>
+          <p className="text-text-secondary mt-1">
             Manage your account preferences and club settings
           </p>
         </div>
+        
+        {/* Save Success Toast */}
+        {saveSuccess && (
+          <div className="flex items-center gap-2 px-4 py-2 bg-success-500/10 border border-success-500/20 rounded-xl animate-fade-in">
+            <CheckIcon className="w-5 h-5 text-success-400" />
+            <span className="text-success-400 text-sm font-medium">Changes saved successfully</span>
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Settings Navigation */}
         <div className="lg:col-span-1">
-          <div className="bg-dark-card/80 backdrop-blur-xl border border-white/10 rounded-xl p-4">
-            <nav className="space-y-2">
+          <div className="card-premium p-2">
+            <nav className="space-y-1">
               {tabs.map((tab) => {
                 const Icon = tab.icon
+                const isActive = activeTab === tab.id
                 return (
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg font-medium text-sm transition-all duration-200 ${
-                      activeTab === tab.id
-                        ? 'bg-accent-blue/20 text-accent-blue border border-accent-blue/30'
-                        : 'text-gray-400 hover:text-white hover:bg-white/5'
+                    className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left transition-all duration-200 group ${
+                      isActive
+                        ? 'bg-gold-500/10 border border-gold-500/20'
+                        : 'hover:bg-white/5'
                     }`}
                   >
-                    <Icon className="h-4 w-4" />
-                    <span>{tab.name}</span>
+                    <div className={`p-2 rounded-lg transition-colors ${
+                      isActive ? 'bg-gold-500/20' : 'bg-midnight-800 group-hover:bg-midnight-700'
+                    }`}>
+                      <Icon className={`w-4 h-4 ${isActive ? 'text-gold-400' : 'text-text-tertiary group-hover:text-text-secondary'}`} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className={`text-sm font-medium truncate ${isActive ? 'text-gold-400' : 'text-text-primary'}`}>
+                        {tab.name}
+                      </p>
+                      <p className="text-xs text-text-muted truncate">{tab.description}</p>
+                    </div>
+                    <ChevronRightIcon className={`w-4 h-4 transition-colors ${
+                      isActive ? 'text-gold-400' : 'text-text-muted'
+                    }`} />
                   </button>
                 )
               })}
@@ -112,362 +162,414 @@ const Settings: React.FC = () => {
         </div>
 
         {/* Settings Content */}
-        <div className="lg:col-span-3">
-          <div className="bg-dark-card/80 backdrop-blur-xl border border-white/10 rounded-xl p-6">
-            {/* Profile Tab */}
-            {activeTab === 'profile' && (
-              <div className="space-y-6">
+        <div className="lg:col-span-3 space-y-6">
+          {/* Profile Tab */}
+          {activeTab === 'profile' && (
+            <div className="card-premium p-6 space-y-6">
+              <div className="flex items-start gap-4 pb-6 border-b border-white/5">
+                <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-gold-500 to-gold-600 flex items-center justify-center text-2xl font-bold text-white">
+                  {profileData.ownerName.charAt(0)}
+                </div>
+                <div className="flex-1">
+                  <h2 className="text-xl font-semibold text-text-primary">{profileData.ownerName}</h2>
+                  <p className="text-text-secondary">{profileData.clubName}</p>
+                  <p className="text-text-muted text-sm mt-1">{profileData.email}</p>
+                </div>
+                <button className="btn-secondary text-sm">
+                  Change Photo
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
-                  <h2 className="text-xl font-semibold text-white mb-4">Profile Information</h2>
-                  <p className="text-gray-400 text-sm">Update your account details and club information.</p>
+                  <label className="block text-sm font-medium text-text-secondary mb-2">Full Name</label>
+                  <input
+                    type="text"
+                    value={profileData.ownerName}
+                    onChange={(e) => setProfileData({...profileData, ownerName: e.target.value})}
+                    className="input-premium w-full"
+                  />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Full Name
-                    </label>
-                    <input
-                      type="text"
-                      value={profileData.ownerName}
-                      onChange={(e) => setProfileData({...profileData, ownerName: e.target.value})}
-                      className="w-full px-4 py-3 bg-dark-bg/50 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent-blue focus:border-transparent"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Email Address
-                    </label>
-                    <input
-                      type="email"
-                      value={profileData.email}
-                      onChange={(e) => setProfileData({...profileData, email: e.target.value})}
-                      className="w-full px-4 py-3 bg-dark-bg/50 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent-blue focus:border-transparent"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Phone Number
-                    </label>
-                    <input
-                      type="tel"
-                      value={profileData.phoneNumber}
-                      onChange={(e) => setProfileData({...profileData, phoneNumber: e.target.value})}
-                      className="w-full px-4 py-3 bg-dark-bg/50 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent-blue focus:border-transparent"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Club Name
-                    </label>
-                    <input
-                      type="text"
-                      value={profileData.clubName}
-                      onChange={(e) => setProfileData({...profileData, clubName: e.target.value})}
-                      className="w-full px-4 py-3 bg-dark-bg/50 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent-blue focus:border-transparent"
-                    />
-                  </div>
-
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Club Address
-                    </label>
-                    <input
-                      type="text"
-                      value={profileData.address}
-                      onChange={(e) => setProfileData({...profileData, address: e.target.value})}
-                      className="w-full px-4 py-3 bg-dark-bg/50 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent-blue focus:border-transparent"
-                      placeholder="123 Main St, City, State 12345"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Timezone
-                    </label>
-                    <select
-                      value={profileData.timezone}
-                      onChange={(e) => setProfileData({...profileData, timezone: e.target.value})}
-                      className="w-full px-4 py-3 bg-dark-bg/50 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-accent-blue focus:border-transparent"
-                    >
-                      <option value="America/New_York">Eastern Time</option>
-                      <option value="America/Chicago">Central Time</option>
-                      <option value="America/Denver">Mountain Time</option>
-                      <option value="America/Los_Angeles">Pacific Time</option>
-                    </select>
-                  </div>
+                <div>
+                  <label className="block text-sm font-medium text-text-secondary mb-2">Email Address</label>
+                  <input
+                    type="email"
+                    value={profileData.email}
+                    onChange={(e) => setProfileData({...profileData, email: e.target.value})}
+                    className="input-premium w-full"
+                  />
                 </div>
 
-                <div className="flex justify-end">
-                  <button
-                    onClick={handleProfileSave}
-                    className="bg-gradient-to-r from-accent-blue to-accent-gold hover:from-accent-gold hover:to-accent-blue text-white font-semibold px-6 py-3 rounded-lg shadow-lg transition-all duration-300 transform hover:scale-105"
+                <div>
+                  <label className="block text-sm font-medium text-text-secondary mb-2">Phone Number</label>
+                  <input
+                    type="tel"
+                    value={profileData.phoneNumber}
+                    onChange={(e) => setProfileData({...profileData, phoneNumber: e.target.value})}
+                    className="input-premium w-full"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-text-secondary mb-2">Club Name</label>
+                  <input
+                    type="text"
+                    value={profileData.clubName}
+                    onChange={(e) => setProfileData({...profileData, clubName: e.target.value})}
+                    className="input-premium w-full"
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-text-secondary mb-2">Club Address</label>
+                  <input
+                    type="text"
+                    value={profileData.address}
+                    onChange={(e) => setProfileData({...profileData, address: e.target.value})}
+                    className="input-premium w-full"
+                    placeholder="123 Main St, City, State 12345"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-text-secondary mb-2">Timezone</label>
+                  <select
+                    value={profileData.timezone}
+                    onChange={(e) => setProfileData({...profileData, timezone: e.target.value})}
+                    className="input-premium w-full"
                   >
-                    Save Changes
+                    <option value="America/New_York">Eastern Time (ET)</option>
+                    <option value="America/Chicago">Central Time (CT)</option>
+                    <option value="America/Denver">Mountain Time (MT)</option>
+                    <option value="America/Los_Angeles">Pacific Time (PT)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex justify-end pt-4 border-t border-white/5">
+                <button onClick={handleProfileSave} className="btn-primary">
+                  Save Changes
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Notifications Tab */}
+          {activeTab === 'notifications' && (
+            <div className="card-premium p-6 space-y-6">
+              <div>
+                <h2 className="text-xl font-semibold text-text-primary">Notification Preferences</h2>
+                <p className="text-text-secondary text-sm mt-1">Choose how you want to receive alerts</p>
+              </div>
+
+              <div className="space-y-1">
+                {[
+                  { key: 'complianceAlerts', title: 'Compliance Alerts', desc: 'License expirations and compliance issues', icon: ShieldCheckIcon, critical: true },
+                  { key: 'vipAlerts', title: 'VIP Room Alerts', desc: 'Session timers and room status changes', icon: BuildingStorefrontIcon },
+                  { key: 'dancerCheckIns', title: 'Dancer Check-ins', desc: 'Notifications when dancers check in/out', icon: UserCircleIcon },
+                  { key: 'revenueReports', title: 'Revenue Reports', desc: 'Daily and weekly revenue summaries', icon: CreditCardIcon },
+                  { key: 'emailAlerts', title: 'Email Notifications', desc: 'Receive notifications via email', icon: BellIcon },
+                  { key: 'smsAlerts', title: 'SMS Alerts', desc: 'Text messages for critical alerts', icon: DevicePhoneMobileIcon },
+                  { key: 'systemUpdates', title: 'System Updates', desc: 'Platform updates and maintenance notices', icon: CloudIcon },
+                  { key: 'marketingEmails', title: 'Marketing Emails', desc: 'Product news and promotional content', icon: GlobeAltIcon }
+                ].map(({ key, title, desc, icon: Icon, critical }) => (
+                  <div 
+                    key={key} 
+                    className={`flex items-center justify-between p-4 rounded-xl transition-colors ${
+                      critical ? 'bg-gold-500/5 border border-gold-500/10' : 'hover:bg-white/[0.02]'
+                    }`}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className={`p-2.5 rounded-xl ${critical ? 'bg-gold-500/10' : 'bg-midnight-800'}`}>
+                        <Icon className={`w-5 h-5 ${critical ? 'text-gold-400' : 'text-text-tertiary'}`} />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h4 className="text-text-primary font-medium">{title}</h4>
+                          {critical && (
+                            <span className="px-2 py-0.5 text-[10px] font-medium bg-gold-500/20 text-gold-400 rounded-full uppercase">
+                              Important
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-text-muted text-sm">{desc}</p>
+                      </div>
+                    </div>
+                    <Toggle 
+                      enabled={notifications[key as keyof typeof notifications]} 
+                      onChange={() => handleNotificationToggle(key)} 
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Preferences Tab */}
+          {activeTab === 'preferences' && (
+            <div className="card-premium p-6 space-y-6">
+              <div>
+                <h2 className="text-xl font-semibold text-text-primary">System Preferences</h2>
+                <p className="text-text-secondary text-sm mt-1">Customize your ClubOps experience</p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div>
+                  <label className="block text-sm font-medium text-text-secondary mb-2">Language</label>
+                  <select
+                    value={preferences.language}
+                    onChange={(e) => handlePreferenceChange('language', e.target.value)}
+                    className="input-premium w-full"
+                  >
+                    <option value="en">English</option>
+                    <option value="es">Español</option>
+                    <option value="fr">Français</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-text-secondary mb-2">Currency</label>
+                  <select
+                    value={preferences.currency}
+                    onChange={(e) => handlePreferenceChange('currency', e.target.value)}
+                    className="input-premium w-full"
+                  >
+                    <option value="USD">USD ($)</option>
+                    <option value="EUR">EUR (€)</option>
+                    <option value="GBP">GBP (£)</option>
+                    <option value="CAD">CAD ($)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-text-secondary mb-2">Date Format</label>
+                  <select
+                    value={preferences.dateFormat}
+                    onChange={(e) => handlePreferenceChange('dateFormat', e.target.value)}
+                    className="input-premium w-full"
+                  >
+                    <option value="MM/dd/yyyy">MM/DD/YYYY</option>
+                    <option value="dd/MM/yyyy">DD/MM/YYYY</option>
+                    <option value="yyyy-MM-dd">YYYY-MM-DD</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-text-secondary mb-2">Time Format</label>
+                  <select
+                    value={preferences.timeFormat}
+                    onChange={(e) => handlePreferenceChange('timeFormat', e.target.value)}
+                    className="input-premium w-full"
+                  >
+                    <option value="12h">12 Hour (AM/PM)</option>
+                    <option value="24h">24 Hour</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-text-secondary mb-2">Auto Logout</label>
+                  <select
+                    value={preferences.autoLogout}
+                    onChange={(e) => handlePreferenceChange('autoLogout', e.target.value)}
+                    className="input-premium w-full"
+                  >
+                    <option value="15">15 minutes</option>
+                    <option value="30">30 minutes</option>
+                    <option value="60">1 hour</option>
+                    <option value="120">2 hours</option>
+                    <option value="0">Never</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Security Tab */}
+          {activeTab === 'security' && (
+            <div className="space-y-6">
+              <div className="card-premium p-6 space-y-6">
+                <div>
+                  <h2 className="text-xl font-semibold text-text-primary">Security Settings</h2>
+                  <p className="text-text-secondary text-sm mt-1">Manage your account security</p>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-4 bg-midnight-900/50 rounded-xl border border-white/5">
+                    <div className="flex items-center gap-4">
+                      <div className="p-2.5 rounded-xl bg-electric-500/10">
+                        <KeyIcon className="w-5 h-5 text-electric-400" />
+                      </div>
+                      <div>
+                        <h4 className="text-text-primary font-medium">Change Password</h4>
+                        <p className="text-text-muted text-sm">Last changed 30 days ago</p>
+                      </div>
+                    </div>
+                    <button className="btn-secondary text-sm">Update</button>
+                  </div>
+
+                  <div className="flex items-center justify-between p-4 bg-midnight-900/50 rounded-xl border border-white/5">
+                    <div className="flex items-center gap-4">
+                      <div className="p-2.5 rounded-xl bg-success-500/10">
+                        <DevicePhoneMobileIcon className="w-5 h-5 text-success-400" />
+                      </div>
+                      <div>
+                        <h4 className="text-text-primary font-medium">Two-Factor Authentication</h4>
+                        <p className="text-text-muted text-sm">Add an extra layer of security</p>
+                      </div>
+                    </div>
+                    <button className="px-4 py-2 bg-success-500 hover:bg-success-400 text-white text-sm font-medium rounded-xl transition-colors">
+                      Enable
+                    </button>
+                  </div>
+
+                  <div className="flex items-center justify-between p-4 bg-midnight-900/50 rounded-xl border border-white/5">
+                    <div className="flex items-center gap-4">
+                      <div className="p-2.5 rounded-xl bg-royal-500/10">
+                        <ShieldCheckIcon className="w-5 h-5 text-royal-400" />
+                      </div>
+                      <div>
+                        <h4 className="text-text-primary font-medium">Active Sessions</h4>
+                        <p className="text-text-muted text-sm">2 devices currently logged in</p>
+                      </div>
+                    </div>
+                    <button className="btn-secondary text-sm">Manage</button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Danger Zone */}
+              <div className="p-6 bg-danger-500/5 border border-danger-500/20 rounded-2xl">
+                <div className="flex items-start gap-4">
+                  <div className="p-2.5 rounded-xl bg-danger-500/10">
+                    <ExclamationTriangleIcon className="w-5 h-5 text-danger-400" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-danger-400 font-semibold">Danger Zone</h3>
+                    <p className="text-danger-400/70 text-sm mt-1">
+                      Permanently delete your account and all associated data. This action cannot be undone.
+                    </p>
+                  </div>
+                  <button className="px-4 py-2 bg-danger-500 hover:bg-danger-400 text-white text-sm font-medium rounded-xl transition-colors">
+                    Delete Account
                   </button>
                 </div>
               </div>
-            )}
+            </div>
+          )}
 
-            {/* Notifications Tab */}
-            {activeTab === 'notifications' && (
-              <div className="space-y-6">
-                <div>
-                  <h2 className="text-xl font-semibold text-white mb-4">Notification Preferences</h2>
-                  <p className="text-gray-400 text-sm">Choose how you want to receive notifications from ClubOps.</p>
-                </div>
+          {/* Integrations Tab */}
+          {activeTab === 'integrations' && (
+            <div className="card-premium p-6 space-y-6">
+              <div>
+                <h2 className="text-xl font-semibold text-text-primary">Integrations</h2>
+                <p className="text-text-secondary text-sm mt-1">Connect external services and tools</p>
+              </div>
 
-                <div className="space-y-6">
-                  {Object.entries(notifications).map(([key, value]) => (
-                    <div key={key} className="flex items-center justify-between p-4 bg-dark-bg/30 rounded-lg">
-                      <div>
-                        <h4 className="text-white font-medium capitalize">
-                          {key.replace(/([A-Z])/g, ' $1').trim()}
-                        </h4>
-                        <p className="text-gray-400 text-sm">
-                          {key === 'emailAlerts' && 'Get email notifications for important events'}
-                          {key === 'smsAlerts' && 'Receive SMS alerts for critical issues'}
-                          {key === 'systemUpdates' && 'Stay informed about system updates and maintenance'}
-                          {key === 'marketingEmails' && 'Receive promotional content and product updates'}
-                          {key === 'complianceAlerts' && 'Get notified about compliance and license issues'}
-                          {key === 'revenueReports' && 'Receive daily and weekly revenue reports'}
-                        </p>
+              <div className="space-y-4">
+                {[
+                  { name: 'Stripe', desc: 'Payment processing', status: 'connected', icon: '💳' },
+                  { name: 'QuickBooks', desc: 'Accounting software', status: 'available', icon: '📊' },
+                  { name: 'Google Calendar', desc: 'Schedule sync', status: 'available', icon: '📅' },
+                  { name: 'Slack', desc: 'Team notifications', status: 'available', icon: '💬' }
+                ].map((integration) => (
+                  <div key={integration.name} className="flex items-center justify-between p-4 bg-midnight-900/50 rounded-xl border border-white/5">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-xl bg-midnight-800 flex items-center justify-center text-2xl">
+                        {integration.icon}
                       </div>
-                      <button
-                        onClick={() => handleNotificationToggle(key)}
-                        className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-accent-blue focus:ring-offset-2 ${
-                          value ? 'bg-accent-blue' : 'bg-gray-600'
-                        }`}
-                      >
-                        <span
-                          className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                            value ? 'translate-x-5' : 'translate-x-0'
-                          }`}
-                        />
-                      </button>
+                      <div>
+                        <h4 className="text-text-primary font-medium">{integration.name}</h4>
+                        <p className="text-text-muted text-sm">{integration.desc}</p>
+                      </div>
                     </div>
+                    {integration.status === 'connected' ? (
+                      <div className="flex items-center gap-2">
+                        <span className="badge-success">Connected</span>
+                        <button className="btn-ghost text-sm">Configure</button>
+                      </div>
+                    ) : (
+                      <button className="btn-secondary text-sm">Connect</button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Appearance Tab */}
+          {activeTab === 'appearance' && (
+            <div className="card-premium p-6 space-y-8">
+              <div>
+                <h2 className="text-xl font-semibold text-text-primary">Appearance</h2>
+                <p className="text-text-secondary text-sm mt-1">Customize the look and feel</p>
+              </div>
+
+              <div>
+                <h3 className="text-text-primary font-medium mb-4">Theme</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <button className="p-4 border-2 border-gold-500/50 bg-gold-500/5 rounded-xl text-left transition-all hover:border-gold-500">
+                    <div className="w-full h-16 bg-gradient-to-br from-midnight-950 to-midnight-900 rounded-lg mb-3 ring-2 ring-gold-500/30" />
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="text-text-primary font-medium">Midnight Luxe</h4>
+                        <p className="text-text-muted text-xs">Current theme</p>
+                      </div>
+                      <CheckIcon className="w-5 h-5 text-gold-400" />
+                    </div>
+                  </button>
+
+                  <button className="p-4 border border-white/10 rounded-xl text-left opacity-60 cursor-not-allowed">
+                    <div className="w-full h-16 bg-gradient-to-br from-zinc-100 to-zinc-200 rounded-lg mb-3" />
+                    <h4 className="text-text-primary font-medium">Light Mode</h4>
+                    <p className="text-text-muted text-xs">Coming soon</p>
+                  </button>
+
+                  <button className="p-4 border border-white/10 rounded-xl text-left opacity-60 cursor-not-allowed">
+                    <div className="w-full h-16 bg-gradient-to-r from-midnight-950 via-zinc-600 to-zinc-100 rounded-lg mb-3" />
+                    <h4 className="text-text-primary font-medium">Auto</h4>
+                    <p className="text-text-muted text-xs">System preference</p>
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-text-primary font-medium mb-4">Accent Color</h3>
+                <div className="flex gap-3">
+                  {[
+                    { color: 'bg-gold-500', name: 'Gold', active: true },
+                    { color: 'bg-electric-500', name: 'Cyan' },
+                    { color: 'bg-royal-500', name: 'Purple' },
+                    { color: 'bg-danger-500', name: 'Red' },
+                    { color: 'bg-success-500', name: 'Green' }
+                  ].map((accent) => (
+                    <button
+                      key={accent.name}
+                      className={`w-10 h-10 rounded-xl ${accent.color} transition-transform hover:scale-110 ${
+                        accent.active ? 'ring-2 ring-white ring-offset-2 ring-offset-midnight-950' : ''
+                      }`}
+                      title={accent.name}
+                    />
                   ))}
                 </div>
               </div>
-            )}
 
-            {/* Preferences Tab */}
-            {activeTab === 'preferences' && (
-              <div className="space-y-6">
-                <div>
-                  <h2 className="text-xl font-semibold text-white mb-4">System Preferences</h2>
-                  <p className="text-gray-400 text-sm">Customize your ClubOps experience.</p>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      <LanguageIcon className="h-4 w-4 inline mr-2" />
-                      Language
-                    </label>
-                    <select
-                      value={preferences.language}
-                      onChange={(e) => handlePreferenceChange('language', e.target.value)}
-                      className="w-full px-4 py-3 bg-dark-bg/50 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-accent-blue"
-                    >
-                      <option value="en">English</option>
-                      <option value="es">Spanish</option>
-                      <option value="fr">French</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Currency
-                    </label>
-                    <select
-                      value={preferences.currency}
-                      onChange={(e) => handlePreferenceChange('currency', e.target.value)}
-                      className="w-full px-4 py-3 bg-dark-bg/50 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-accent-blue"
-                    >
-                      <option value="USD">USD ($)</option>
-                      <option value="EUR">EUR (€)</option>
-                      <option value="GBP">GBP (£)</option>
-                      <option value="CAD">CAD ($)</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Date Format
-                    </label>
-                    <select
-                      value={preferences.dateFormat}
-                      onChange={(e) => handlePreferenceChange('dateFormat', e.target.value)}
-                      className="w-full px-4 py-3 bg-dark-bg/50 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-accent-blue"
-                    >
-                      <option value="MM/dd/yyyy">MM/dd/yyyy</option>
-                      <option value="dd/MM/yyyy">dd/MM/yyyy</option>
-                      <option value="yyyy-MM-dd">yyyy-MM-dd</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Time Format
-                    </label>
-                    <select
-                      value={preferences.timeFormat}
-                      onChange={(e) => handlePreferenceChange('timeFormat', e.target.value)}
-                      className="w-full px-4 py-3 bg-dark-bg/50 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-accent-blue"
-                    >
-                      <option value="12h">12 Hour</option>
-                      <option value="24h">24 Hour</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Auto Logout (minutes)
-                    </label>
-                    <select
-                      value={preferences.autoLogout}
-                      onChange={(e) => handlePreferenceChange('autoLogout', e.target.value)}
-                      className="w-full px-4 py-3 bg-dark-bg/50 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-accent-blue"
-                    >
-                      <option value="15">15 minutes</option>
-                      <option value="30">30 minutes</option>
-                      <option value="60">1 hour</option>
-                      <option value="120">2 hours</option>
-                      <option value="0">Never</option>
-                    </select>
-                  </div>
+              <div>
+                <h3 className="text-text-primary font-medium mb-4">Display Density</h3>
+                <div className="flex gap-3">
+                  <button className="flex-1 p-4 border border-white/10 rounded-xl text-center hover:bg-white/5 transition-colors">
+                    <span className="text-text-primary font-medium">Comfortable</span>
+                  </button>
+                  <button className="flex-1 p-4 border-2 border-gold-500/50 bg-gold-500/5 rounded-xl text-center">
+                    <span className="text-gold-400 font-medium">Default</span>
+                  </button>
+                  <button className="flex-1 p-4 border border-white/10 rounded-xl text-center hover:bg-white/5 transition-colors">
+                    <span className="text-text-primary font-medium">Compact</span>
+                  </button>
                 </div>
               </div>
-            )}
-
-            {/* Security Tab */}
-            {activeTab === 'security' && (
-              <div className="space-y-6">
-                <div>
-                  <h2 className="text-xl font-semibold text-white mb-4">Security Settings</h2>
-                  <p className="text-gray-400 text-sm">Manage your account security and authentication.</p>
-                </div>
-
-                <div className="space-y-6">
-                  <div className="p-4 bg-dark-bg/30 rounded-lg">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h4 className="text-white font-medium flex items-center">
-                          <KeyIcon className="h-4 w-4 mr-2" />
-                          Change Password
-                        </h4>
-                        <p className="text-gray-400 text-sm">Update your account password</p>
-                      </div>
-                      <button className="bg-accent-blue hover:bg-accent-gold text-white font-medium px-4 py-2 rounded-lg transition-colors">
-                        Update
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="p-4 bg-dark-bg/30 rounded-lg">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h4 className="text-white font-medium flex items-center">
-                          <DevicePhoneMobileIcon className="h-4 w-4 mr-2" />
-                          Two-Factor Authentication
-                        </h4>
-                        <p className="text-gray-400 text-sm">Add an extra layer of security</p>
-                      </div>
-                      <button className="bg-green-600 hover:bg-green-500 text-white font-medium px-4 py-2 rounded-lg transition-colors">
-                        Enable
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="p-4 bg-dark-bg/30 rounded-lg">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h4 className="text-white font-medium">Active Sessions</h4>
-                        <p className="text-gray-400 text-sm">Manage your logged-in devices</p>
-                      </div>
-                      <button className="bg-gray-600 hover:bg-gray-500 text-white font-medium px-4 py-2 rounded-lg transition-colors">
-                        View All
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Appearance Tab */}
-            {activeTab === 'appearance' && (
-              <div className="space-y-6">
-                <div>
-                  <h2 className="text-xl font-semibold text-white mb-4">Appearance Settings</h2>
-                  <p className="text-gray-400 text-sm">Customize the look and feel of ClubOps.</p>
-                </div>
-
-                <div className="space-y-6">
-                  <div>
-                    <h4 className="text-white font-medium mb-4">Theme</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className={`p-4 border-2 rounded-lg cursor-pointer transition-colors ${
-                        preferences.theme === 'dark' ? 'border-accent-blue bg-accent-blue/10' : 'border-white/20'
-                      }`}>
-                        <div className="w-full h-20 bg-gradient-to-br from-gray-900 to-black rounded mb-3"></div>
-                        <h5 className="text-white font-medium">Dark Theme</h5>
-                        <p className="text-gray-400 text-sm">Current premium theme</p>
-                      </div>
-
-                      <div className={`p-4 border-2 rounded-lg cursor-pointer transition-colors opacity-50 ${
-                        preferences.theme === 'light' ? 'border-accent-blue bg-accent-blue/10' : 'border-white/20'
-                      }`}>
-                        <div className="w-full h-20 bg-gradient-to-br from-white to-gray-100 rounded mb-3"></div>
-                        <h5 className="text-white font-medium">Light Theme</h5>
-                        <p className="text-gray-400 text-sm">Coming soon</p>
-                      </div>
-
-                      <div className={`p-4 border-2 rounded-lg cursor-pointer transition-colors opacity-50 ${
-                        preferences.theme === 'auto' ? 'border-accent-blue bg-accent-blue/10' : 'border-white/20'
-                      }`}>
-                        <div className="w-full h-20 bg-gradient-to-r from-gray-900 via-gray-600 to-white rounded mb-3"></div>
-                        <h5 className="text-white font-medium">Auto Theme</h5>
-                        <p className="text-gray-400 text-sm">System preference</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <h4 className="text-white font-medium mb-4">Accent Colors</h4>
-                    <div className="flex space-x-3">
-                      <div className="w-8 h-8 rounded-full bg-accent-blue border-2 border-white cursor-pointer"></div>
-                      <div className="w-8 h-8 rounded-full bg-accent-gold border border-white/20 cursor-pointer"></div>
-                      <div className="w-8 h-8 rounded-full bg-accent-red border border-white/20 cursor-pointer"></div>
-                      <div className="w-8 h-8 rounded-full bg-green-500 border border-white/20 cursor-pointer"></div>
-                      <div className="w-8 h-8 rounded-full bg-purple-500 border border-white/20 cursor-pointer"></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Danger Zone */}
-      <div className="bg-red-900/20 border border-red-500/50 rounded-xl p-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-red-300 font-semibold flex items-center">
-              <TrashIcon className="h-5 w-5 mr-2" />
-              Danger Zone
-            </h3>
-            <p className="text-red-400/70 text-sm mt-1">
-              Permanently delete your account and all associated data
-            </p>
-          </div>
-          <button className="bg-red-600 hover:bg-red-500 text-white font-medium px-6 py-2 rounded-lg transition-colors">
-            Delete Account
-          </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
