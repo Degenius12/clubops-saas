@@ -37,6 +37,9 @@ const doorStaffRoutes = require('../routes/door-staff');
 const vipHostRoutes = require('../routes/vip-host');
 const securityRoutes = require('../routes/security');
 
+// Queue Routes (alias for dj-queue)
+const queueRoutes = require('../routes/queue');
+
 const app = express();
 const server = http.createServer(app);
 
@@ -131,6 +134,9 @@ app.use('/api/shifts', shiftRoutes);
 app.use('/api/door-staff', doorStaffRoutes);
 app.use('/api/vip-host', vipHostRoutes);
 app.use('/api/security', securityRoutes);
+
+// Queue Routes (frontend uses /api/queue)
+app.use('/api/queue', queueRoutes);
 
 // Make io accessible to routes for real-time updates
 app.set('io', io);
