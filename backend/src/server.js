@@ -31,6 +31,12 @@ const subscriptionRoutes = require('../routes/subscriptions');
 const analyticsRoutes = require('../routes/analytics');
 const webhookRoutes = require('../routes/webhooks');
 
+// Fraud Prevention Routes
+const shiftRoutes = require('../routes/shifts');
+const doorStaffRoutes = require('../routes/door-staff');
+const vipHostRoutes = require('../routes/vip-host');
+const securityRoutes = require('../routes/security');
+
 const app = express();
 const server = http.createServer(app);
 
@@ -42,6 +48,12 @@ const io = new Server(server, {
       "https://frontend-o9bhynpim-tony-telemacques-projects.vercel.app",
       "https://frontend-6v4tpr1qa-tony-telemacques-projects.vercel.app",
       "http://localhost:3000",
+      "http://localhost:3002",
+      "http://localhost:3003",
+      "http://localhost:3004",
+      "http://localhost:3005",
+      "http://localhost:3006",
+      "http://localhost:3007",
       "http://localhost:5173"
     ],
     methods: ["GET", "POST"]
@@ -67,6 +79,12 @@ app.use(cors({
     "https://frontend-o9bhynpim-tony-telemacques-projects.vercel.app",
     "https://frontend-6v4tpr1qa-tony-telemacques-projects.vercel.app",
     "http://localhost:3000",
+    "http://localhost:3002",
+    "http://localhost:3003",
+    "http://localhost:3004",
+    "http://localhost:3005",
+    "http://localhost:3006",
+    "http://localhost:3007",
     "http://localhost:5173"
   ],
   credentials: true
@@ -108,6 +126,15 @@ app.use('/api/financial', financialRoutes);
 app.use('/api/subscriptions', subscriptionRoutes);
 app.use('/api/analytics', analyticsRoutes);
 
+// Fraud Prevention & Role-Based Routes
+app.use('/api/shifts', shiftRoutes);
+app.use('/api/door-staff', doorStaffRoutes);
+app.use('/api/vip-host', vipHostRoutes);
+app.use('/api/security', securityRoutes);
+
+// Make io accessible to routes for real-time updates
+app.set('io', io);
+
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.json({ 
@@ -140,6 +167,44 @@ io.on('connection', (socket) => {
   // Dancer status updates
   socket.on('dancer-update', (data) => {
     socket.to(`club-${data.clubId}`).emit('dancer-updated', data);
+  });
+
+  // ==== FRAUD PREVENTION REAL-TIME EVENTS ====
+  
+  // Door Staff Events
+  socket.on('dancer-check-in', (data) => {
+    socket.to(`club-${data.clubId}`).emit('dancer-checked-in', data);
+  });
+
+  socket.on('dancer-check-out', (data) => {
+    socket.to(`club-${data.clubId}`).emit('dancer-checked-out', data);
+  });
+
+  // VIP Host Events
+  socket.on('vip-session-start', (data) => {
+    socket.to(`club-${data.clubId}`).emit('vip-session-started', data);
+  });
+
+  socket.on('vip-session-end', (data) => {
+    socket.to(`club-${data.clubId}`).emit('vip-session-ended', data);
+  });
+
+  socket.on('vip-song-count', (data) => {
+    socket.to(`club-${data.clubId}`).emit('vip-song-count-updated', data);
+  });
+
+  // Alert Events
+  socket.on('verification-alert', (data) => {
+    socket.to(`club-${data.clubId}`).emit('new-alert', data);
+  });
+
+  // Shift Events
+  socket.on('shift-start', (data) => {
+    socket.to(`club-${data.clubId}`).emit('shift-started', data);
+  });
+
+  socket.on('shift-end', (data) => {
+    socket.to(`club-${data.clubId}`).emit('shift-ended', data);
   });
 
   socket.on('disconnect', () => {

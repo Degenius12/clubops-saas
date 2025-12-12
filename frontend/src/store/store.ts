@@ -6,6 +6,11 @@ import queueSlice from './slices/queueSlice'
 import vipSlice from './slices/vipSlice'
 import revenueSlice from './slices/revenueSlice'
 import subscriptionSlice from './slices/subscriptionSlice'
+// Fraud Prevention Slices
+import shiftSlice from './slices/shiftSlice'
+import doorStaffSlice from './slices/doorStaffSlice'
+import vipHostSlice from './slices/vipHostSlice'
+import securitySlice from './slices/securitySlice'
 
 export const store = configureStore({
   reducer: {
@@ -16,6 +21,11 @@ export const store = configureStore({
     vip: vipSlice,
     revenue: revenueSlice,
     subscription: subscriptionSlice,
+    // Fraud Prevention Reducers
+    shift: shiftSlice,
+    doorStaff: doorStaffSlice,
+    vipHost: vipHostSlice,
+    security: securitySlice,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

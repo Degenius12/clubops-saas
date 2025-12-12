@@ -20,6 +20,11 @@ import VIPBooths from './components/vip/VIPBooths'
 import Revenue from './components/revenue/Revenue'
 import Settings from './components/settings/Settings'
 
+// Role-Based Station Interfaces (Fraud Prevention)
+import VipHostInterface from './components/vip-host/VipHostInterface'
+import DoorStaffInterface from './components/door-staff/DoorStaffInterface'
+import SecurityDashboard from './components/owner/SecurityDashboard'
+
 // SaaS Pages
 import SubscriptionDashboard from './components/subscription/SubscriptionDashboard'
 import BillingPanel from './components/billing/BillingPanel'
@@ -96,6 +101,27 @@ function App() {
             <DashboardLayout>
               <VIPBooths />
             </DashboardLayout>
+          </ProtectedRoute>
+        } />
+
+        {/* VIP Host Station - Tablet Interface for VIP Session Management */}
+        <Route path="/vip-host" element={
+          <ProtectedRoute>
+            <VipHostInterface />
+          </ProtectedRoute>
+        } />
+
+        {/* Door Staff Station - Tablet Interface for Check-Ins & Bar Fees */}
+        <Route path="/door-staff" element={
+          <ProtectedRoute>
+            <DoorStaffInterface />
+          </ProtectedRoute>
+        } />
+
+        {/* Owner Security Dashboard - Fraud Detection & Monitoring */}
+        <Route path="/security" element={
+          <ProtectedRoute>
+            <SecurityDashboard />
           </ProtectedRoute>
         } />
 

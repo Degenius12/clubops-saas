@@ -25,10 +25,10 @@ interface AuthState {
 const initialState: AuthState = {
   user: null,
   token: localStorage.getItem('token'),
-  isLoading: false,
-  loading: false,
+  isLoading: !!localStorage.getItem('token'), // Set loading true if we have a token to validate
+  loading: !!localStorage.getItem('token'),
   error: null,
-  isAuthenticated: false,
+  isAuthenticated: !!localStorage.getItem('token'), // Initialize based on token presence
 }
 
 // Async thunks for authentication
@@ -193,9 +193,24 @@ const authSlice = createSlice({
         state.error = action.error.message || 'Update failed'
       })
       // Get current user cases
+      .addCase(getCurrentUser.pending, (state) => {
+        state.isLoading = true
+        state.loading = true
+      })
       .addCase(getCurrentUser.fulfilled, (state, action) => {
         state.user = action.payload
         state.isAuthenticated = true
+        state.isLoading = false
+        state.loading = false
+      })
+      .addCase(getCurrentUser.rejected, (state) => {
+        // Token was invalid, clear auth state
+        state.user = null
+        state.token = null
+        state.isAuthenticated = false
+        state.isLoading = false
+        state.loading = false
+        localStorage.removeItem('token')
       })
   },
 })

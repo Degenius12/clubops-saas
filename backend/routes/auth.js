@@ -3,6 +3,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
 const { PrismaClient } = require('@prisma/client');
+const { auth } = require('../middleware/auth');
 
 const prisma = new PrismaClient();
 const router = express.Router();
@@ -14,9 +15,12 @@ router.post('/register', [
   body('email').isEmail().normalizeEmail(),
   body('password').isLength({ min: 6 }),
   body('clubName').notEmpty().trim(),
-  body('subdomain').notEmpty().trim(),
-  body('firstName').notEmpty().trim(),
-  body('lastName').notEmpty().trim()
+  // Made optional - will auto-generate from clubName if not provided
+  body('subdomain').optional().trim(),
+  // Support either ownerName OR firstName/lastName
+  body('ownerName').optional().trim(),
+  body('firstName').optional().trim(),
+  body('lastName').optional().trim()
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -24,7 +28,29 @@ router.post('/register', [
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { email, password, clubName, subdomain, firstName, lastName } = req.body;
+    const { email, password, clubName, ownerName, phoneNumber } = req.body;
+    
+    // Handle ownerName -> firstName/lastName split
+    let firstName = req.body.firstName;
+    let lastName = req.body.lastName;
+    if (ownerName && !firstName && !lastName) {
+      const nameParts = ownerName.trim().split(' ');
+      firstName = nameParts[0] || 'Owner';
+      lastName = nameParts.slice(1).join(' ') || 'User';
+    }
+    firstName = firstName || 'Owner';
+    lastName = lastName || 'User';
+
+    // Auto-generate subdomain from clubName if not provided
+    let subdomain = req.body.subdomain;
+    if (!subdomain) {
+      subdomain = clubName.toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '')
+        .substring(0, 30);
+      // Add random suffix to ensure uniqueness
+      subdomain = `${subdomain}-${Date.now().toString(36).slice(-4)}`;
+    }
 
     // Check if subdomain is taken
     const existingClub = await prisma.club.findUnique({
@@ -217,7 +243,7 @@ router.post('/login', [
 // @route   GET /api/auth/me
 // @desc    Get current user
 // @access  Private (handled by auth middleware)
-router.get('/me', async (req, res) => {
+router.get('/me', auth, async (req, res) => {
   try {
     const user = await prisma.clubUser.findUnique({
       where: { id: req.user.id },
