@@ -1,6 +1,6 @@
 // API Configuration
 // Use environment variable, with fallback to current production URL
-const PRODUCTION_API_URL = 'https://clubops-backend-8ttr5qcwc-tony-telemacques-projects.vercel.app';
+const PRODUCTION_API_URL = 'https://clubops-backend.vercel.app';
 const DEV_API_URL = 'http://localhost:3001';
 
 // Detect production environment
