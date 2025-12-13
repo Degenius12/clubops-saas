@@ -561,6 +561,320 @@ app.get('/api/financial/transactions', authenticateToken, (req, res) => {
   ]);
 });
 
+// ============= FRAUD PREVENTION - MOCK DATA =============
+let mockShift = {
+  id: 'shift-001',
+  staffId: 'staff-001',
+  role: 'door_staff',
+  startTime: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+  endTime: null,
+  openingBalance: 200,
+  closingBalance: null,
+  status: 'active'
+};
+
+let mockCheckedInDancers = [
+  { id: 'checkin-1', dancerId: 'd1', stageName: 'Crystal', checkInTime: new Date().toISOString(), barFeeStatus: 'PAID', barFeeAmount: 50, checkOutTime: null },
+  { id: 'checkin-2', dancerId: 'd2', stageName: 'Diamond', checkInTime: new Date().toISOString(), barFeeStatus: 'PAID', barFeeAmount: 50, checkOutTime: null },
+  { id: 'checkin-3', dancerId: 'd3', stageName: 'Ruby', checkInTime: new Date().toISOString(), barFeeStatus: 'PAID', barFeeAmount: 50, checkOutTime: null },
+  { id: 'checkin-4', dancerId: 'd4', stageName: 'Sapphire', checkInTime: new Date().toISOString(), barFeeStatus: 'PENDING', barFeeAmount: 0, checkOutTime: null },
+  { id: 'checkin-5', dancerId: 'd5', stageName: 'Emerald', checkInTime: new Date().toISOString(), barFeeStatus: 'PENDING', barFeeAmount: 0, checkOutTime: null }
+];
+
+let mockVipSessions = [
+  { id: 'session-1', boothId: 'booth-1', boothName: 'Champagne Room', dancerId: 'd4', dancerName: 'Sapphire', startTime: new Date(Date.now() - 30*60000).toISOString(), endTime: null, songCount: 6, hostSongCount: 6, status: 'active', customerConfirmed: false },
+  { id: 'session-2', boothId: 'booth-2', boothName: 'Diamond Suite', dancerId: 'd1', dancerName: 'Crystal', startTime: new Date(Date.now() - 2*60*60000).toISOString(), endTime: new Date(Date.now() - 60*60000).toISOString(), songCount: 8, hostSongCount: 8, status: 'verified', customerConfirmed: true },
+  { id: 'session-3', boothId: 'booth-3', boothName: 'Platinum Lounge', dancerId: 'd2', dancerName: 'Diamond', startTime: new Date(Date.now() - 3*60*60000).toISOString(), endTime: new Date(Date.now() - 2*60*60000).toISOString(), songCount: 18, hostSongCount: 15, status: 'mismatch', customerConfirmed: true, discrepancy: 3 }
+];
+
+let mockAlerts = [
+  { id: 'alert-1', type: 'VIP_SONG_MISMATCH', severity: 'HIGH', status: 'OPEN', message: '3 song discrepancy in Diamond Suite', createdAt: new Date().toISOString() },
+  { id: 'alert-2', type: 'LICENSE_EXPIRING', severity: 'MEDIUM', status: 'OPEN', message: "Ruby's license expires Jan 15, 2025", createdAt: new Date().toISOString() },
+  { id: 'alert-3', type: 'CASH_VARIANCE', severity: 'MEDIUM', status: 'ACKNOWLEDGED', message: '$15 variance from previous shift', createdAt: new Date().toISOString() }
+];
+
+let mockAuditLog = [
+  { id: 'audit-1', action: 'DANCER_CHECK_IN', staffId: 'staff-001', staffName: 'Mike (Door)', details: 'Crystal checked in', timestamp: new Date().toISOString(), riskLevel: 'LOW' },
+  { id: 'audit-2', action: 'VIP_SESSION_START', staffId: 'staff-002', staffName: 'Sarah (VIP)', details: 'Session started in Champagne Room', timestamp: new Date().toISOString(), riskLevel: 'LOW' },
+  { id: 'audit-3', action: 'SONG_COUNT_MISMATCH', staffId: 'staff-002', staffName: 'Sarah (VIP)', details: 'Host: 15, DJ: 18 - Discrepancy: 3', timestamp: new Date().toISOString(), riskLevel: 'HIGH' }
+];
+
+// ============= SHIFTS API =============
+app.post('/api/shifts/start', authenticateToken, (req, res) => {
+  const { openingBalance } = req.body;
+  mockShift = {
+    id: 'shift-' + Date.now(),
+    staffId: req.user.id,
+    role: req.user.role,
+    startTime: new Date().toISOString(),
+    endTime: null,
+    openingBalance: openingBalance || 200,
+    closingBalance: null,
+    status: 'active'
+  };
+  res.json({ success: true, shift: mockShift });
+});
+
+app.get('/api/shifts/current', authenticateToken, (req, res) => {
+  res.json(mockShift);
+});
+
+app.post('/api/shifts/end', authenticateToken, (req, res) => {
+  const { closingBalance } = req.body;
+  mockShift.endTime = new Date().toISOString();
+  mockShift.closingBalance = closingBalance;
+  mockShift.status = 'completed';
+  res.json({ success: true, shift: mockShift });
+});
+
+// ============= DOOR STAFF API =============
+app.get('/api/door-staff/checked-in', authenticateToken, (req, res) => {
+  res.json(mockCheckedInDancers.filter(d => !d.checkOutTime));
+});
+
+app.get('/api/door-staff/dancer/search', authenticateToken, (req, res) => {
+  const q = (req.query.q || '').toLowerCase();
+  const results = mockDancers.filter(d => d.stageName.toLowerCase().includes(q) || d.legalName?.toLowerCase().includes(q));
+  res.json(results);
+});
+
+app.get('/api/door-staff/dancer/qr/:code', authenticateToken, (req, res) => {
+  const code = req.params.code.toUpperCase();
+  const dancer = mockDancers.find(d => d.qrCode === code || d.badgeCode === code);
+  if (!dancer) return res.status(404).json({ error: 'Dancer not found' });
+  res.json(dancer);
+});
+
+app.post('/api/door-staff/check-in', authenticateToken, (req, res) => {
+  const { dancerId, stageName } = req.body;
+  const newCheckIn = {
+    id: 'checkin-' + Date.now(),
+    dancerId,
+    stageName: stageName || 'Unknown',
+    checkInTime: new Date().toISOString(),
+    barFeeStatus: 'PENDING',
+    barFeeAmount: 0,
+    checkOutTime: null
+  };
+  mockCheckedInDancers.push(newCheckIn);
+  res.json({ success: true, checkIn: newCheckIn });
+});
+
+app.post('/api/door-staff/check-out/:id', authenticateToken, (req, res) => {
+  const idx = mockCheckedInDancers.findIndex(d => d.id === req.params.id || d.dancerId === req.params.id);
+  if (idx === -1) return res.status(404).json({ error: 'Check-in not found' });
+  mockCheckedInDancers[idx].checkOutTime = new Date().toISOString();
+  res.json({ success: true, checkIn: mockCheckedInDancers[idx] });
+});
+
+app.post('/api/door-staff/bar-fee/:id', authenticateToken, (req, res) => {
+  const { amount } = req.body;
+  const idx = mockCheckedInDancers.findIndex(d => d.id === req.params.id || d.dancerId === req.params.id);
+  if (idx === -1) return res.status(404).json({ error: 'Check-in not found' });
+  mockCheckedInDancers[idx].barFeeStatus = 'PAID';
+  mockCheckedInDancers[idx].barFeeAmount = amount || 50;
+  res.json({ success: true, checkIn: mockCheckedInDancers[idx] });
+});
+
+app.get('/api/door-staff/alerts', authenticateToken, (req, res) => {
+  res.json(mockAlerts);
+});
+
+app.post('/api/door-staff/alerts/:id/acknowledge', authenticateToken, (req, res) => {
+  const idx = mockAlerts.findIndex(a => a.id === req.params.id);
+  if (idx !== -1) mockAlerts[idx].status = 'ACKNOWLEDGED';
+  res.json({ success: true });
+});
+
+app.post('/api/door-staff/alerts/:id/dismiss', authenticateToken, (req, res) => {
+  const idx = mockAlerts.findIndex(a => a.id === req.params.id);
+  if (idx !== -1) mockAlerts[idx].status = 'RESOLVED';
+  res.json({ success: true });
+});
+
+app.get('/api/door-staff/summary', authenticateToken, (req, res) => {
+  const active = mockCheckedInDancers.filter(d => !d.checkOutTime);
+  const paid = active.filter(d => d.barFeeStatus === 'PAID');
+  res.json({
+    totalCheckedIn: active.length,
+    barFeesPaid: paid.length,
+    barFeesPending: active.length - paid.length,
+    totalBarFees: paid.reduce((sum, d) => sum + d.barFeeAmount, 0),
+    alertCount: mockAlerts.filter(a => a.status === 'OPEN').length
+  });
+});
+
+// ============= VIP HOST API =============
+app.get('/api/vip-host/booths', authenticateToken, (req, res) => {
+  res.json(mockVipBooths.map(b => ({
+    ...b,
+    currentSession: mockVipSessions.find(s => s.boothId === b.id && s.status === 'active')
+  })));
+});
+
+app.get('/api/vip-host/available-dancers', authenticateToken, (req, res) => {
+  const checkedIn = mockCheckedInDancers.filter(d => !d.checkOutTime);
+  res.json(checkedIn);
+});
+
+app.get('/api/vip-host/sessions/active', authenticateToken, (req, res) => {
+  res.json(mockVipSessions.filter(s => s.status === 'active'));
+});
+
+app.post('/api/vip-host/sessions/start', authenticateToken, (req, res) => {
+  const { boothId, dancerId, dancerName } = req.body;
+  const booth = mockVipBooths.find(b => b.id === boothId);
+  const newSession = {
+    id: 'session-' + Date.now(),
+    boothId,
+    boothName: booth?.name || 'Unknown',
+    dancerId,
+    dancerName,
+    startTime: new Date().toISOString(),
+    endTime: null,
+    songCount: 0,
+    hostSongCount: 0,
+    status: 'active',
+    customerConfirmed: false
+  };
+  mockVipSessions.push(newSession);
+  res.json({ success: true, session: newSession });
+});
+
+app.put('/api/vip-host/sessions/:id/song-count', authenticateToken, (req, res) => {
+  const { count } = req.body;
+  const idx = mockVipSessions.findIndex(s => s.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ error: 'Session not found' });
+  mockVipSessions[idx].hostSongCount = count;
+  mockVipSessions[idx].songCount = count;
+  res.json({ success: true, session: mockVipSessions[idx] });
+});
+
+app.post('/api/vip-host/sessions/:id/end', authenticateToken, (req, res) => {
+  const idx = mockVipSessions.findIndex(s => s.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ error: 'Session not found' });
+  mockVipSessions[idx].endTime = new Date().toISOString();
+  mockVipSessions[idx].status = 'pending_confirmation';
+  res.json({ success: true, session: mockVipSessions[idx] });
+});
+
+app.get('/api/vip-host/sessions/:id/confirm', authenticateToken, (req, res) => {
+  const session = mockVipSessions.find(s => s.id === req.params.id);
+  if (!session) return res.status(404).json({ error: 'Session not found' });
+  res.json(session);
+});
+
+app.post('/api/vip-host/sessions/:id/confirm', authenticateToken, (req, res) => {
+  const idx = mockVipSessions.findIndex(s => s.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ error: 'Session not found' });
+  mockVipSessions[idx].customerConfirmed = true;
+  mockVipSessions[idx].status = 'verified';
+  res.json({ success: true, session: mockVipSessions[idx] });
+});
+
+app.post('/api/vip-host/sessions/:id/dispute', authenticateToken, (req, res) => {
+  const { reason } = req.body;
+  const idx = mockVipSessions.findIndex(s => s.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ error: 'Session not found' });
+  mockVipSessions[idx].status = 'disputed';
+  mockVipSessions[idx].disputeReason = reason;
+  res.json({ success: true, session: mockVipSessions[idx] });
+});
+
+app.get('/api/vip-host/summary', authenticateToken, (req, res) => {
+  const active = mockVipSessions.filter(s => s.status === 'active');
+  const completed = mockVipSessions.filter(s => s.status !== 'active');
+  res.json({
+    activeSessions: active.length,
+    completedSessions: completed.length,
+    totalSongs: mockVipSessions.reduce((sum, s) => sum + s.songCount, 0),
+    disputedSessions: mockVipSessions.filter(s => s.status === 'disputed').length
+  });
+});
+
+app.get('/api/vip-host/sessions/history', authenticateToken, (req, res) => {
+  res.json(mockVipSessions.filter(s => s.status !== 'active'));
+});
+
+// ============= SECURITY DASHBOARD API =============
+app.get('/api/security/integrity', authenticateToken, (req, res) => {
+  res.json({
+    overallScore: 94,
+    songCountAccuracy: 96,
+    cashHandlingScore: 92,
+    complianceScore: 98,
+    alertsOpen: mockAlerts.filter(a => a.status === 'OPEN').length,
+    anomaliesDetected: 2
+  });
+});
+
+app.get('/api/security/audit-log', authenticateToken, (req, res) => {
+  res.json(mockAuditLog);
+});
+
+app.get('/api/security/song-comparisons', authenticateToken, (req, res) => {
+  res.json(mockVipSessions.map(s => ({
+    sessionId: s.id,
+    boothName: s.boothName,
+    dancerName: s.dancerName,
+    hostCount: s.hostSongCount,
+    djCount: s.songCount,
+    discrepancy: Math.abs(s.hostSongCount - s.songCount),
+    status: s.status
+  })));
+});
+
+app.get('/api/security/anomalies', authenticateToken, (req, res) => {
+  res.json(mockAlerts);
+});
+
+app.post('/api/security/anomalies/:id/investigate', authenticateToken, (req, res) => {
+  const idx = mockAlerts.findIndex(a => a.id === req.params.id);
+  if (idx !== -1) mockAlerts[idx].status = 'INVESTIGATING';
+  res.json({ success: true });
+});
+
+app.post('/api/security/anomalies/:id/resolve', authenticateToken, (req, res) => {
+  const idx = mockAlerts.findIndex(a => a.id === req.params.id);
+  if (idx !== -1) mockAlerts[idx].status = 'RESOLVED';
+  res.json({ success: true });
+});
+
+app.post('/api/security/anomalies/:id/dismiss', authenticateToken, (req, res) => {
+  const idx = mockAlerts.findIndex(a => a.id === req.params.id);
+  if (idx !== -1) mockAlerts[idx].status = 'DISMISSED';
+  res.json({ success: true });
+});
+
+app.get('/api/security/employee-performance', authenticateToken, (req, res) => {
+  res.json([
+    { id: 'staff-001', name: 'Mike', role: 'door_staff', accuracy: 98, shiftsWorked: 24, alertsGenerated: 2 },
+    { id: 'staff-002', name: 'Sarah', role: 'vip_host', accuracy: 95, shiftsWorked: 22, alertsGenerated: 5 }
+  ]);
+});
+
+app.get('/api/security/reports', authenticateToken, (req, res) => {
+  res.json([
+    { id: 'report-1', type: 'WEEKLY_VARIANCE', title: 'Weekly VIP Variance Analysis', createdAt: new Date().toISOString(), viewed: false }
+  ]);
+});
+
+app.post('/api/security/reports/:id/viewed', authenticateToken, (req, res) => {
+  res.json({ success: true });
+});
+
+app.get('/api/security/export/audit-log', authenticateToken, (req, res) => {
+  res.json(mockAuditLog);
+});
+
+app.get('/api/security/export/comparisons', authenticateToken, (req, res) => {
+  res.json(mockVipSessions);
+});
+
+app.post('/api/security/verify-chain', authenticateToken, (req, res) => {
+  res.json({ valid: true, entries: mockAuditLog.length, message: 'Audit chain integrity verified' });
+});
+
 // ============= HEALTH CHECK =============
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', message: 'ClubOps API v3.0.0 - Fraud Prevention Ready', timestamp: new Date().toISOString(), version: '3.0.0', database_connected: !!process.env.DATABASE_URL });
