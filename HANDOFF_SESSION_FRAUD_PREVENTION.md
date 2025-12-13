@@ -5,108 +5,110 @@
 
 ---
 
-## 📋 CURRENT TASK: Production Deployment
+## 📋 DEPLOYMENT TASK LIST
 
-### Status: Setting Up Vercel Deployment
-
-**Completed Steps:**
-- [x] Verified Fraud Prevention phase complete (21/21 tasks)
-- [x] Checked current deployment configuration
-- [x] Reviewed vercel.json files (frontend + backend)
-- [x] Checked Git status - branch up to date with origin/main
-
-**In Progress:**
-- [ ] Update backend api/index.js with fraud prevention routes
-- [ ] Configure production environment variables
-- [ ] Deploy backend to Vercel
-- [ ] Deploy frontend to Vercel
-- [ ] Verify production connectivity
-- [ ] Test all interfaces in production
+| # | Task | Status | Notes |
+|---|------|--------|-------|
+| 1 | Update Vercel API with Fraud Prevention Routes | 🔄 IN PROGRESS | Adding door-staff, vip-host, security endpoints |
+| 2 | Sync Database Schema to Production | ⏳ PENDING | Neon DB migration |
+| 3 | Update Frontend Production URLs | ⏳ PENDING | Verify VITE_API_URL |
+| 4 | Deploy Backend to Vercel | ⏳ PENDING | Push & verify |
+| 5 | Deploy Frontend to Vercel | ⏳ PENDING | Push & verify |
+| 6 | Run Production Seed Data | ⏳ PENDING | Demo credentials |
+| 7 | End-to-End Production Test | ⏳ PENDING | All 3 interfaces |
+| 8 | Update Documentation | ⏳ PENDING | Production URLs |
 
 ---
 
-## 🔧 DEPLOYMENT CONFIGURATION
+## 🔧 CURRENT STATUS
 
-### Backend (api/index.js)
-- **Current:** Basic routes only (dancers, VIP, DJ queue)
-- **Needs:** Fraud prevention routes (door-staff, vip-host, security, shifts)
-- **Location:** C:\Users\tonyt\ClubOps-SaaS\backend\api\index.js
+### Git Status
+- Branch: `main` (up to date with origin)
+- Modified files:
+  - `HANDOFF_SESSION_FRAUD_PREVENTION.md`
+  - `HANDOFF_SHEET.md`
+  - `frontend/src/config/api.ts`
+- Untracked:
+  - `backend/check-users.js`
+  - `backend/prisma/seed.js`
 
-### Frontend
-- **API Config:** C:\Users\tonyt\ClubOps-SaaS\frontend\src\config\api.ts
-- **Production URL:** https://clubops-backend.vercel.app
-- **Dev URL:** http://localhost:3001
+### Servers Running
+- Backend: Port 3001 (PID 3660)
+- Frontend: Port 3000 (PID 41024)
 
-### Environment Variables Needed
-```
-DATABASE_URL=postgresql://...
-JWT_SECRET=clubops-super-secure-jwt-key-2024-...
-FRONTEND_URL=https://[frontend-deployment].vercel.app
-CLIENT_URL=https://[frontend-deployment].vercel.app
-NODE_ENV=production
-```
+### Current Production Config
+- Backend URL: `https://clubops-backend.vercel.app`
+- Frontend URL: `https://frontend-le2gjeahb-tony-telemacques-projects.vercel.app`
+- Database: Neon PostgreSQL
+
+---
+
+## 🎯 DEPLOYMENT APPROACH
+
+### Option A: Full Serverless (Vercel API)
+- Update `backend/api/index.js` with all fraud prevention routes
+- Single deployment, serverless scaling
+- **Issue**: Need to add ~2000+ lines of route handlers
+
+### Option B: Separate Backend Service
+- Deploy backend to Railway/Render as full Node.js server
+- Better for Socket.io real-time features
+- More complex but production-ready
+
+### Recommended: Option A (Vercel Serverless)
+- Faster deployment
+- Already configured
+- Add fraud prevention mock data to existing API
 
 ---
 
 ## 📁 Key Files for Deployment
 
-| File | Purpose |
-|------|---------|
-| backend/api/index.js | Vercel serverless API (750 lines) |
-| backend/vercel.json | Backend deployment config |
-| frontend/vercel.json | Frontend deployment config |
-| frontend/.env.production | Production environment vars |
-| frontend/src/config/api.ts | API client configuration |
-
----
-
-## 🚀 DEPLOYMENT STEPS
-
-### Step 1: Update Backend API with Fraud Prevention
-Add to api/index.js:
-- Door Staff routes (/api/door-staff/*)
-- VIP Host routes (/api/vip-host/*)
-- Security routes (/api/security/*)
-- Shifts routes (/api/shifts/*)
-
-### Step 2: Git Commit & Push
-```bash
-git add .
-git commit -m "Add fraud prevention routes to production API"
-git push origin main
 ```
+Backend (Vercel Serverless):
+- backend/api/index.js          # Main serverless entry (needs fraud routes)
+- backend/vercel.json           # Vercel config
+- backend/prisma/schema.prisma  # Database schema
 
-### Step 3: Vercel Deployment
-- Backend auto-deploys from GitHub
-- Frontend auto-deploys from GitHub
-- Verify deployment URLs
-
-### Step 4: Production Testing
-- Test health endpoint
-- Test authentication
-- Test fraud prevention interfaces
+Frontend:
+- frontend/.env.production      # Production API URL
+- frontend/src/config/api.ts    # API client config
+- frontend/vercel.json          # Frontend routing
+```
 
 ---
 
 ## 🔐 Demo Credentials
 
-| Role | Email | Password |
-|------|-------|----------|
-| Owner | admin@clubops.com | password |
-| Owner | tonytele@gmail.com | Admin1.0 |
-| Demo | demo@clubops.com | Demo123! |
+| Role | Email | Password/PIN |
+|------|-------|--------------|
+| Owner | `admin@clubops.com` | `password` |
+| Owner | `tonytele@gmail.com` | `Admin1.0` |
+| Demo | `demo@clubops.com` | `Demo123!` |
+| Door Staff | `doorstaff@demo.com` | PIN: 1234 |
+| VIP Host | `viphost@demo.com` | PIN: 5678 |
 
 ---
 
-## 📝 Session Notes
+## 🚀 Quick Commands
 
-### December 13, 2025:
-- Started production deployment phase
-- Identified api/index.js needs fraud prevention routes
-- Git status: clean except handoff files
+```bash
+# Git commit and push
+cd C:\Users\tonyt\ClubOps-SaaS
+git add .
+git commit -m "Production deployment - fraud prevention"
+git push origin main
+
+# Vercel deploy (if CLI installed)
+cd backend
+vercel --prod
+
+cd ../frontend
+vercel --prod
+```
 
 ---
 
 **Last Updated:** December 13, 2025
-**Status:** 🚀 PRODUCTION DEPLOYMENT IN PROGRESS
-**Next Action:** Add fraud prevention routes to api/index.js
+**Status:** 🚀 Production Deployment In Progress
+**Next Action:** Update Vercel API with fraud prevention routes
