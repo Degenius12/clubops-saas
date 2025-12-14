@@ -1,6 +1,6 @@
 // ClubOps SaaS - Serverless API for Vercel
 // Complete backend with Fraud Prevention System
-// Version: 3.0.3 - Production Ready (Force Deploy 2025-12-13)
+// Version: 3.0.4 - Added missing routes (shifts/active, security/comparisons)
 
 // Safe dotenv loading for serverless
 try { require('dotenv').config(); } catch (e) { console.log('dotenv not needed in serverless'); }
@@ -234,6 +234,15 @@ app.get('/api/shifts/current', authenticateToken, (req, res) => {
   res.json(mockShift);
 });
 
+// Alias for frontend compatibility
+app.get('/api/shifts/active', authenticateToken, (req, res) => {
+  if (mockShift && mockShift.status === 'active') {
+    res.json(mockShift);
+  } else {
+    res.json(null);
+  }
+});
+
 app.post('/api/shifts/end', authenticateToken, (req, res) => {
   const { closingBalance } = req.body;
   mockShift.endTime = new Date().toISOString();
@@ -453,6 +462,20 @@ app.get('/api/security/song-comparisons', authenticateToken, (req, res) => {
   })));
 });
 
+// Alias for frontend compatibility
+app.get('/api/security/comparisons', authenticateToken, (req, res) => {
+  res.json(mockVipSessions.map(s => ({
+    sessionId: s.id,
+    boothName: s.boothName,
+    dancerName: s.dancerName,
+    hostCount: s.hostSongCount,
+    djCount: s.songCount,
+    discrepancy: Math.abs((s.hostSongCount || 0) - (s.songCount || 0)),
+    status: s.status,
+    timestamp: s.startTime
+  })));
+});
+
 app.get('/api/security/anomalies', authenticateToken, (req, res) => {
   res.json(mockAlerts);
 });
@@ -593,9 +616,9 @@ app.get('/api/financial/transactions', authenticateToken, (req, res) => {
 app.get('/health', (req, res) => {
   res.json({ 
     status: 'ok', 
-    message: 'ClubOps API v3.0.3 - Fraud Prevention Ready', 
+    message: 'ClubOps API v3.0.4 - All Routes Complete', 
     timestamp: new Date().toISOString(), 
-    version: '3.0.3', 
+    version: '3.0.4', 
     database_connected: !!process.env.DATABASE_URL 
   });
 });
