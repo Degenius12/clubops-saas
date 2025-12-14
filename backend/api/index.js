@@ -603,6 +603,65 @@ app.put('/api/queue/reorder', authenticateToken, (req, res) => {
   res.json(mockDjQueue);
 });
 
+// ============= SUBSCRIPTION MANAGEMENT =============
+const subscriptionPlans = [
+  { id: 'starter', name: 'Starter', price: 0, interval: 'forever', dancers: 5, vipBooths: 0, storage: '1GB', features: ['Up to 5 dancers', 'Basic dancer management', 'Simple reporting', 'Email support'] },
+  { id: 'professional', name: 'Professional', price: 49, interval: 'month', dancers: 25, vipBooths: 5, storage: '10GB', features: ['Up to 25 dancers', 'Full dancer management', 'VIP booth tracking', 'Revenue analytics', 'Priority email support'] },
+  { id: 'business', name: 'Business', price: 149, interval: 'month', dancers: 100, vipBooths: -1, storage: '50GB', features: ['Up to 100 dancers', 'Full dancer management', 'Unlimited VIP booths', 'Advanced analytics', 'Fraud prevention suite', 'Priority phone support'], popular: true },
+  { id: 'enterprise', name: 'Enterprise', price: 399, interval: 'month', dancers: -1, vipBooths: -1, storage: 'Unlimited', features: ['Unlimited dancers', 'Multi-location support', 'Custom integrations', 'Full API access', 'Dedicated support', 'White-label options'] }
+];
+
+app.get('/api/subscription', authenticateToken, (req, res) => {
+  const user = users.find(u => u.id === req.user.id);
+  const tier = user?.subscription_tier || 'starter';
+  const plan = subscriptionPlans.find(p => p.id === tier) || subscriptionPlans[0];
+  
+  res.json({
+    currentPlan: {
+      id: plan.id,
+      name: plan.name,
+      price: plan.price,
+      interval: plan.interval,
+      status: 'active',
+      startDate: '2024-01-01',
+      nextBillingDate: plan.price > 0 ? '2025-01-01' : null
+    },
+    usage: {
+      dancers: { used: mockDancers.length, limit: plan.dancers === -1 ? 'Unlimited' : plan.dancers },
+      vipBooths: { used: mockVipBooths.length, limit: plan.vipBooths === -1 ? 'Unlimited' : plan.vipBooths },
+      storage: { used: '2.4GB', limit: plan.storage }
+    },
+    availablePlans: subscriptionPlans
+  });
+});
+
+app.get('/api/subscription/plans', (req, res) => {
+  res.json(subscriptionPlans);
+});
+
+app.post('/api/subscription/upgrade', authenticateToken, (req, res) => {
+  const { planId } = req.body;
+  const plan = subscriptionPlans.find(p => p.id === planId);
+  if (!plan) return res.status(400).json({ error: 'Invalid plan' });
+  
+  const userIdx = users.findIndex(u => u.id === req.user.id);
+  if (userIdx !== -1) users[userIdx].subscription_tier = planId;
+  
+  res.json({ 
+    success: true, 
+    message: `Upgraded to ${plan.name} plan`,
+    plan: plan,
+    redirectUrl: plan.price > 0 ? '/billing/checkout' : null
+  });
+});
+
+app.post('/api/subscription/cancel', authenticateToken, (req, res) => {
+  const userIdx = users.findIndex(u => u.id === req.user.id);
+  if (userIdx !== -1) users[userIdx].subscription_tier = 'starter';
+  res.json({ success: true, message: 'Subscription cancelled. You are now on the Starter plan.' });
+});
+
+
 // ============= FINANCIAL =============
 app.get('/api/financial/transactions', authenticateToken, (req, res) => {
   res.json([
@@ -616,17 +675,17 @@ app.get('/api/financial/transactions', authenticateToken, (req, res) => {
 app.get('/health', (req, res) => {
   res.json({ 
     status: 'ok', 
-    message: 'ClubOps API v3.0.4 - All Routes Complete', 
+    message: 'ClubOps API v3.0.5 - Subscription Management Added', 
     timestamp: new Date().toISOString(), 
-    version: '3.0.4', 
+    version: '3.0.5', 
     database_connected: !!process.env.DATABASE_URL 
   });
 });
 
 app.get('/', (req, res) => {
   res.json({
-    message: 'ClubOps SaaS - Production API with Fraud Prevention',
-    version: '3.0.2',
+    message: 'ClubOps SaaS - Production API with Subscription Management',
+    version: '3.0.5',
     status: 'operational',
     features: [
       'Dancer Management', 
@@ -637,7 +696,8 @@ app.get('/', (req, res) => {
       'Security Dashboard', 
       'Door Staff Interface', 
       'VIP Host Interface', 
-      'Real-time Alerts'
+      'Real-time Alerts',
+      'Subscription Management'
     ],
     endpoints: { 
       auth: ['/api/auth/login', '/api/auth/register', '/api/auth/me'], 
@@ -648,7 +708,8 @@ app.get('/', (req, res) => {
       dancers: ['/api/dancers'],
       vipRooms: ['/api/vip-rooms'],
       queue: ['/api/queue', '/api/dj-queue'],
-      shifts: ['/api/shifts/*']
+      shifts: ['/api/shifts/*'],
+      subscription: ['/api/subscription', '/api/subscription/plans', '/api/subscription/upgrade']
     }
   });
 });
