@@ -1,24 +1,28 @@
 // ClubOps SaaS - Serverless API for Vercel
 // Complete backend with Fraud Prevention System
-// Version: 3.0.1 - Production Ready (Consolidated)
+// Version: 3.0.2 - Production Ready (Consolidated)
 
-require('dotenv').config();
+// Safe dotenv loading for serverless
+try { require('dotenv').config(); } catch (e) { console.log('dotenv not needed in serverless'); }
+
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
+const jwt = require('jsonwebtoken');
 
 const app = express();
 
-// Database connection - Serverless optimized
-let prisma;
+// Database connection - Serverless optimized (graceful fallback)
+let prisma = null;
 try {
   const { PrismaClient } = require('@prisma/client');
   prisma = new PrismaClient({
-    datasources: { db: { url: process.env.DATABASE_URL } }
+    datasources: { db: { url: process.env.DATABASE_URL } },
+    log: ['error']
   });
+  console.log('Prisma client initialized');
 } catch (error) {
-  console.log('Prisma not available, using mock data');
-  prisma = null;
+  console.log('Prisma not available, using mock data:', error.message);
 }
 
 // Security middleware
@@ -53,13 +57,13 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 // JWT Authentication middleware
+const JWT_SECRET = process.env.JWT_SECRET || 'clubops-super-secure-jwt-key-2024';
 const authenticateToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
   if (!token) return res.status(401).json({ error: 'Access token required' });
   try {
-    const jwt = require('jsonwebtoken');
-    const user = jwt.verify(token, process.env.JWT_SECRET || 'clubops-super-secure-jwt-key-2024');
+    const user = jwt.verify(token, JWT_SECRET);
     req.user = user.user || user;
     next();
   } catch (error) {
@@ -153,10 +157,9 @@ app.post('/api/auth/login', async (req, res) => {
       return res.status(400).json({ error: 'Password or PIN required' });
     }
 
-    const jwt = require('jsonwebtoken');
     const token = jwt.sign(
       { user: { id: user.id, email: user.email, role: user.role, club_id: user.club_id } },
-      process.env.JWT_SECRET || 'clubops-super-secure-jwt-key-2024',
+      JWT_SECRET,
       { expiresIn: '24h' }
     );
 
@@ -182,8 +185,7 @@ app.post('/api/auth/register', async (req, res) => {
     const newUser = { id: users.length + 1, email, password, name, role: 'owner', club_id: (users.length + 1).toString(), subscription_tier: 'free' };
     users.push(newUser);
 
-    const jwt = require('jsonwebtoken');
-    const token = jwt.sign({ user: { id: newUser.id, email: newUser.email, role: newUser.role, club_id: newUser.club_id } }, process.env.JWT_SECRET || 'clubops-super-secure-jwt-key-2024', { expiresIn: '24h' });
+    const token = jwt.sign({ user: { id: newUser.id, email: newUser.email, role: newUser.role, club_id: newUser.club_id } }, JWT_SECRET, { expiresIn: '24h' });
     res.status(201).json({ token, user: newUser });
   } catch (error) {
     res.status(500).json({ error: 'Registration failed' });
@@ -591,9 +593,9 @@ app.get('/api/financial/transactions', authenticateToken, (req, res) => {
 app.get('/health', (req, res) => {
   res.json({ 
     status: 'ok', 
-    message: 'ClubOps API v3.0.1 - Fraud Prevention Ready', 
+    message: 'ClubOps API v3.0.2 - Fraud Prevention Ready', 
     timestamp: new Date().toISOString(), 
-    version: '3.0.1', 
+    version: '3.0.2', 
     database_connected: !!process.env.DATABASE_URL 
   });
 });
@@ -601,7 +603,7 @@ app.get('/health', (req, res) => {
 app.get('/', (req, res) => {
   res.json({
     message: 'ClubOps SaaS - Production API with Fraud Prevention',
-    version: '3.0.1',
+    version: '3.0.2',
     status: 'operational',
     features: [
       'Dancer Management', 
