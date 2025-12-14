@@ -1,6 +1,6 @@
 // ClubOps SaaS - Serverless API for Vercel
 // Complete backend with Fraud Prevention System
-// Version: 3.0.2 - Production Ready (Consolidated)
+// Version: 3.0.3 - Production Ready (Force Deploy 2025-12-13)
 
 // Safe dotenv loading for serverless
 try { require('dotenv').config(); } catch (e) { console.log('dotenv not needed in serverless'); }
@@ -593,9 +593,9 @@ app.get('/api/financial/transactions', authenticateToken, (req, res) => {
 app.get('/health', (req, res) => {
   res.json({ 
     status: 'ok', 
-    message: 'ClubOps API v3.0.2 - Fraud Prevention Ready', 
+    message: 'ClubOps API v3.0.3 - Fraud Prevention Ready', 
     timestamp: new Date().toISOString(), 
-    version: '3.0.2', 
+    version: '3.0.3', 
     database_connected: !!process.env.DATABASE_URL 
   });
 });
