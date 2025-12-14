@@ -81,7 +81,7 @@ const DoorStaffInterface: React.FC = () => {
   const [closingBalance, setClosingBalance] = useState('')
   const [shiftTimer, setShiftTimer] = useState('0:00:00')
   const searchInputRef = useRef<HTMLInputElement>(null)
-  const searchDebounceRef = useRef<NodeJS.Timeout>()
+  const searchDebounceRef = useRef<ReturnType<typeof setTimeout>>()
 
   // Club settings (would come from club config API)
   const clubSettings = {
