@@ -30,6 +30,9 @@ import SubscriptionDashboard from './components/subscription/SubscriptionDashboa
 import BillingPanel from './components/billing/BillingPanel'
 import AdminDashboard from './components/admin/AdminDashboard'
 
+// Public Pages
+import InvestorPage from './pages/InvestorPage'
+
 function App() {
   const dispatch = useDispatch<AppDispatch>()
   const { isAuthenticated, token, user } = useSelector((state: RootState) => state.auth)
@@ -54,6 +57,9 @@ function App() {
   return (
     <div className="App bg-dark-bg text-white min-h-screen">
       <Routes>
+        {/* Investor Landing Page - Fully Public, No Auth Check */}
+        <Route path="/investors" element={<InvestorPage />} />
+
         {/* Public Routes */}
         <Route path="/login" element={
           <PublicRoute>
