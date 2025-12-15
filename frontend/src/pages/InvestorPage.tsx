@@ -1,13 +1,28 @@
 import React, { useState } from 'react';
 import { 
-  Sparkles, TrendingUp, Users, DollarSign, Shield, Zap,
+  Sparkles, Users, DollarSign, Zap,
   Monitor, Smartphone, ChevronRight, Play, CheckCircle,
-  ArrowRight, BarChart3, Lock, Camera, CreditCard, Scan, Building2
+  ArrowRight, BarChart3, Lock, Camera, CreditCard, Building2, Loader2
 } from 'lucide-react';
+
+// TODO: Replace with your Formspree form ID
+// 1. Go to https://formspree.io and create free account
+// 2. Create new form, copy the form ID (e.g., "xabcdefg")
+// 3. Replace 'YOUR_FORMSPREE_ID' below
+const FORMSPREE_ENDPOINT = 'https://formspree.io/f/YOUR_FORMSPREE_ID';
 
 export default function InvestorLandingPage() {
   const [showDemoModal, setShowDemoModal] = useState(false);
-  const [formData, setFormData] = useState({ name: '', email: '', firm: '', message: '' });
+  const [formData, setFormData] = useState({ 
+    name: '', 
+    email: '', 
+    firm: '', 
+    interestType: '',
+    onboardingInterest: '',
+    dancerCount: '',
+    message: '' 
+  });
+  const [submitStatus, setSubmitStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
 
   const marketStats = [
     { label: 'US Market Size', value: '$8.1B', subtext: 'Annual Revenue' },
@@ -32,11 +47,41 @@ export default function InvestorLandingPage() {
     { phase: 'Q3 2025', title: 'Scale', items: ['Multi-Location', 'Franchise Tools', 'API Marketplace'], status: 'planned' }
   ];
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Demo request:', formData);
+    setSubmitStatus('loading');
+
+    try {
+      const response = await fetch(FORMSPREE_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          firm: formData.firm,
+          interest_type: formData.interestType,
+          onboarding_interest: formData.onboardingInterest || 'N/A',
+          dancer_count: formData.dancerCount || 'N/A',
+          message: formData.message || 'No message provided',
+          submitted_at: new Date().toISOString(),
+          source: 'Investor Landing Page'
+        })
+      });
+
+      if (response.ok) {
+        setSubmitStatus('success');
+        setFormData({ name: '', email: '', firm: '', interestType: '', onboardingInterest: '', dancerCount: '', message: '' });
+      } else {
+        setSubmitStatus('error');
+      }
+    } catch (error) {
+      setSubmitStatus('error');
+    }
+  };
+
+  const resetForm = () => {
+    setSubmitStatus('idle');
     setShowDemoModal(false);
-    alert('Thank you! We will contact you within 24 hours.');
   };
 
   return (
@@ -55,7 +100,7 @@ export default function InvestorLandingPage() {
               onClick={() => setShowDemoModal(true)}
               className="px-6 py-2 bg-[#D4AF37] text-black font-semibold rounded-lg hover:bg-[#B8962E] transition"
             >
-              Request Full Demo
+              Get Started
             </button>
           </div>
         </nav>
@@ -192,7 +237,7 @@ export default function InvestorLandingPage() {
             <div className="bg-[#1A1A1A] rounded-xl p-8 border border-gray-800">
               <BarChart3 className="w-10 h-10 text-[#D4AF37] mb-4" />
               <h3 className="text-xl font-semibold mb-2">SaaS Subscriptions</h3>
-              <p className="text-gray-400 mb-4">$49 - $399/month per location</p>
+              <p className="text-gray-400 mb-4">$99 - $499/month per location</p>
               <ul className="space-y-2 text-sm text-gray-500">
                 <li>• Tiered feature access</li>
                 <li>• Annual discounts (20%)</li>
@@ -251,15 +296,15 @@ export default function InvestorLandingPage() {
       {/* CTA Section */}
       <section className="py-20">
         <div className="max-w-4xl mx-auto px-8 text-center">
-          <h2 className="text-4xl font-bold mb-4">Ready to Learn More?</h2>
+          <h2 className="text-4xl font-bold mb-4">Ready to Get Started?</h2>
           <p className="text-gray-400 text-xl mb-8">
-            Schedule a personalized demo and discover how ClubOps is transforming the entertainment industry
+            Whether you're an investor or club owner, let's talk about how ClubOps can work for you
           </p>
           <button 
             onClick={() => setShowDemoModal(true)}
             className="inline-flex items-center gap-2 px-10 py-5 bg-[#D4AF37] text-black font-semibold rounded-lg hover:bg-[#B8962E] transition text-xl"
           >
-            Request Full Demo <ArrowRight className="w-6 h-6" />
+            Contact Us <ArrowRight className="w-6 h-6" />
           </button>
         </div>
       </section>
@@ -273,60 +318,152 @@ export default function InvestorLandingPage() {
             <span className="text-gray-500">© 2025</span>
           </div>
           <div className="text-gray-500 text-sm">
-            Contact: <a href="mailto:investors@clubops.com" className="text-[#D4AF37] hover:underline">investors@clubops.com</a>
+            Contact: <a href="mailto:hello@clubops.com" className="text-[#D4AF37] hover:underline">hello@clubops.com</a>
           </div>
         </div>
       </footer>
 
-      {/* Demo Request Modal */}
+      {/* Contact Modal */}
       {showDemoModal && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-          <div className="bg-[#1A1A1A] rounded-xl p-8 max-w-md w-full border border-gray-800 relative">
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-[#1A1A1A] rounded-xl p-8 max-w-md w-full border border-gray-800 relative my-8">
             <button 
-              onClick={() => setShowDemoModal(false)}
+              onClick={resetForm}
               className="absolute top-4 right-4 text-gray-500 hover:text-white"
             >
               ✕
             </button>
-            <h3 className="text-2xl font-bold mb-2">Request Full Demo</h3>
-            <p className="text-gray-400 mb-6">We'll schedule a personalized presentation within 24 hours</p>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <input
-                type="text"
-                placeholder="Your Name"
-                value={formData.name}
-                onChange={(e) => setFormData({...formData, name: e.target.value})}
-                className="w-full px-4 py-3 bg-[#0D0D0D] border border-gray-700 rounded-lg focus:border-[#D4AF37] focus:outline-none"
-                required
-              />
-              <input
-                type="email"
-                placeholder="Email Address"
-                value={formData.email}
-                onChange={(e) => setFormData({...formData, email: e.target.value})}
-                className="w-full px-4 py-3 bg-[#0D0D0D] border border-gray-700 rounded-lg focus:border-[#D4AF37] focus:outline-none"
-                required
-              />
-              <input
-                type="text"
-                placeholder="Firm / Organization"
-                value={formData.firm}
-                onChange={(e) => setFormData({...formData, firm: e.target.value})}
-                className="w-full px-4 py-3 bg-[#0D0D0D] border border-gray-700 rounded-lg focus:border-[#D4AF37] focus:outline-none"
-              />
-              <textarea
-                placeholder="Message (optional)"
-                value={formData.message}
-                onChange={(e) => setFormData({...formData, message: e.target.value})}
-                className="w-full px-4 py-3 bg-[#0D0D0D] border border-gray-700 rounded-lg focus:border-[#D4AF37] focus:outline-none h-24 resize-none"
-              />
-              <button
-                type="submit"
-                className="w-full px-6 py-4 bg-[#D4AF37] text-black font-semibold rounded-lg hover:bg-[#B8962E] transition"
-              >
-                Submit Request
-              </button>
-            </form>
+
+            {submitStatus === 'success' ? (
+              <div className="text-center py-8">
+                <CheckCircle className="w-16 h-16 text-[#22C55E] mx-auto mb-4" />
+                <h3 className="text-2xl font-bold mb-2">Thank You!</h3>
+                <p className="text-gray-400 mb-6">We'll be in touch within 24 hours.</p>
+                <button
+                  onClick={resetForm}
+                  className="px-6 py-3 bg-[#D4AF37] text-black font-semibold rounded-lg hover:bg-[#B8962E] transition"
+                >
+                  Close
+                </button>
+              </div>
+            ) : (
+              <>
+                <h3 className="text-2xl font-bold mb-2">Get in Touch</h3>
+                <p className="text-gray-400 mb-6">Tell us about yourself and we'll reach out within 24 hours</p>
+                
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <input
+                    type="text"
+                    name="name"
+                    placeholder="Your Name *"
+                    value={formData.name}
+                    onChange={(e) => setFormData({...formData, name: e.target.value})}
+                    className="w-full px-4 py-3 bg-[#0D0D0D] border border-gray-700 rounded-lg focus:border-[#D4AF37] focus:outline-none"
+                    required
+                  />
+                  
+                  <input
+                    type="email"
+                    name="email"
+                    placeholder="Email Address *"
+                    value={formData.email}
+                    onChange={(e) => setFormData({...formData, email: e.target.value})}
+                    className="w-full px-4 py-3 bg-[#0D0D0D] border border-gray-700 rounded-lg focus:border-[#D4AF37] focus:outline-none"
+                    required
+                  />
+                  
+                  <input
+                    type="text"
+                    name="firm"
+                    placeholder="Company / Club Name"
+                    value={formData.firm}
+                    onChange={(e) => setFormData({...formData, firm: e.target.value})}
+                    className="w-full px-4 py-3 bg-[#0D0D0D] border border-gray-700 rounded-lg focus:border-[#D4AF37] focus:outline-none"
+                  />
+
+                  <select
+                    name="interestType"
+                    value={formData.interestType}
+                    onChange={(e) => setFormData({...formData, interestType: e.target.value})}
+                    className="w-full px-4 py-3 bg-[#0D0D0D] border border-gray-700 rounded-lg focus:border-[#D4AF37] focus:outline-none text-white"
+                    required
+                  >
+                    <option value="" className="text-gray-500">I am a... *</option>
+                    <option value="investor">Investor</option>
+                    <option value="club_owner">Club Owner / Operator</option>
+                    <option value="manager">Club Manager</option>
+                    <option value="consultant">Industry Consultant</option>
+                    <option value="other">Other</option>
+                  </select>
+
+                  {/* Show onboarding options for club owners/managers */}
+                  {(formData.interestType === 'club_owner' || formData.interestType === 'manager') && (
+                    <>
+                      <select
+                        name="dancerCount"
+                        value={formData.dancerCount}
+                        onChange={(e) => setFormData({...formData, dancerCount: e.target.value})}
+                        className="w-full px-4 py-3 bg-[#0D0D0D] border border-gray-700 rounded-lg focus:border-[#D4AF37] focus:outline-none text-white"
+                      >
+                        <option value="">How many dancers do you have?</option>
+                        <option value="1-15">1-15 dancers</option>
+                        <option value="16-30">16-30 dancers</option>
+                        <option value="31-50">31-50 dancers</option>
+                        <option value="51-100">51-100 dancers</option>
+                        <option value="100+">100+ dancers</option>
+                      </select>
+
+                      <select
+                        name="onboardingInterest"
+                        value={formData.onboardingInterest}
+                        onChange={(e) => setFormData({...formData, onboardingInterest: e.target.value})}
+                        className="w-full px-4 py-3 bg-[#0D0D0D] border border-gray-700 rounded-lg focus:border-[#D4AF37] focus:outline-none text-white"
+                      >
+                        <option value="">Onboarding preference?</option>
+                        <option value="diy">DIY - I'll set it up myself (Free)</option>
+                        <option value="guided">Guided Setup - 2hr Zoom session ($499)</option>
+                        <option value="professional">Professional - Full setup + training ($999)</option>
+                        <option value="white_glove">White Glove - On-site setup ($1,999+)</option>
+                        <option value="undecided">Not sure yet - tell me more</option>
+                      </select>
+
+                      <div className="bg-[#0D0D0D] border border-gray-700 rounded-lg p-3">
+                        <p className="text-xs text-gray-500">
+                          💡 Need help migrating existing dancer data? We offer data migration services starting at $999 for up to 25 dancers.
+                        </p>
+                      </div>
+                    </>
+                  )}
+                  
+                  <textarea
+                    name="message"
+                    placeholder="Tell us about your needs (optional)"
+                    value={formData.message}
+                    onChange={(e) => setFormData({...formData, message: e.target.value})}
+                    className="w-full px-4 py-3 bg-[#0D0D0D] border border-gray-700 rounded-lg focus:border-[#D4AF37] focus:outline-none h-24 resize-none"
+                  />
+
+                  {submitStatus === 'error' && (
+                    <p className="text-red-500 text-sm">Something went wrong. Please try again or email us directly.</p>
+                  )}
+                  
+                  <button
+                    type="submit"
+                    disabled={submitStatus === 'loading'}
+                    className="w-full px-6 py-4 bg-[#D4AF37] text-black font-semibold rounded-lg hover:bg-[#B8962E] transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    {submitStatus === 'loading' ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        Sending...
+                      </>
+                    ) : (
+                      'Submit Request'
+                    )}
+                  </button>
+                </form>
+              </>
+            )}
           </div>
         </div>
       )}
