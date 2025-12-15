@@ -1,6 +1,6 @@
 # ClubOps - UI/UX Documentation
 
-**Version:** 1.0  
+**Version:** 2.0  
 **Date:** December 14, 2025  
 **Status:** Production Ready  
 **Live URL:** https://clubops-saas-frontend.vercel.app
@@ -21,15 +21,44 @@ ClubOps is a comprehensive SaaS platform designed for gentlemen's club managemen
 
 ## Application Screenshots
 
+### 0. Authentication (Login)
+**File:** `screenshots/00-login.png`
+
+![ClubOps Login](screenshots/00-login.png)
+*Premium login experience with social authentication options*
+
+Secure authentication portal:
+
+**Login Form:**
+- Email address field
+- Password with visibility toggle
+- "Remember me" checkbox
+- Forgot password link
+
+**Social Login Options:**
+- Google OAuth
+- Facebook OAuth
+
+**Design Elements:**
+- ClubOps branding with sparkle icon
+- Gradient accent bar
+- Gold "Sign In" button
+- Dark theme optimized for club environments
+
+---
+
 ### 1. Dashboard (Home)
 **File:** `screenshots/01-dashboard.png`
+
+![ClubOps Dashboard](screenshots/01-dashboard.png)
+*Dashboard showing real-time metrics, activity feed, and quick actions*
 
 The main dashboard provides an at-a-glance view of club operations:
 
 **Key Metrics Cards:**
 - Active Dancers: 12 (gold badge)
 - Tonight's Revenue: $2,847 (+12.5% indicator)
-- VIP Rooms Active: 3/8 (utilization tracking)
+- VIP Booths Active: 3/8 (utilization tracking)
 - Queue Length: 8 dancers (real-time count)
 
 **Features:**
@@ -42,6 +71,9 @@ The main dashboard provides an at-a-glance view of club operations:
 
 ### 2. Dancer Management
 **File:** `screenshots/02-dancers.png`
+
+![Dancer Management](screenshots/02-dancers.png)
+*Comprehensive dancer roster with compliance tracking and status badges*
 
 Comprehensive dancer roster management with compliance tracking:
 
@@ -66,6 +98,9 @@ Comprehensive dancer roster management with compliance tracking:
 
 ### 3. DJ Queue Management
 **File:** `screenshots/03-dj-queue.png`
+
+![DJ Queue Interface](screenshots/03-dj-queue.png)
+*Real-time stage queue management with drag-and-drop reordering*
 
 The core operational interface for DJ workflow:
 
@@ -92,7 +127,10 @@ The core operational interface for DJ workflow:
 ### 4. VIP Booth Management
 **File:** `screenshots/04-vip-booths.png`
 
-Real-time VIP room tracking and session management:
+![VIP Booth Management](screenshots/04-vip-booths.png)
+*Real-time booth tracking with session timers and status indicators*
+
+Real-time VIP booth tracking and session management:
 
 **Booth Status Grid:**
 - **Available** (Green): Ready for booking
@@ -106,7 +144,7 @@ Real-time VIP room tracking and session management:
 - Running timer display
 - Revenue tracking per booth
 
-**Room Details:**
+**Booth Details:**
 - Booth number/name
 - Capacity information
 - Amenity icons
@@ -116,6 +154,9 @@ Real-time VIP room tracking and session management:
 
 ### 5. Revenue Dashboard
 **File:** `screenshots/05-revenue.png`
+
+![Revenue Dashboard](screenshots/05-revenue.png)
+*Financial tracking with breakdown charts and trend analysis*
 
 Financial tracking and reporting interface:
 
@@ -144,6 +185,9 @@ Financial tracking and reporting interface:
 ### 6. Settings
 **File:** `screenshots/06-settings.png`
 
+![Settings Page](screenshots/06-settings.png)
+*Account configuration with tabbed navigation and profile management*
+
 Account and system configuration:
 
 **Settings Tabs:**
@@ -167,6 +211,58 @@ Account and system configuration:
 - Tab navigation with gold highlight on active tab
 - Form fields with dark input backgrounds
 - Gold "Save Changes" button
+
+---
+
+### 7. Subscription Management
+**File:** `screenshots/07-subscription.png`
+
+![Subscription Plans](screenshots/07-subscription.png)
+*Tiered pricing with usage metrics and upgrade options*
+
+Manage your ClubOps subscription and monitor usage:
+
+**Current Plan Display:**
+- Active plan with status badge
+- Usage metrics (dancers, booths, storage)
+- Progress bars showing limit utilization
+
+**Available Tiers:**
+| Plan | Price | Dancers | VIP Booths | Storage |
+|------|-------|---------|------------|---------|
+| Starter | $0/forever | 5 | 0 | 1GB |
+| Professional | $49/month | 25 | 5 | 10GB |
+| Business | $149/month | 100 | Unlimited | 50GB |
+| Enterprise | $399/month | Unlimited | Unlimited | Unlimited |
+
+**Features:**
+- Monthly/Annual toggle (20% savings on annual)
+- Usage limit warnings with progress indicators
+- One-click upgrade buttons
+- "Most Popular" badge on Business tier
+- Clear feature comparison
+
+---
+
+## Mobile Responsive Design
+
+ClubOps is fully optimized for mobile devices, allowing managers to monitor operations from anywhere.
+
+### Mobile Login
+![Mobile Login](screenshots/mobile/mobile-00-login.png)
+*Clean, touch-optimized login experience*
+
+### Mobile Dashboard
+![Mobile Dashboard](screenshots/mobile/mobile-01-dashboard.png)
+*Key metrics accessible on-the-go with hamburger navigation*
+
+### Mobile Dancer Management
+![Mobile Dancers](screenshots/mobile/mobile-02-dancers.png)
+*Swipe-friendly dancer cards with status badges*
+
+### Mobile VIP Booth View
+![Mobile VIP Booths](screenshots/mobile/mobile-03-vip.png)
+*Monitor booth status and sessions from anywhere*
 
 ---
 
@@ -196,7 +292,7 @@ Account and system configuration:
 
 ---
 
-## Responsive Design
+## Responsive Design Breakpoints
 
 The application is fully responsive with breakpoints:
 - **Desktop**: 1280px+ (Full sidebar, expanded views)
@@ -228,12 +324,13 @@ ClubOps
 
 **Login Credentials (Demo):**
 - Email: admin@clubops.com
-- Password: demo123
+- Password: password
 
 **Features:**
 - JWT-based authentication
 - Session management
 - Role-based access control
+- Social OAuth (Google, Facebook)
 
 ---
 
@@ -248,17 +345,19 @@ ClubOps
 | Real-time | Socket.io |
 | Backend | Node.js + Express |
 | Database | PostgreSQL + Prisma ORM |
-| Hosting | Vercel (Frontend) |
+| Hosting | Vercel (Frontend & Backend) |
 | API | Vercel Serverless Functions |
+| API Version | v3.0.5 |
 
 ---
 
 ## Production URLs
 
 - **Frontend**: https://clubops-saas-frontend.vercel.app
-- **Backend API**: https://clubops-saas-backend.vercel.app/api
+- **Backend API**: https://clubops-backend.vercel.app
 
 ---
 
-*Document generated: December 14, 2025*  
+*Document Version: 2.0*  
+*Last Updated: December 14, 2025*  
 *ClubOps © 2025 - All Rights Reserved*
