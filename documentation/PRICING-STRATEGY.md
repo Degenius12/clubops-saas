@@ -1,7 +1,7 @@
 # ClubOps Pricing Strategy & Structure
 
-**Version:** 1.0  
-**Date:** December 14, 2025  
+**Version:** 1.1  
+**Date:** December 15, 2025  
 **Status:** Draft for Review
 
 ---
@@ -14,7 +14,7 @@ ClubOps pricing is designed around a **modular, scalable model** that grows with
 1. SaaS Subscriptions (recurring monthly/annual)
 2. Transaction Fees (POS processing)
 3. Hardware Lease/Purchase
-4. Implementation & Setup Fees
+4. Onboarding & Data Migration Fees
 5. Premium Support Tiers
 
 ---
@@ -117,6 +117,16 @@ ClubOps pricing is designed around a **modular, scalable model** that grows with
 | **VIP Wristband System** | $149/mo | $999 | RFID wristbands + readers |
 | **Full VIP Suite** | $249/mo | $2,499 | Lock + display + timer per booth |
 
+### Hardware Installation Policy
+
+| Service | Price | Notes |
+|---------|-------|-------|
+| **Hardware Consultation** | Included in Professional+ onboarding | We spec equipment & recommend placement |
+| **Hardware Procurement** | At cost + 10% | We can order on your behalf |
+| **Hardware Installation** | Customer responsibility | Must use licensed low-voltage/IT vendor |
+| **Installation Support** | $150/hr (remote) | We guide your vendor via video call |
+| **Vendor Referral** | Free | We connect you with vetted installers in your area |
+
 ---
 
 ## Part 4: Bundled Packages
@@ -157,24 +167,160 @@ ClubOps pricing is designed around a **modular, scalable model** that grows with
 
 ---
 
-## Part 5: Implementation & Services
+## Part 5: Onboarding & Implementation
 
-| Service | Price |
-|---------|-------|
-| Remote Setup & Training | $499 |
-| On-Site Implementation (1 day) | $1,500 |
-| On-Site Implementation (3 day) | $3,500 |
-| Custom Integration Development | $150/hour |
-| Data Migration | $500 - $2,000 |
-| Custom Report Development | $250/report |
+### 5.1 Onboarding Tiers (Training & Configuration)
 
-### Premium Support Tiers
+| Option | Price | What's Included | Time Investment |
+|--------|-------|-----------------|-----------------|
+| **DIY (Self-Service)** | $0 | Video tutorials, knowledge base, email support (48hr) | Self-paced |
+| **Guided Setup** | $499 | 2hr Zoom session, system config, basic Q&A, 1 follow-up email | ~3 hrs |
+| **Professional Setup** | $999 | Full configuration, 3 training sessions, 14-day priority support | ~6-8 hrs |
+| **Enterprise Setup** | $1,999 | All above + on-site visit (1 day), all-staff training | ~12-16 hrs + travel |
 
-| Tier | Monthly | Includes |
-|------|---------|----------|
-| Standard | Included | Email support, 48hr response |
-| Priority | $99 | Phone + chat, 4hr response, extended hours |
-| Dedicated | $299 | Named account manager, 1hr response, 24/7 |
+**What Each Tier Includes:**
+
+**DIY ($0)**
+- Access to knowledge base & video library
+- Community forum access
+- Email support (48hr response)
+- Self-guided setup wizard
+
+**Guided Setup ($499)**
+- 2-hour Zoom configuration session
+- Account & system setup
+- User role configuration
+- 1 follow-up Q&A email
+
+**Professional Setup ($999)**
+- Everything in Guided, plus:
+- Full system configuration
+- VIP booth/room setup
+- 3× 1-hour training sessions (management, staff, DJ)
+- 14-day priority email support (4hr response)
+- Configuration documentation
+
+**Enterprise Setup ($1,999)**
+- Everything in Professional, plus:
+- On-site visit (1 day, continental US — travel included)
+- All-staff in-person training
+- Hardware placement consultation
+- Custom workflow configuration
+- 30-day priority support
+- Monthly check-in (first 3 months)
+
+---
+
+### 5.2 Data Migration Services
+
+**Minimum: $999** — Data migration is labor-intensive and requires accuracy for compliance.
+
+#### Tiered Pricing
+
+| Tier | Price | Dancers | What's Included |
+|------|-------|---------|-----------------|
+| **Basic** | $999 | Up to 25 | Dancer profiles, basic compliance info |
+| **Standard** | $1,999 | Up to 50 | Full profiles, compliance docs, 6-mo VIP history |
+| **Comprehensive** | $3,499 | Up to 100 | Full profiles, all docs, 12-mo transaction history, custom fields |
+| **Enterprise** | $4,999+ | 100+ | Multi-location, full historical data, legacy system extraction |
+
+#### Per-Dancer Pricing (Custom Quotes)
+
+For clubs outside standard tiers or with unique needs:
+
+| Complexity | Per Dancer | Best For |
+|------------|------------|----------|
+| **Simple** | $35/dancer | Name, contact, stage name, basic info only |
+| **Standard** | $50/dancer | Full profile + compliance documents |
+| **Full** | $75/dancer | Everything + photos, performance history, tip records |
+| **Complex** | $100/dancer | Legacy system extraction, custom field mapping, data cleanup |
+
+**Minimum project: $999** (regardless of dancer count)
+
+#### What Data Migration Includes
+
+- **Dancer Profiles:** Legal name, stage name, contact info, emergency contact, photos
+- **Compliance Documents:** Licenses, permits, IDs, expiration date tracking
+- **Employment Records:** Start dates, contract status, pay arrangements
+- **VIP History:** Session records, revenue history (if available)
+- **Custom Fields:** Club-specific data points
+- **Quality Assurance:** Data verification & duplicate checking
+
+---
+
+### 5.3 Onboarding Bundles (Setup + Migration)
+
+| Package | Price | Includes | Savings |
+|---------|-------|----------|---------|
+| **Quick Start** | $1,299 | Guided Setup + Basic Migration (25 dancers) | Save $199 |
+| **Full Launch** | $2,499 | Professional Setup + Standard Migration (50 dancers) | Save $499 |
+| **White Glove** | $4,999 | Enterprise Setup + Comprehensive Migration (100 dancers) | Save $999 |
+
+---
+
+### 5.4 Data Migration Questionnaire
+
+Before quoting data migration, gather this information:
+
+**Section A: Current Data Location**
+1. Where is your dancer data currently stored?
+   - [ ] Spreadsheets (Excel/Google Sheets)
+   - [ ] Paper records
+   - [ ] Another software system (name: _______)
+   - [ ] Multiple sources
+   - [ ] No formal records
+
+2. Is the data in a single location or scattered across multiple files/systems?
+
+**Section B: Data Volume**
+3. How many active dancers do you currently have? _____
+4. How many inactive/former dancers need to be imported? _____
+5. How many VIP booths/rooms do you operate? _____
+
+**Section C: Data Completeness**
+6. For each dancer, what information do you have? (Check all that apply)
+   - [ ] Legal name
+   - [ ] Stage name
+   - [ ] Contact info (phone/email)
+   - [ ] Photos
+   - [ ] Government ID copies
+   - [ ] Performer licenses/permits
+   - [ ] License expiration dates
+   - [ ] Start date / tenure
+   - [ ] Contract/agreement copies
+   - [ ] Emergency contact
+   - [ ] Pay rate / house fee info
+
+**Section D: Historical Data**
+7. Do you have VIP session history to import?
+   - [ ] No historical data
+   - [ ] Less than 6 months
+   - [ ] 6-12 months
+   - [ ] 1+ years
+
+8. Do you have revenue/tip tracking history?
+   - [ ] No
+   - [ ] Yes, in spreadsheets
+   - [ ] Yes, in another system
+
+**Section E: Special Requirements**
+9. Any custom fields or club-specific data to track? _____
+10. Do you need data from multiple locations consolidated? _____
+11. Is there any data cleanup needed (duplicates, outdated info)? _____
+
+**Section F: Timeline**
+12. When do you need to be fully operational? _____
+13. Is there a hard deadline (license renewal, ownership change, etc.)? _____
+
+---
+
+### 5.5 Premium Support Tiers
+
+| Tier | Monthly | Response Time | Includes |
+|------|---------|---------------|----------|
+| **Standard** | Included | 48 hours | Email support |
+| **Priority** | $99/mo | 4 hours | Phone + chat, extended hours (8am-10pm) |
+| **Dedicated** | $299/mo | 1 hour | Named account manager, 24/7 availability |
 
 ---
 
@@ -183,35 +329,38 @@ ClubOps pricing is designed around a **modular, scalable model** that grows with
 ### Example A: Small Single-Location Club
 **"The Velvet Room" — 15 dancers, 4 VIP booths**
 
-| Item | Monthly Cost |
-|------|-------------|
-| Professional SaaS | $99 |
-| Front Door POS | $99 |
-| Processing fees (~$15k volume) | ~$400 |
-| **Total MRR** | **$598** |
-| **Annual Revenue** | **$7,176** |
+| Item | One-Time | Monthly |
+|------|----------|---------|
+| Quick Start Bundle | $1,299 | — |
+| Professional SaaS | — | $99 |
+| Front Door POS | — | $99 |
+| Processing fees (~$15k volume) | — | ~$400 |
+| **Total** | **$1,299** | **$598/mo** |
+| **Year 1 Total** | | **$8,475** |
 
 ### Example B: Mid-Size Venue
 **"Diamond Club" — 40 dancers, 8 VIP rooms, high volume**
 
-| Item | Monthly Cost |
-|------|-------------|
-| Silver Package | $599 |
-| Additional VIP terminals (4) | $316 |
-| Processing fees (~$50k volume) | ~$1,300 |
-| **Total MRR** | **$2,215** |
-| **Annual Revenue** | **$26,580** |
+| Item | One-Time | Monthly |
+|------|----------|---------|
+| Full Launch Bundle | $2,499 | — |
+| Silver Package | — | $599 |
+| Additional VIP terminals (4) | — | $316 |
+| Processing fees (~$50k volume) | — | ~$1,300 |
+| **Total** | **$2,499** | **$2,215/mo** |
+| **Year 1 Total** | | **$29,079** |
 
 ### Example C: Large Multi-Location Chain
 **"Prestige Entertainment" — 5 locations, 200+ dancers**
 
-| Item | Monthly Cost |
-|------|-------------|
-| Platinum Package (5 locations) | $4,500 |
-| Hardware bundle (5 venues) | $2,500 |
-| Processing fees (~$300k volume) | ~$7,750 |
-| **Total MRR** | **$14,750** |
-| **Annual Revenue** | **$177,000** |
+| Item | One-Time | Monthly |
+|------|----------|---------|
+| White Glove × 5 locations | $24,995 | — |
+| Platinum Package (5 locations) | — | $4,500 |
+| Hardware bundle (5 venues) | — | $2,500 |
+| Processing fees (~$300k volume) | — | ~$7,750 |
+| **Total** | **$24,995** | **$14,750/mo** |
+| **Year 1 Total** | | **$201,995** |
 
 ---
 
@@ -224,13 +373,13 @@ ClubOps pricing is designed around a **modular, scalable model** that grows with
 
 ### Revenue Projections (Conservative)
 
-| Year | Customers | Avg MRR | Total ARR | Transaction Rev | Total |
-|------|-----------|---------|-----------|-----------------|-------|
-| Y1 | 50 | $500 | $300K | $200K | $500K |
-| Y2 | 200 | $750 | $1.8M | $1.2M | $3M |
-| Y3 | 500 | $1,000 | $6M | $4M | $10M |
-| Y4 | 1,000 | $1,250 | $15M | $10M | $25M |
-| Y5 | 2,000 | $1,500 | $36M | $24M | $60M |
+| Year | Customers | Avg MRR | Total ARR | Transaction Rev | Onboarding Rev | Total |
+|------|-----------|---------|-----------|-----------------|----------------|-------|
+| Y1 | 50 | $500 | $300K | $200K | $75K | $575K |
+| Y2 | 200 | $750 | $1.8M | $1.2M | $300K | $3.3M |
+| Y3 | 500 | $1,000 | $6M | $4M | $500K | $10.5M |
+| Y4 | 1,000 | $1,250 | $15M | $10M | $750K | $25.75M |
+| Y5 | 2,000 | $1,500 | $36M | $24M | $1M | $61M |
 
 ### Unit Economics
 
@@ -241,6 +390,7 @@ ClubOps pricing is designed around a **modular, scalable model** that grows with
 | LTV:CAC Ratio | 5:1 - 15:1 |
 | Gross Margin (SaaS) | 80-85% |
 | Gross Margin (Hardware) | 40-50% |
+| Gross Margin (Onboarding) | 60-70% |
 | Net Revenue Retention | 110%+ |
 
 ---
@@ -268,6 +418,7 @@ ClubOps pricing is designed around a **modular, scalable model** that grows with
 2. **Freemium hook** — Starter tier drives trials
 3. **Professional tier sweet spot** — $99/mo is accessible
 4. **Lock in annual contracts** — 20% discount drives commitment
+5. **Onboarding revenue** — Capture implementation fees upfront
 
 ### Phase 2: POS Rollout (Q1 2025)
 1. **Bundle incentives** — Discount POS for existing SaaS customers
@@ -288,14 +439,16 @@ ClubOps pricing is designed around a **modular, scalable model** that grows with
 
 ## Action Items
 
+- [x] Define onboarding tiers and pricing
+- [x] Create data migration pricing structure
+- [x] Build data migration questionnaire
 - [ ] Finalize hardware vendor partnerships
 - [ ] Build POS integration (Stripe/Square)
 - [ ] Create pricing calculator for sales team
-- [ ] Develop customer onboarding for configuration options
 - [ ] Set up facial recognition pilot program
 - [ ] Design VIP access control hardware specs
 
 ---
 
-*Document Created: December 14, 2025*  
-*ClubOps Pricing Strategy v1.0*
+*Document Updated: December 15, 2025*  
+*ClubOps Pricing Strategy v1.1*
