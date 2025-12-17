@@ -22,6 +22,17 @@ const DancerManagement: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('')
   const [filterStatus, setFilterStatus] = useState('all')
   const [showAddModal, setShowAddModal] = useState(false)
+  const [showViewModal, setShowViewModal] = useState(false)
+  const [selectedDancer, setSelectedDancer] = useState<any>(null)
+  
+  // Form state for add dancer
+  const [newDancer, setNewDancer] = useState({
+    legalName: '',
+    stageName: '',
+    email: '',
+    phone: '',
+    status: 'active'
+  })
   
   useEffect(() => {
     dispatch(fetchDancers())
@@ -101,6 +112,24 @@ const DancerManagement: React.FC = () => {
     const diffTime = expiry.getTime() - today.getTime()
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
     return diffDays
+  }
+
+  // Handle view dancer
+  const handleViewDancer = (dancer: any) => {
+    setSelectedDancer(dancer)
+    setShowViewModal(true)
+  }
+
+  // Handle add dancer submit
+  const handleAddDancerSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    try {
+      await dispatch(addDancer(newDancer)).unwrap()
+      setShowAddModal(false)
+      setNewDancer({ legalName: '', stageName: '', email: '', phone: '', status: 'active' })
+    } catch (err) {
+      console.error('Failed to add dancer:', err)
+    }
   }
 
   return (
@@ -291,7 +320,10 @@ const DancerManagement: React.FC = () => {
 
                 {/* Action Buttons */}
                 <div className="flex gap-2">
-                  <button className="flex-1 btn-secondary py-2 text-sm touch-target">
+                  <button 
+                    onClick={() => handleViewDancer(dancer)}
+                    className="flex-1 btn-secondary py-2 text-sm touch-target"
+                  >
                     <EyeIcon className="h-4 w-4 mr-1.5" />
                     View
                   </button>
@@ -342,6 +374,152 @@ const DancerManagement: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Add Dancer Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="card-premium p-6 w-full max-w-md animate-scale-in">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-semibold text-text-primary">Add New Dancer</h2>
+              <button onClick={() => setShowAddModal(false)} className="p-2 hover:bg-white/5 rounded-lg transition-colors">
+                <XMarkIcon className="h-5 w-5 text-text-tertiary" />
+              </button>
+            </div>
+            
+            <form onSubmit={handleAddDancerSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm text-text-secondary mb-1.5">Legal Name *</label>
+                <input
+                  type="text"
+                  required
+                  value={newDancer.legalName}
+                  onChange={(e) => setNewDancer({...newDancer, legalName: e.target.value})}
+                  className="input-premium w-full"
+                  placeholder="Full legal name"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm text-text-secondary mb-1.5">Stage Name</label>
+                <input
+                  type="text"
+                  value={newDancer.stageName}
+                  onChange={(e) => setNewDancer({...newDancer, stageName: e.target.value})}
+                  className="input-premium w-full"
+                  placeholder="Performer name"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm text-text-secondary mb-1.5">Email</label>
+                <input
+                  type="email"
+                  value={newDancer.email}
+                  onChange={(e) => setNewDancer({...newDancer, email: e.target.value})}
+                  className="input-premium w-full"
+                  placeholder="email@example.com"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm text-text-secondary mb-1.5">Phone</label>
+                <input
+                  type="tel"
+                  value={newDancer.phone}
+                  onChange={(e) => setNewDancer({...newDancer, phone: e.target.value})}
+                  className="input-premium w-full"
+                  placeholder="(555) 123-4567"
+                />
+              </div>
+              
+              <div className="flex gap-3 pt-4">
+                <button type="button" onClick={() => setShowAddModal(false)} className="flex-1 btn-secondary py-2.5">
+                  Cancel
+                </button>
+                <button type="submit" className="flex-1 btn-primary py-2.5">
+                  Add Dancer
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* View Dancer Modal */}
+      {showViewModal && selectedDancer && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="card-premium p-6 w-full max-w-lg animate-scale-in">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-semibold text-text-primary">Dancer Details</h2>
+              <button onClick={() => setShowViewModal(false)} className="p-2 hover:bg-white/5 rounded-lg transition-colors">
+                <XMarkIcon className="h-5 w-5 text-text-tertiary" />
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              {/* Avatar and Name */}
+              <div className="flex items-center gap-4 pb-4 border-b border-white/5">
+                <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-gold-500 to-gold-600 flex items-center justify-center">
+                  <span className="text-midnight-900 font-bold text-xl">
+                    {getDancerName(selectedDancer).split(' ').map(n => n[0] || '').join('').toUpperCase().slice(0, 2)}
+                  </span>
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-text-primary">{getStageName(selectedDancer) || getDancerName(selectedDancer)}</h3>
+                  {getStageName(selectedDancer) && <p className="text-sm text-text-tertiary">{getDancerName(selectedDancer)}</p>}
+                  <span className={`badge mt-1 ${getDancerStatus(selectedDancer) === 'active' ? 'badge-success' : 'badge-info'}`}>
+                    {getDancerStatus(selectedDancer)}
+                  </span>
+                </div>
+              </div>
+              
+              {/* Details Grid */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-3 rounded-lg bg-midnight-800/50">
+                  <p className="text-xs text-text-tertiary mb-1">Email</p>
+                  <p className="text-sm text-text-primary">{selectedDancer.email || 'Not provided'}</p>
+                </div>
+                <div className="p-3 rounded-lg bg-midnight-800/50">
+                  <p className="text-xs text-text-tertiary mb-1">Phone</p>
+                  <p className="text-sm text-text-primary">{selectedDancer.phone || 'Not provided'}</p>
+                </div>
+                <div className="p-3 rounded-lg bg-midnight-800/50">
+                  <p className="text-xs text-text-tertiary mb-1">Bar Fee</p>
+                  <p className={`text-sm font-medium ${selectedDancer.bar_fee_paid ? 'text-status-success' : 'text-status-danger'}`}>
+                    {selectedDancer.bar_fee_paid ? '✓ Paid' : '✗ Unpaid'}
+                  </p>
+                </div>
+                <div className="p-3 rounded-lg bg-midnight-800/50">
+                  <p className="text-xs text-text-tertiary mb-1">Contract</p>
+                  <p className={`text-sm font-medium ${selectedDancer.contract_signed ? 'text-status-success' : 'text-status-warning'}`}>
+                    {selectedDancer.contract_signed ? '✓ Signed' : '○ Pending'}
+                  </p>
+                </div>
+                <div className="col-span-2 p-3 rounded-lg bg-midnight-800/50">
+                  <p className="text-xs text-text-tertiary mb-1">License Status</p>
+                  <p className={`text-sm font-medium ${
+                    getComplianceStatus(selectedDancer) === 'valid' ? 'text-status-success' :
+                    getComplianceStatus(selectedDancer) === 'expired' ? 'text-status-danger' : 'text-status-warning'
+                  }`}>
+                    {getComplianceStatus(selectedDancer) === 'valid' ? '✓ All documents valid' :
+                     getComplianceStatus(selectedDancer) === 'expired' ? '✗ License expired - action required' :
+                     `⚠ Expires in ${getDaysUntilExpiry(selectedDancer) || '?'} days`}
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex gap-3 pt-4">
+                <button onClick={() => setShowViewModal(false)} className="flex-1 btn-secondary py-2.5">
+                  Close
+                </button>
+                <button className="flex-1 btn-primary py-2.5">
+                  Edit Dancer
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

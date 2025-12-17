@@ -1,47 +1,81 @@
 # ClubOps - UI/UX Documentation
 
-**Version:** 1.0  
+**Version:** 2.0  
 **Date:** December 14, 2025  
 **Status:** Production Ready  
+**API Version:** v3.0.5  
 **Live URL:** https://clubops-saas-frontend.vercel.app
 
 ---
 
 ## Executive Summary
 
-ClubOps is a comprehensive SaaS platform designed for gentlemen's club management. The application features a premium dark theme optimized for low-light environments, with accent colors of metallic gold, deep blue, and subtle red highlights.
+ClubOps is a comprehensive SaaS platform designed for gentlemen's club management. The application features a premium dark theme optimized for low-light environments, with accent colors of metallic gold, deep teal, and subtle red highlights. Built with modern web technologies and deployed on enterprise-grade infrastructure, ClubOps delivers real-time operational insights and compliance management for club operators.
 
 ### Key Design Principles
 - **Dark Theme**: Optimized for club environments with minimal eye strain
-- **Color Palette**: Deep charcoal backgrounds (#1a1a1a), gold accents (#D4AF37), teal highlights
-- **Typography**: Clean, readable fonts with high contrast
+- **Color Palette**: Deep charcoal backgrounds (#0D0D0D), metallic gold accents (#D4AF37), teal highlights (#0D9488)
+- **Typography**: Clean Inter typeface with high contrast for readability
 - **Data Visualization**: Real-time metrics with color-coded status indicators
+- **Mobile-First**: Fully responsive design works seamlessly on all devices
 
 ---
 
 ## Application Screenshots
 
+### 0. Authentication (Login)
+**File:** `screenshots/00-login.png`
+
+![ClubOps Login](screenshots/00-login.png)
+*Premium login experience with social authentication options*
+
+Secure authentication portal for club staff and management:
+
+**Login Form:**
+- Email address field with validation
+- Password with visibility toggle
+- "Remember me" checkbox for session persistence
+- Forgot password recovery link
+
+**Social Login Options:**
+- Google OAuth integration
+- Facebook OAuth integration
+
+**Design Elements:**
+- ClubOps branding with sparkle icon
+- Gradient accent bar for premium feel
+- Gold "Sign In" button
+- Dark theme optimized for club environments
+
+---
+
 ### 1. Dashboard (Home)
 **File:** `screenshots/01-dashboard.png`
+
+![ClubOps Dashboard](screenshots/01-dashboard.png)
+*Dashboard showing real-time metrics, activity feed, and quick actions*
 
 The main dashboard provides an at-a-glance view of club operations:
 
 **Key Metrics Cards:**
-- Active Dancers: 12 (gold badge)
-- Tonight's Revenue: $2,847 (+12.5% indicator)
-- VIP Rooms Active: 3/8 (utilization tracking)
-- Queue Length: 8 dancers (real-time count)
+- Active Dancers: Real-time count with gold badge
+- Tonight's Revenue: Live total with percentage change indicator
+- VIP Booths Active: Utilization tracking (e.g., 3/8)
+- Queue Length: Real-time dancer queue count
 
 **Features:**
 - Quick action buttons for common tasks
 - Staff status indicators
 - Revenue trend visualization
-- Live activity feed
+- Live activity feed with timestamps
 
 ---
 
 ### 2. Dancer Management
 **File:** `screenshots/02-dancers.png`
+
+![Dancer Management](screenshots/02-dancers.png)
+*Comprehensive dancer roster with compliance tracking and status badges*
 
 Comprehensive dancer roster management with compliance tracking:
 
@@ -52,7 +86,7 @@ Comprehensive dancer roster management with compliance tracking:
 
 **Dancer Cards Display:**
 - Profile photo placeholder
-- Stage name
+- Stage name prominently displayed
 - License expiration date
 - Current status (Checked In/Available/On Break)
 - Quick action buttons
@@ -61,11 +95,15 @@ Comprehensive dancer roster management with compliance tracking:
 - Proactive expiration alerts
 - Blocking alerts for expired licenses
 - Filter by status (All/Active/Pending/Expired)
+- Batch operations for roster management
 
 ---
 
 ### 3. DJ Queue Management
 **File:** `screenshots/03-dj-queue.png`
+
+![DJ Queue Interface](screenshots/03-dj-queue.png)
+*Real-time queue management with drag-and-drop reordering*
 
 The core operational interface for DJ workflow:
 
@@ -92,7 +130,10 @@ The core operational interface for DJ workflow:
 ### 4. VIP Booth Management
 **File:** `screenshots/04-vip-booths.png`
 
-Real-time VIP room tracking and session management:
+![VIP Booth Management](screenshots/04-vip-booths.png)
+*Real-time booth tracking with session timers and status indicators*
+
+Real-time VIP booth tracking and session management:
 
 **Booth Status Grid:**
 - **Available** (Green): Ready for booking
@@ -106,7 +147,7 @@ Real-time VIP room tracking and session management:
 - Running timer display
 - Revenue tracking per booth
 
-**Room Details:**
+**Booth Details:**
 - Booth number/name
 - Capacity information
 - Amenity icons
@@ -116,6 +157,9 @@ Real-time VIP room tracking and session management:
 
 ### 5. Revenue Dashboard
 **File:** `screenshots/05-revenue.png`
+
+![Revenue Dashboard](screenshots/05-revenue.png)
+*Financial tracking with period comparisons and category breakdown*
 
 Financial tracking and reporting interface:
 
@@ -135,14 +179,17 @@ Financial tracking and reporting interface:
 
 **Features:**
 - Time period filters
-- Export functionality
+- Export functionality (CSV, PDF)
 - Trend analysis
-- Category breakdown
+- Category breakdown visualization
 
 ---
 
 ### 6. Settings
 **File:** `screenshots/06-settings.png`
+
+![Settings Page](screenshots/06-settings.png)
+*Account and system configuration with tabbed navigation*
 
 Account and system configuration:
 
@@ -167,98 +214,50 @@ Account and system configuration:
 - Tab navigation with gold highlight on active tab
 - Form fields with dark input backgrounds
 - Gold "Save Changes" button
+- Responsive layout for all screen sizes
 
 ---
 
-## Color Palette Reference
+### 7. Subscription Management
+**File:** `screenshots/07-subscription.png`
 
-| Element | Color | Hex Code |
-|---------|-------|----------|
-| Background (Primary) | Dark Charcoal | #0D0D0D |
-| Background (Cards) | Elevated Dark | #1A1A1A |
-| Background (Input) | Field Dark | #2A2A2A |
-| Accent (Primary) | Metallic Gold | #D4AF37 |
-| Accent (Secondary) | Deep Teal | #0D9488 |
-| Status - Success | Green | #22C55E |
-| Status - Warning | Amber | #F59E0B |
-| Status - Error | Red | #EF4444 |
-| Text (Primary) | White | #FFFFFF |
-| Text (Secondary) | Gray | #9CA3AF |
+![Subscription Plans](screenshots/07-subscription.png)
+*Tiered pricing with usage metrics and upgrade options*
 
----
+Manage your ClubOps subscription and monitor usage:
 
-## Typography
+**Current Plan Display:**
+- Active plan with status badge
+- Usage metrics (dancers, booths, storage)
+- Progress bars showing limit utilization
 
-- **Headings**: Inter, Semi-bold
-- **Body Text**: Inter, Regular
-- **Metrics/Numbers**: Inter, Medium (tabular figures)
-- **Buttons**: Inter, Medium
-
----
-
-## Responsive Design
-
-The application is fully responsive with breakpoints:
-- **Desktop**: 1280px+ (Full sidebar, expanded views)
-- **Tablet**: 768px - 1279px (Collapsible sidebar)
-- **Mobile**: < 768px (Bottom navigation, stacked cards)
-
----
-
-## Navigation Structure
-
-```
-ClubOps
-├── Club Management
-│   ├── Dashboard
-│   ├── Dancers
-│   ├── DJ Queue
-│   ├── VIP Booths
-│   └── Revenue
-├── Platform
-│   ├── Subscription
-│   ├── Billing
-│   └── Admin
-└── Settings
-```
-
----
-
-## Authentication
-
-**Login Credentials (Demo):**
-- Email: admin@clubops.com
-- Password: demo123
+**Available Tiers:**
+| Plan | Price | Dancers | VIP Booths | Storage |
+|------|-------|---------|------------|---------|
+| Starter | $0/forever | 5 | 0 | 1GB |
+| Professional | $49/month | 25 | 5 | 10GB |
+| Business | $149/month | 100 | Unlimited | 50GB |
+| Enterprise | $399/month | Unlimited | Unlimited | Unlimited |
 
 **Features:**
-- JWT-based authentication
-- Session management
-- Role-based access control
+- Monthly/Annual toggle (20% savings on annual)
+- Usage limit warnings with progress indicators
+- One-click upgrade buttons
+- "Most Popular" badge on Business tier
+- Clear feature comparison
 
 ---
 
-## Technical Stack
+## Mobile Responsive Design
 
-| Layer | Technology |
-|-------|------------|
-| Frontend | React 18 + TypeScript |
-| Styling | Tailwind CSS |
-| Build Tool | Vite |
-| State Management | React Context + Hooks |
-| Real-time | Socket.io |
-| Backend | Node.js + Express |
-| Database | PostgreSQL + Prisma ORM |
-| Hosting | Vercel (Frontend) |
-| API | Vercel Serverless Functions |
+ClubOps is fully optimized for mobile devices, allowing managers to monitor operations from anywhere. The interface adapts intelligently with hamburger navigation, stacked cards, and touch-optimized controls.
 
----
+### Mobile Login
+![Mobile Login](screenshots/mobile/mobile-00-login.png)
+*Clean, touch-optimized login experience*
 
-## Production URLs
+Responsive login form adapts to screen width with full functionality:
+- Touch-friendly input fields
+- Social login buttons optimized for mobile
+- Readable typography at all sizes
 
-- **Frontend**: https://clubops-saas-frontend.vercel.app
-- **Backend API**: https://clubops-saas-backend.vercel.app/api
-
----
-
-*Document generated: December 14, 2025*  
-*ClubOps © 2025 - All Rights Reserved*
