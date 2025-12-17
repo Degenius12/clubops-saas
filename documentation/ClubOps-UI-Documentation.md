@@ -29,6 +29,7 @@ ClubOps is a comprehensive SaaS platform designed for gentlemen's club managemen
 ![ClubOps Login](screenshots/00-login.png)
 *Premium login experience with social authentication options*
 
+<<<<<<< HEAD
 Secure authentication portal for club staff and management:
 
 **Login Form:**
@@ -44,6 +45,23 @@ Secure authentication portal for club staff and management:
 **Design Elements:**
 - ClubOps branding with sparkle icon
 - Gradient accent bar for premium feel
+=======
+Secure authentication portal:
+
+**Login Form:**
+- Email address field
+- Password with visibility toggle
+- "Remember me" checkbox
+- Forgot password link
+
+**Social Login Options:**
+- Google OAuth
+- Facebook OAuth
+
+**Design Elements:**
+- ClubOps branding with sparkle icon
+- Gradient accent bar
+>>>>>>> d558dcde4b4cdac26a8f68e119263caf8228ba15
 - Gold "Sign In" button
 - Dark theme optimized for club environments
 
@@ -58,10 +76,17 @@ Secure authentication portal for club staff and management:
 The main dashboard provides an at-a-glance view of club operations:
 
 **Key Metrics Cards:**
+<<<<<<< HEAD
 - Active Dancers: Real-time count with gold badge
 - Tonight's Revenue: Live total with percentage change indicator
 - VIP Booths Active: Utilization tracking (e.g., 3/8)
 - Queue Length: Real-time dancer queue count
+=======
+- Active Dancers: 12 (gold badge)
+- Tonight's Revenue: $2,847 (+12.5% indicator)
+- VIP Booths Active: 3/8 (utilization tracking)
+- Queue Length: 8 dancers (real-time count)
+>>>>>>> d558dcde4b4cdac26a8f68e119263caf8228ba15
 
 **Features:**
 - Quick action buttons for common tasks
@@ -103,7 +128,11 @@ Comprehensive dancer roster management with compliance tracking:
 **File:** `screenshots/03-dj-queue.png`
 
 ![DJ Queue Interface](screenshots/03-dj-queue.png)
+<<<<<<< HEAD
 *Real-time queue management with drag-and-drop reordering*
+=======
+*Real-time stage queue management with drag-and-drop reordering*
+>>>>>>> d558dcde4b4cdac26a8f68e119263caf8228ba15
 
 The core operational interface for DJ workflow:
 
@@ -159,7 +188,11 @@ Real-time VIP booth tracking and session management:
 **File:** `screenshots/05-revenue.png`
 
 ![Revenue Dashboard](screenshots/05-revenue.png)
+<<<<<<< HEAD
 *Financial tracking with period comparisons and category breakdown*
+=======
+*Financial tracking with breakdown charts and trend analysis*
+>>>>>>> d558dcde4b4cdac26a8f68e119263caf8228ba15
 
 Financial tracking and reporting interface:
 
@@ -189,7 +222,11 @@ Financial tracking and reporting interface:
 **File:** `screenshots/06-settings.png`
 
 ![Settings Page](screenshots/06-settings.png)
+<<<<<<< HEAD
 *Account and system configuration with tabbed navigation*
+=======
+*Account configuration with tabbed navigation and profile management*
+>>>>>>> d558dcde4b4cdac26a8f68e119263caf8228ba15
 
 Account and system configuration:
 
@@ -220,6 +257,8 @@ Account and system configuration:
 
 ### 7. Subscription Management
 **File:** `screenshots/07-subscription.png`
+<<<<<<< HEAD
+=======
 
 ![Subscription Plans](screenshots/07-subscription.png)
 *Tiered pricing with usage metrics and upgrade options*
@@ -250,7 +289,123 @@ Manage your ClubOps subscription and monitor usage:
 
 ## Mobile Responsive Design
 
+ClubOps is fully optimized for mobile devices, allowing managers to monitor operations from anywhere.
+
+### Mobile Login
+![Mobile Login](screenshots/mobile/mobile-00-login.png)
+*Clean, touch-optimized login experience*
+
+### Mobile Dashboard
+![Mobile Dashboard](screenshots/mobile/mobile-01-dashboard.png)
+*Key metrics accessible on-the-go with hamburger navigation*
+
+### Mobile Dancer Management
+![Mobile Dancers](screenshots/mobile/mobile-02-dancers.png)
+*Swipe-friendly dancer cards with status badges*
+
+### Mobile VIP Booth View
+![Mobile VIP Booths](screenshots/mobile/mobile-03-vip.png)
+*Monitor booth status and sessions from anywhere*
+
+---
+
+## Color Palette Reference
+>>>>>>> d558dcde4b4cdac26a8f68e119263caf8228ba15
+
+![Subscription Plans](screenshots/07-subscription.png)
+*Tiered pricing with usage metrics and upgrade options*
+
+Manage your ClubOps subscription and monitor usage:
+
+**Current Plan Display:**
+- Active plan with status badge
+- Usage metrics (dancers, booths, storage)
+- Progress bars showing limit utilization
+
+<<<<<<< HEAD
+**Available Tiers:**
+| Plan | Price | Dancers | VIP Booths | Storage |
+|------|-------|---------|------------|---------|
+| Starter | $0/forever | 5 | 0 | 1GB |
+| Professional | $49/month | 25 | 5 | 10GB |
+| Business | $149/month | 100 | Unlimited | 50GB |
+| Enterprise | $399/month | Unlimited | Unlimited | Unlimited |
+
+**Features:**
+- Monthly/Annual toggle (20% savings on annual)
+- Usage limit warnings with progress indicators
+- One-click upgrade buttons
+- "Most Popular" badge on Business tier
+- Clear feature comparison
+=======
+- **Headings**: Inter, Semi-bold
+- **Body Text**: Inter, Regular
+- **Metrics/Numbers**: Inter, Medium (tabular figures)
+- **Buttons**: Inter, Medium
+
+---
+
+## Responsive Design Breakpoints
+
+The application is fully responsive with breakpoints:
+- **Desktop**: 1280px+ (Full sidebar, expanded views)
+- **Tablet**: 768px - 1279px (Collapsible sidebar)
+- **Mobile**: < 768px (Bottom navigation, stacked cards)
+
+---
+
+## Navigation Structure
+
+```
+ClubOps
+├── Club Management
+│   ├── Dashboard
+│   ├── Dancers
+│   ├── DJ Queue
+│   ├── VIP Booths
+│   └── Revenue
+├── Platform
+│   ├── Subscription
+│   ├── Billing
+│   └── Admin
+└── Settings
+```
+
+---
+
+## Authentication
+
+**Login Credentials (Demo):**
+- Email: admin@clubops.com
+- Password: password
+
+**Features:**
+- JWT-based authentication
+- Session management
+- Role-based access control
+- Social OAuth (Google, Facebook)
+>>>>>>> d558dcde4b4cdac26a8f68e119263caf8228ba15
+
+---
+
+## Mobile Responsive Design
+
+<<<<<<< HEAD
 ClubOps is fully optimized for mobile devices, allowing managers to monitor operations from anywhere. The interface adapts intelligently with hamburger navigation, stacked cards, and touch-optimized controls.
+=======
+| Layer | Technology |
+|-------|------------|
+| Frontend | React 18 + TypeScript |
+| Styling | Tailwind CSS |
+| Build Tool | Vite |
+| State Management | React Context + Hooks |
+| Real-time | Socket.io |
+| Backend | Node.js + Express |
+| Database | PostgreSQL + Prisma ORM |
+| Hosting | Vercel (Frontend & Backend) |
+| API | Vercel Serverless Functions |
+| API Version | v3.0.5 |
+>>>>>>> d558dcde4b4cdac26a8f68e119263caf8228ba15
 
 ### Mobile Login
 ![Mobile Login](screenshots/mobile/mobile-00-login.png)
@@ -261,3 +416,14 @@ Responsive login form adapts to screen width with full functionality:
 - Social login buttons optimized for mobile
 - Readable typography at all sizes
 
+<<<<<<< HEAD
+=======
+- **Frontend**: https://clubops-saas-frontend.vercel.app
+- **Backend API**: https://clubops-backend.vercel.app
+
+---
+
+*Document Version: 2.0*  
+*Last Updated: December 14, 2025*  
+*ClubOps © 2025 - All Rights Reserved*
+>>>>>>> d558dcde4b4cdac26a8f68e119263caf8228ba15
