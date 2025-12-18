@@ -144,7 +144,52 @@ const SubscriptionDashboard: React.FC = () => {
     }
   ]
 
-  const currentPlanData = plans.find(p => p.id === currentPlan?.planId) || plans[0]
+  // Helper to safely get the plan ID from currentPlan (API returns different structures)
+  const getCurrentPlanId = () => {
+    if (!currentPlan) return 'free'
+    // API returns { id: 'enterprise', ... } structure
+    return currentPlan.id || currentPlan.planId || 'free'
+  }
+
+  const currentPlanData = plans.find(p => p.id === getCurrentPlanId()) || plans[0]
+
+  // Helper to safely extract numeric value from usage data
+  // API returns: { dancers: { used: 8, limit: -1 }, vipBooths: { used: 5, limit: -1 } }
+  const getUsageValue = (key: 'dancers' | 'vipBooths' | 'storage', defaultValue: number = 0): number => {
+    if (!usage || !usage[key]) return defaultValue
+    // Handle object format from API
+    if (typeof usage[key] === 'object' && usage[key].used !== undefined) {
+      return usage[key].used
+    }
+    // Handle direct number format
+    if (typeof usage[key] === 'number') {
+      return usage[key]
+    }
+    return defaultValue
+  }
+
+  // Helper to get limit from API usage data
+  const getUsageLimit = (key: 'dancers' | 'vipBooths' | 'storage'): number | 'unlimited' => {
+    if (!usage || !usage[key]) {
+      // Fall back to plan limits
+      if (key === 'dancers') return currentPlanData.limits.dancers
+      if (key === 'vipBooths') return currentPlanData.limits.vipBooths
+      return 100 // default for storage
+    }
+    // Handle object format from API
+    if (typeof usage[key] === 'object' && usage[key].limit !== undefined) {
+      const limit = usage[key].limit
+      // API returns -1 or 'Unlimited' for unlimited
+      if (limit === -1 || limit === 'Unlimited' || limit === 'unlimited') {
+        return 'unlimited'
+      }
+      return limit
+    }
+    // Fall back to plan limits
+    if (key === 'dancers') return currentPlanData.limits.dancers
+    if (key === 'vipBooths') return currentPlanData.limits.vipBooths
+    return 100
+  }
 
   const getUsagePercentage = (current: number, max: number | 'unlimited') => {
     if (max === 'unlimited') return 15
@@ -247,15 +292,15 @@ const SubscriptionDashboard: React.FC = () => {
         {[
           { 
             label: 'Dancers', 
-            current: usage?.dancers || 3, 
-            max: currentPlanData.limits.dancers,
+            current: getUsageValue('dancers', 3), 
+            max: getUsageLimit('dancers'),
             icon: UsersIcon,
             color: 'electric'
           },
           { 
             label: 'VIP Booths', 
-            current: usage?.vipBooths || 2, 
-            max: currentPlanData.limits.vipBooths,
+            current: getUsageValue('vipBooths', 2), 
+            max: getUsageLimit('vipBooths'),
             icon: CurrencyDollarIcon,
             color: 'gold'
           },
@@ -313,7 +358,7 @@ const SubscriptionDashboard: React.FC = () => {
         
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
           {plans.map((plan, index) => {
-            const isCurrent = plan.id === currentPlan?.planId
+            const isCurrent = plan.id === getCurrentPlanId()
             const PlanIcon = plan.icon
             
             return (
