@@ -26,7 +26,13 @@ const DancerManagement: React.FC = () => {
   const [selectedDancer, setSelectedDancer] = useState<any>(null)
   
   // Form state for add dancer
-  const [newDancer, setNewDancer] = useState({
+  const [newDancer, setNewDancer] = useState<{
+    legalName: string
+    stageName: string
+    email: string
+    phone: string
+    status: 'active' | 'inactive' | 'suspended'
+  }>({
     legalName: '',
     stageName: '',
     email: '',
