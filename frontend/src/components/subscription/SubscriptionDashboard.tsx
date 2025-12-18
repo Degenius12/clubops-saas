@@ -214,6 +214,23 @@ const SubscriptionDashboard: React.FC = () => {
     }
   }
 
+  // Fix: Helper function to get gradient class based on plan ID
+  // Dynamic template strings don't work with Tailwind JIT compiler
+  const getGradientClass = (planId: string) => {
+    switch (planId) {
+      case 'free':
+        return 'from-slate-500 to-slate-600'
+      case 'basic':
+        return 'from-electric-500 to-royal-500'
+      case 'pro':
+        return 'from-gold-500 to-gold-600'
+      case 'enterprise':
+        return 'from-status-danger to-rose-600'
+      default:
+        return 'from-slate-500 to-slate-600'
+    }
+  }
+
   return (
     <div className="space-y-8 animate-fade-in">
       {/* Header */}
@@ -253,11 +270,11 @@ const SubscriptionDashboard: React.FC = () => {
 
       {/* Current Plan Card */}
       <div className="card-premium p-6 relative overflow-hidden">
-        <div className={`absolute top-0 right-0 w-64 h-64 bg-gradient-to-br ${currentPlanData.gradient} opacity-10 blur-3xl`}></div>
-        
+        <div className={`absolute top-0 right-0 w-64 h-64 bg-gradient-to-br ${getGradientClass(currentPlanData.id)} opacity-10 blur-3xl`}></div>
+
         <div className="relative flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
           <div className="flex items-center gap-5">
-            <div className={`p-4 rounded-2xl bg-gradient-to-br ${currentPlanData.gradient}`}>
+            <div className={`p-4 rounded-2xl bg-gradient-to-br ${getGradientClass(currentPlanData.id)}`}>
               <currentPlanData.icon className="h-8 w-8 text-white" />
             </div>
             <div>
@@ -290,23 +307,23 @@ const SubscriptionDashboard: React.FC = () => {
       {/* Usage Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {[
-          { 
-            label: 'Dancers', 
-            current: getUsageValue('dancers', 3), 
+          {
+            label: 'Dancers',
+            current: getUsageValue('dancers', 3),
             max: getUsageLimit('dancers'),
             icon: UsersIcon,
             color: 'electric'
           },
-          { 
-            label: 'VIP Booths', 
-            current: getUsageValue('vipBooths', 2), 
+          {
+            label: 'VIP Booths',
+            current: getUsageValue('vipBooths', 2),
             max: getUsageLimit('vipBooths'),
             icon: CurrencyDollarIcon,
             color: 'gold'
           },
-          { 
-            label: 'Storage Used', 
-            current: 2.4, 
+          {
+            label: 'Storage Used',
+            current: 2.4,
             max: parseFloat(currentPlanData.limits.storage) || 100,
             icon: ChartBarIcon,
             color: 'royal',
@@ -314,17 +331,31 @@ const SubscriptionDashboard: React.FC = () => {
           }
         ].map((stat, index) => {
           const percentage = getUsagePercentage(stat.current, stat.max)
+
+          // Fix: Use proper conditional classes instead of dynamic template strings
+          const iconBgClass = stat.color === 'electric'
+            ? 'bg-electric-500/10'
+            : stat.color === 'gold'
+              ? 'bg-gold-500/10'
+              : 'bg-royal-500/10'
+
+          const iconColorClass = stat.color === 'electric'
+            ? 'text-electric-500'
+            : stat.color === 'gold'
+              ? 'text-gold-500'
+              : 'text-royal-500'
+
           return (
             <div key={stat.label} className="card-premium p-5" style={{ animationDelay: `${index * 50}ms` }}>
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
-                  <div className={`p-2.5 rounded-xl bg-${stat.color}-500/10`}>
-                    <stat.icon className={`h-5 w-5 text-${stat.color}-500`} />
+                  <div className={`p-2.5 rounded-xl ${iconBgClass}`}>
+                    <stat.icon className={`h-5 w-5 ${iconColorClass}`} />
                   </div>
                   <span className="text-text-secondary font-medium">{stat.label}</span>
                 </div>
               </div>
-              
+
               <div className="flex items-baseline gap-2 mb-3">
                 <span className="text-2xl font-bold text-text-primary tabular-nums">
                   {stat.current}{stat.suffix || ''}
@@ -333,14 +364,14 @@ const SubscriptionDashboard: React.FC = () => {
                   / {stat.max === 'unlimited' ? '∞' : `${stat.max}${stat.suffix || ''}`}
                 </span>
               </div>
-              
+
               <div className="h-2 rounded-full bg-midnight-700 overflow-hidden">
-                <div 
+                <div
                   className={`h-full rounded-full transition-all duration-500 ${getUsageColor(percentage)}`}
                   style={{ width: `${percentage}%` }}
                 />
               </div>
-              
+
               {percentage >= 80 && (
                 <p className="text-xs text-status-warning mt-2 flex items-center gap-1">
                   <InformationCircleIcon className="h-3.5 w-3.5" />
@@ -381,7 +412,7 @@ const SubscriptionDashboard: React.FC = () => {
 
                 {/* Plan Header */}
                 <div className="text-center mb-6 pt-2">
-                  <div className={`w-14 h-14 mx-auto rounded-2xl bg-gradient-to-br ${plan.gradient} p-3 mb-4`}>
+                  <div className={`w-14 h-14 mx-auto rounded-2xl bg-gradient-to-br ${getGradientClass(plan.id)} p-3 mb-4`}>
                     <PlanIcon className="h-full w-full text-white" />
                   </div>
                   <h3 className="text-xl font-bold text-text-primary">{plan.name}</h3>
@@ -461,7 +492,7 @@ const SubscriptionDashboard: React.FC = () => {
             
             {/* Modal Header */}
             <div className="text-center mb-6">
-              <div className={`w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br ${selectedPlan.gradient} p-4 mb-4`}>
+              <div className={`w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br ${getGradientClass(selectedPlan.id)} p-4 mb-4`}>
                 <selectedPlan.icon className="h-full w-full text-white" />
               </div>
               <h3 className="text-xl font-bold text-text-primary">Upgrade to {selectedPlan.name}</h3>
