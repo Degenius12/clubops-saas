@@ -5,6 +5,7 @@ const express = require('express');
 const { body, validationResult } = require('express-validator');
 const { PrismaClient } = require('@prisma/client');
 const { auth, authorize } = require('../middleware/auth');
+const anomalyDetection = require('../services/anomalyDetection');
 
 const prisma = new PrismaClient();
 const router = express.Router();
@@ -773,6 +774,195 @@ router.get('/export/comparisons', async (req, res) => {
     });
   } catch (error) {
     console.error('Export comparisons error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// ===========================================
+// STATISTICAL ANOMALY DETECTION
+// ===========================================
+
+// @route   POST /api/security/detect-anomalies
+// @desc    Run statistical anomaly detection algorithms
+// @access  Private (Owner only)
+router.post('/detect-anomalies', async (req, res) => {
+  try {
+    const {
+      period = 30,
+      employeeId = null,
+      sessionId = null,
+      createAlerts = true
+    } = req.body;
+
+    // Run anomaly detection
+    const results = await anomalyDetection.detectAnomalies(req.user.clubId, {
+      period: parseInt(period),
+      employeeId,
+      sessionId
+    });
+
+    // Optionally create VerificationAlert records for found anomalies
+    if (createAlerts && results.anomalies.length > 0) {
+      const createdAlerts = [];
+
+      for (const anomaly of results.anomalies) {
+        // Check if alert already exists for this entity
+        const existing = await prisma.verificationAlert.findFirst({
+          where: {
+            clubId: req.user.clubId,
+            alertType: anomaly.type,
+            entityType: anomaly.entityType,
+            entityId: anomaly.entityId,
+            status: { in: ['OPEN', 'ACKNOWLEDGED'] }
+          }
+        });
+
+        if (!existing) {
+          const alert = await prisma.verificationAlert.create({
+            data: {
+              clubId: req.user.clubId,
+              alertType: anomaly.type,
+              severity: anomaly.severity,
+              status: 'OPEN',
+              title: anomaly.title,
+              message: anomaly.message,
+              entityType: anomaly.entityType,
+              entityId: anomaly.entityId,
+              details: anomaly.details || {},
+              isHighRisk: anomaly.severity === 'CRITICAL' || anomaly.severity === 'HIGH',
+              flaggedReason: anomaly.recommendedAction
+            }
+          });
+          createdAlerts.push(alert);
+        }
+      }
+
+      results.alertsCreated = createdAlerts.length;
+      results.alertsSkipped = results.anomalies.length - createdAlerts.length;
+    }
+
+    res.json({
+      success: true,
+      ...results,
+      message: `Detected ${results.anomalies.length} anomalies across ${period} days`
+    });
+  } catch (error) {
+    console.error('Anomaly detection error:', error);
+    res.status(500).json({ error: 'Server error', message: error.message });
+  }
+});
+
+// @route   GET /api/security/anomaly-analysis/:sessionId
+// @desc    Get detailed anomaly analysis for specific VIP session
+// @access  Private (Owner only)
+router.get('/anomaly-analysis/:sessionId', async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+
+    // Run detection for just this session
+    const results = await anomalyDetection.detectAnomalies(req.user.clubId, {
+      period: 365, // Look far back to ensure we find it
+      sessionId
+    });
+
+    if (results.anomalies.length === 0) {
+      return res.json({
+        sessionId,
+        hasAnomalies: false,
+        message: 'No anomalies detected for this session'
+      });
+    }
+
+    // Get full session details
+    const session = await prisma.vipSession.findUnique({
+      where: { id: sessionId },
+      include: {
+        startedBy: { select: { id: true, name: true, email: true, role: true } },
+        endedBy: { select: { id: true, name: true, email: true, role: true } },
+        overrideBy: { select: { id: true, name: true, email: true, role: true } }
+      }
+    });
+
+    res.json({
+      sessionId,
+      hasAnomalies: true,
+      session,
+      anomalies: results.anomalies,
+      stats: results.stats
+    });
+  } catch (error) {
+    console.error('Session anomaly analysis error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// @route   GET /api/security/employee-risk-score/:employeeId
+// @desc    Get comprehensive risk score for employee
+// @access  Private (Owner only)
+router.get('/employee-risk-score/:employeeId', async (req, res) => {
+  try {
+    const { employeeId } = req.params;
+    const { period = 30 } = req.query;
+
+    // Run detection for specific employee
+    const results = await anomalyDetection.detectAnomalies(req.user.clubId, {
+      period: parseInt(period),
+      employeeId
+    });
+
+    // Calculate risk score (0-100, where 100 is highest risk)
+    let riskScore = 0;
+    const weights = {
+      CRITICAL: 25,
+      HIGH: 15,
+      MEDIUM: 8,
+      LOW: 3
+    };
+
+    results.anomalies.forEach(anomaly => {
+      riskScore += weights[anomaly.severity] || 0;
+    });
+
+    // Cap at 100
+    riskScore = Math.min(riskScore, 100);
+
+    // Determine risk level
+    let riskLevel = 'LOW';
+    if (riskScore >= 75) riskLevel = 'CRITICAL';
+    else if (riskScore >= 50) riskLevel = 'HIGH';
+    else if (riskScore >= 25) riskLevel = 'MEDIUM';
+
+    // Get employee details
+    const employee = await prisma.user.findUnique({
+      where: { id: employeeId },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        active: true
+      }
+    });
+
+    res.json({
+      employee,
+      riskScore,
+      riskLevel,
+      anomalyCount: results.anomalies.length,
+      anomaliesBySeverity: results.stats.bySeverity,
+      anomaliesByType: results.stats.byType,
+      recentAnomalies: results.anomalies.slice(0, 5),
+      recommendedAction: riskLevel === 'CRITICAL'
+        ? 'Immediate review - Consider suspension pending investigation'
+        : riskLevel === 'HIGH'
+        ? 'Formal performance review and retraining required'
+        : riskLevel === 'MEDIUM'
+        ? 'Monitor closely and provide additional training'
+        : 'Continue monitoring',
+      period
+    });
+  } catch (error) {
+    console.error('Employee risk score error:', error);
     res.status(500).json({ error: 'Server error' });
   }
 });

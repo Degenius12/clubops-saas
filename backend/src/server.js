@@ -48,6 +48,8 @@ const io = new Server(server, {
   cors: {
     origin: [
       process.env.FRONTEND_URL || "http://localhost:3000",
+      "https://www.clubflowapp.com",
+      "https://clubflowapp.com",
       "https://frontend-o9bhynpim-tony-telemacques-projects.vercel.app",
       "https://frontend-6v4tpr1qa-tony-telemacques-projects.vercel.app",
       "http://localhost:3000",
@@ -79,6 +81,8 @@ app.use(helmet({
 app.use(cors({
   origin: [
     process.env.FRONTEND_URL || "http://localhost:3000",
+    "https://www.clubflowapp.com",
+    "https://clubflowapp.com",
     "https://frontend-o9bhynpim-tony-telemacques-projects.vercel.app",
     "https://frontend-6v4tpr1qa-tony-telemacques-projects.vercel.app",
     "http://localhost:3000",
