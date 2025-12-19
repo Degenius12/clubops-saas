@@ -20,6 +20,11 @@ const generateToken = (userId, clubId) => {
   );
 };
 
+// Handle CORS preflight for register
+router.options('/register', (req, res) => {
+  res.status(200).end();
+});
+
 // Club Registration (SaaS Signup)
 router.post('/register', [
   body('clubName').trim().isLength({ min: 2, max: 255 }).withMessage('Club name must be 2-255 characters'),
@@ -117,6 +122,11 @@ router.post('/register', [
     console.error('Registration error:', error);
     res.status(500).json({ error: 'Registration failed' });
   }
+});
+
+// Handle CORS preflight for login
+router.options('/login', (req, res) => {
+  res.status(200).end();
 });
 
 // User Login
