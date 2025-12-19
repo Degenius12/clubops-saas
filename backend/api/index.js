@@ -149,11 +149,6 @@ let mockDjQueue = { current: null, queue: [] };
 
 
 // ============= AUTHENTICATION ROUTES =============
-// Handle CORS preflight for login
-app.options('/api/auth/login', (req, res) => {
-  res.status(204).end();
-});
-
 app.post('/api/auth/login', async (req, res) => {
   try {
     const { email, password, pin } = req.body;
@@ -187,11 +182,6 @@ app.get('/api/auth/me', authenticateToken, (req, res) => {
   const user = users.find(u => u.id === req.user.id);
   if (!user) return res.status(404).json({ error: 'User not found' });
   res.json({ id: user.id, email: user.email, name: user.name, role: user.role, club_id: user.club_id, subscription_tier: user.subscription_tier });
-});
-
-// Handle CORS preflight for register
-app.options('/api/auth/register', (req, res) => {
-  res.status(204).end();
 });
 
 app.post('/api/auth/register', async (req, res) => {
