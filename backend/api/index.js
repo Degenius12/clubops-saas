@@ -683,12 +683,12 @@ app.get('/api/financial/transactions', authenticateToken, (req, res) => {
 
 // ============= HEALTH CHECK =============
 app.get('/health', (req, res) => {
-  res.json({ 
-    status: 'ok', 
-    message: 'ClubOps API v3.0.5 - Subscription Management Added', 
-    timestamp: new Date().toISOString(), 
-    version: '3.0.5', 
-    database_connected: !!process.env.DATABASE_URL 
+  res.json({
+    status: 'ok',
+    message: 'ClubOps API v3.0.6 - CORS Preflight Fix Deployed',
+    timestamp: new Date().toISOString(),
+    version: '3.0.6',
+    database_connected: !!process.env.DATABASE_URL
   });
 });
 
