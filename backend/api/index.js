@@ -49,10 +49,12 @@ app.use(cors({
     return callback(null, allowed.includes(origin));
   },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-  preflightContinue: false,
-  optionsSuccessStatus: 204
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Cache-Control', 'Pragma'],
+  exposedHeaders: ['Authorization'],
+  preflightContinue: true, // CRITICAL: Let our app.options handler run
+  optionsSuccessStatus: 204,
+  maxAge: 86400 // Cache preflight for 24 hours
 }));
 
 // CRITICAL: Handle ALL OPTIONS requests FIRST, before any other middleware or routes
