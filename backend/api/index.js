@@ -42,7 +42,7 @@ app.use(helmet({
 app.use(cors({
   origin: function(origin, callback) {
     if (!origin) return callback(null, true);
-    if (origin.includes('vercel.app') || origin.includes('clubops') || origin.includes('localhost')) {
+    if (origin.includes('vercel.app') || origin.includes('clubops') || origin.includes('clubflow') || origin.includes('localhost')) {
       return callback(null, true);
     }
     const allowed = [process.env.FRONTEND_URL, process.env.CLIENT_URL, "http://localhost:3000"].filter(Boolean);
@@ -50,7 +50,9 @@ app.use(cors({
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  preflightContinue: false,
+  optionsSuccessStatus: 204
 }));
 
 app.use(express.json({ limit: '10mb' }));
