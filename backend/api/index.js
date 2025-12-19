@@ -694,8 +694,8 @@ app.get('/health', (req, res) => {
 
 app.get('/', (req, res) => {
   res.json({
-    message: 'ClubOps SaaS - Production API with Subscription Management',
-    version: '3.0.5',
+    message: 'ClubOps SaaS - Production API with CORS Fix',
+    version: '3.0.6',
     status: 'operational',
     features: [
       'Dancer Management', 

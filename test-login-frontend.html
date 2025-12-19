@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ClubFlow Login Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #0A0A0B;
+            color: #FAFAFA;
+        }
+        .container {
+            background: #111113;
+            padding: 30px;
+            border-radius: 12px;
+            border: 1px solid #27272A;
+        }
+        h1 {
+            color: #D4AF37;
+            margin-bottom: 20px;
+        }
+        input, button {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border: 1px solid #27272A;
+            background: #18181B;
+            color: #FAFAFA;
+            font-size: 14px;
+        }
+        button {
+            background: #D4AF37;
+            color: #0A0A0B;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #B8960C;
+        }
+        #result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .success {
+            background: rgba(16, 185, 129, 0.08);
+            border: 1px solid rgba(16, 185, 129, 0.25);
+            color: #10B981;
+        }
+        .error {
+            background: rgba(239, 68, 68, 0.08);
+            border: 1px solid rgba(239, 68, 68, 0.25);
+            color: #EF4444;
+        }
+        .info {
+            background: rgba(59, 130, 246, 0.08);
+            border: 1px solid rgba(59, 130, 246, 0.25);
+            color: #3B82F6;
+        }
+        .log {
+            margin: 5px 0;
+            padding: 8px;
+            background: #18181B;
+            border-radius: 4px;
+            font-size: 12px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 ClubFlow Login Test</h1>
+        <p style="color: #A1A1AA; font-size: 14px;">Testing login to https://clubops-backend.vercel.app/api/auth/login</p>
+
+        <input type="email" id="email" placeholder="Email" value="admin@clubops.com">
+        <input type="password" id="password" placeholder="Password" value="password">
+        <button onclick="testLogin()">Test Login</button>
+
+        <div id="logs"></div>
+        <div id="result"></div>
+    </div>
+
+    <script>
+        const API_URL = 'https://clubops-backend.vercel.app/api/auth/login';
+
+        function log(message, type = 'info') {
+            const logsDiv = document.getElementById('logs');
+            const logEntry = document.createElement('div');
+            logEntry.className = 'log';
+            logEntry.style.borderLeft = type === 'error' ? '3px solid #EF4444' :
+                                       type === 'success' ? '3px solid #10B981' :
+                                       '3px solid #3B82F6';
+            logEntry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logsDiv.appendChild(logEntry);
+        }
+
+        async function testLogin() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const resultDiv = document.getElementById('result');
+            const logsDiv = document.getElementById('logs');
+
+            // Clear previous results
+            resultDiv.innerHTML = '';
+            logsDiv.innerHTML = '';
+
+            log('🚀 Starting login test...');
+            log(`📧 Email: ${email}`);
+            log(`🔐 Password: ${'*'.repeat(password.length)}`);
+            log(`🌐 API URL: ${API_URL}`);
+
+            try {
+                log('📡 Sending POST request...');
+
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+
+                log(`📊 Response Status: ${response.status} ${response.statusText}`,
+                    response.ok ? 'success' : 'error');
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    log('✅ Login successful!', 'success');
+                    resultDiv.className = 'success';
+                    resultDiv.innerHTML = `
+                        <strong>✅ Login Successful!</strong><br><br>
+                        <strong>Token:</strong><br>${data.token.substring(0, 50)}...<br><br>
+                        <strong>User:</strong><br>${JSON.stringify(data.user, null, 2)}
+                    `;
+                } else {
+                    log('❌ Login failed!', 'error');
+                    resultDiv.className = 'error';
+                    resultDiv.innerHTML = `
+                        <strong>❌ Login Failed</strong><br><br>
+                        <strong>Status:</strong> ${response.status}<br>
+                        <strong>Error:</strong><br>${JSON.stringify(data, null, 2)}
+                    `;
+                }
+            } catch (error) {
+                log(`💥 Network Error: ${error.message}`, 'error');
+                resultDiv.className = 'error';
+                resultDiv.innerHTML = `
+                    <strong>❌ Network Error</strong><br><br>
+                    <strong>Error Message:</strong><br>${error.message}<br><br>
+                    <strong>Error Type:</strong> ${error.name}<br><br>
+                    <strong>Possible Causes:</strong><br>
+                    • CORS policy blocking the request<br>
+                    • Backend server is down<br>
+                    • Network connectivity issues<br>
+                    • Timeout<br><br>
+                    <strong>Full Error:</strong><br>${error.stack || error.toString()}
+                `;
+            }
+        }
+
+        // Auto-run test on load
+        window.addEventListener('load', () => {
+            log('✨ Test page loaded');
+            log('💡 Click "Test Login" to start the test');
+        });
+    </script>
+</body>
+</html>

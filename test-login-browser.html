@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClubFlow Login Test</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0A0A0B 0%, #111113 100%);
+            color: #FAFAFA;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: #18181B;
+            border: 1px solid #27272A;
+            border-radius: 16px;
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+
+        h1 {
+            color: #D4AF37;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            color: #A1A1AA;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #FAFAFA;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px 16px;
+            background: #111113;
+            border: 1px solid #27272A;
+            border-radius: 8px;
+            color: #FAFAFA;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #D4AF37;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            background: #D4AF37;
+            color: #0A0A0B;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            background: #B8960C;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        button:disabled {
+            background: #3F3F46;
+            color: #71717A;
+            cursor: not-allowed;
+        }
+
+        .log-container {
+            margin-top: 30px;
+            padding: 20px;
+            background: #0A0A0B;
+            border: 1px solid #27272A;
+            border-radius: 8px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .log-entry {
+            padding: 8px 12px;
+            margin-bottom: 8px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-family: 'Courier New', monospace;
+            border-left: 3px solid;
+        }
+
+        .log-info {
+            background: rgba(59, 130, 246, 0.1);
+            border-left-color: #3B82F6;
+            color: #93C5FD;
+        }
+
+        .log-success {
+            background: rgba(16, 185, 129, 0.1);
+            border-left-color: #10B981;
+            color: #6EE7B7;
+        }
+
+        .log-error {
+            background: rgba(239, 68, 68, 0.1);
+            border-left-color: #EF4444;
+            color: #FCA5A5;
+        }
+
+        .log-warning {
+            background: rgba(245, 158, 11, 0.1);
+            border-left-color: #F59E0B;
+            color: #FCD34D;
+        }
+
+        .result-box {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .result-success {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .result-error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .timestamp {
+            color: #71717A;
+            font-size: 11px;
+        }
+
+        pre {
+            background: #000;
+            padding: 12px;
+            border-radius: 6px;
+            overflow-x: auto;
+            margin-top: 10px;
+            font-size: 12px;
+            color: #10B981;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 ClubFlow Login Test</h1>
+        <p class="subtitle">Test authentication with the backend API</p>
+
+        <form id="loginForm">
+            <div class="input-group">
+                <label for="email">Email</label>
+                <input
+                    type="email"
+                    id="email"
+                    value="admin@clubops.com"
+                    required
+                    placeholder="Enter your email"
+                >
+            </div>
+
+            <div class="input-group">
+                <label for="password">Password</label>
+                <input
+                    type="password"
+                    id="password"
+                    value="password"
+                    required
+                    placeholder="Enter your password"
+                >
+            </div>
+
+            <button type="submit" id="loginBtn">
+                Test Login
+            </button>
+        </form>
+
+        <div id="result" class="result-box"></div>
+
+        <div class="log-container">
+            <div id="logs"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'https://clubops-backend.vercel.app/api/auth/login';
+        const logsContainer = document.getElementById('logs');
+        const resultBox = document.getElementById('result');
+        const loginBtn = document.getElementById('loginBtn');
+        const loginForm = document.getElementById('loginForm');
+
+        function log(message, type = 'info') {
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+
+            const timestamp = new Date().toLocaleTimeString();
+            entry.innerHTML = `<span class="timestamp">[${timestamp}]</span> ${message}`;
+
+            logsContainer.appendChild(entry);
+            logsContainer.scrollTop = logsContainer.scrollHeight;
+        }
+
+        function showResult(message, type, data = null) {
+            resultBox.style.display = 'block';
+            resultBox.className = `result-box result-${type}`;
+            resultBox.innerHTML = `<strong>${message}</strong>`;
+
+            if (data) {
+                const pre = document.createElement('pre');
+                pre.textContent = JSON.stringify(data, null, 2);
+                resultBox.appendChild(pre);
+            }
+        }
+
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            // Clear previous results
+            logsContainer.innerHTML = '';
+            resultBox.style.display = 'none';
+            loginBtn.disabled = true;
+            loginBtn.textContent = 'Testing...';
+
+            log('🚀 Starting login test', 'info');
+            log(`📧 Email: ${email}`, 'info');
+            log(`🔒 Password: ${'*'.repeat(password.length)}`, 'info');
+            log(`🌐 API URL: ${API_URL}`, 'info');
+
+            try {
+                log('📡 Sending POST request...', 'info');
+
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+
+                log(`📊 Response status: ${response.status} ${response.statusText}`,
+                    response.ok ? 'success' : 'error');
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    log('✅ Login successful!', 'success');
+                    log(`🎫 Token received (${data.token.length} chars)`, 'success');
+                    log(`👤 User: ${data.user.email} (${data.user.role})`, 'success');
+
+                    showResult('✅ Login Successful!', 'success', {
+                        token: data.token.substring(0, 50) + '...',
+                        user: data.user
+                    });
+                } else {
+                    log('❌ Login failed!', 'error');
+                    log(`Error: ${data.error || 'Unknown error'}`, 'error');
+
+                    showResult('❌ Login Failed', 'error', data);
+                }
+
+            } catch (error) {
+                log(`💥 Network error: ${error.message}`, 'error');
+                log('This is likely a CORS issue', 'warning');
+
+                showResult('❌ Network Error', 'error', {
+                    error: error.message,
+                    type: error.name,
+                    possibleCauses: [
+                        'CORS policy blocking the request',
+                        'Backend server is down',
+                        'Network connectivity issue',
+                        'Request timeout'
+                    ]
+                });
+            } finally {
+                loginBtn.disabled = false;
+                loginBtn.textContent = 'Test Login';
+            }
+        });
+
+        // Log initial state
+        log('✨ Test page loaded and ready', 'success');
+        log('💡 Fill in credentials and click "Test Login"', 'info');
+    </script>
+</body>
+</html>

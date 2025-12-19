@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClubFlow Login Debug</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0A0A0B 0%, #111113 100%);
+            color: #FAFAFA;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: #18181B;
+            border: 1px solid #27272A;
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+
+        h1 {
+            color: #D4AF37;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            color: #A1A1AA;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            background: #D4AF37;
+            color: #0A0A0B;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-bottom: 20px;
+        }
+
+        button:hover {
+            background: #B8960C;
+        }
+
+        button:disabled {
+            background: #3F3F46;
+            color: #71717A;
+            cursor: not-allowed;
+        }
+
+        .log-container {
+            background: #0A0A0B;
+            border: 1px solid #27272A;
+            border-radius: 8px;
+            padding: 20px;
+            max-height: 600px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+        }
+
+        .log-entry {
+            padding: 8px 12px;
+            margin-bottom: 8px;
+            border-radius: 6px;
+            border-left: 3px solid;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .log-info {
+            background: rgba(59, 130, 246, 0.1);
+            border-left-color: #3B82F6;
+            color: #93C5FD;
+        }
+
+        .log-success {
+            background: rgba(16, 185, 129, 0.1);
+            border-left-color: #10B981;
+            color: #6EE7B7;
+        }
+
+        .log-error {
+            background: rgba(239, 68, 68, 0.1);
+            border-left-color: #EF4444;
+            color: #FCA5A5;
+        }
+
+        .log-warning {
+            background: rgba(245, 158, 11, 0.1);
+            border-left-color: #F59E0B;
+            color: #FCD34D;
+        }
+
+        .timestamp {
+            color: #71717A;
+            font-size: 11px;
+        }
+
+        pre {
+            background: #000;
+            padding: 12px;
+            border-radius: 6px;
+            overflow-x: auto;
+            margin-top: 10px;
+            font-size: 12px;
+            color: #10B981;
+        }
+
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #111113;
+            border-radius: 8px;
+            border: 1px solid #27272A;
+        }
+
+        .test-section h2 {
+            color: #D4AF37;
+            font-size: 18px;
+            margin-bottom: 15px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+
+        .status-pass {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10B981;
+        }
+
+        .status-fail {
+            background: rgba(239, 68, 68, 0.2);
+            color: #EF4444;
+        }
+
+        .status-pending {
+            background: rgba(245, 158, 11, 0.2);
+            color: #F59E0B;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 ClubFlow Login Debug Tool</h1>
+        <p class="subtitle">Comprehensive diagnostics for login issues</p>
+
+        <div class="test-section">
+            <h2>Step 1: CORS Preflight Test <span id="cors-status" class="status-badge status-pending">PENDING</span></h2>
+            <button id="test-cors" onclick="testCORSPreflight()">Test CORS Preflight</button>
+        </div>
+
+        <div class="test-section">
+            <h2>Step 2: Backend API Test <span id="api-status" class="status-badge status-pending">PENDING</span></h2>
+            <button id="test-api" onclick="testBackendAPI()">Test Backend API</button>
+        </div>
+
+        <div class="test-section">
+            <h2>Step 3: Full Login Test <span id="login-status" class="status-badge status-pending">PENDING</span></h2>
+            <button id="test-login" onclick="testFullLogin()">Test Full Login Flow</button>
+        </div>
+
+        <div class="log-container">
+            <div id="logs"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'https://clubops-backend.vercel.app';
+        const FRONTEND_URL = 'https://www.clubflowapp.com';
+        const logsContainer = document.getElementById('logs');
+
+        function log(message, type = 'info', details = null) {
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+
+            const timestamp = new Date().toLocaleTimeString();
+            let content = `<span class="timestamp">[${timestamp}]</span> ${message}`;
+
+            if (details) {
+                content += `\n<pre>${JSON.stringify(details, null, 2)}</pre>`;
+            }
+
+            entry.innerHTML = content;
+            logsContainer.appendChild(entry);
+            logsContainer.scrollTop = logsContainer.scrollHeight;
+        }
+
+        function updateStatus(elementId, status) {
+            const element = document.getElementById(elementId);
+            element.className = `status-badge status-${status}`;
+            element.textContent = status.toUpperCase();
+        }
+
+        async function testCORSPreflight() {
+            log('🚀 Starting CORS Preflight Test', 'info');
+            log(`Testing: OPTIONS ${API_URL}/api/auth/login`, 'info');
+
+            try {
+                // Test 1: OPTIONS with fetch (browser will handle preflight)
+                log('📡 Sending OPTIONS request...', 'info');
+
+                const response = await fetch(`${API_URL}/api/auth/login`, {
+                    method: 'OPTIONS',
+                    headers: {
+                        'Origin': FRONTEND_URL,
+                        'Access-Control-Request-Method': 'POST',
+                        'Access-Control-Request-Headers': 'content-type'
+                    }
+                });
+
+                log(`📊 Response Status: ${response.status} ${response.statusText}`,
+                    response.status === 204 || response.status === 200 ? 'success' : 'error');
+
+                // Check CORS headers
+                const corsHeaders = {
+                    'Access-Control-Allow-Origin': response.headers.get('Access-Control-Allow-Origin'),
+                    'Access-Control-Allow-Methods': response.headers.get('Access-Control-Allow-Methods'),
+                    'Access-Control-Allow-Headers': response.headers.get('Access-Control-Allow-Headers')
+                };
+
+                log('CORS Headers:', 'info', corsHeaders);
+
+                if (response.status === 204 || response.status === 200) {
+                    log('✅ CORS Preflight PASSED', 'success');
+                    updateStatus('cors-status', 'pass');
+                } else {
+                    log('❌ CORS Preflight FAILED - Expected 204, got ' + response.status, 'error');
+                    updateStatus('cors-status', 'fail');
+                }
+
+            } catch (error) {
+                log(`💥 CORS Preflight Error: ${error.message}`, 'error');
+                log('Error Details:', 'error', {
+                    name: error.name,
+                    message: error.message,
+                    stack: error.stack
+                });
+                updateStatus('cors-status', 'fail');
+            }
+        }
+
+        async function testBackendAPI() {
+            log('🚀 Starting Backend API Test', 'info');
+            log(`Testing: POST ${API_URL}/api/auth/login`, 'info');
+
+            try {
+                const response = await fetch(`${API_URL}/api/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Origin': FRONTEND_URL
+                    },
+                    body: JSON.stringify({
+                        email: 'admin@clubops.com',
+                        password: 'password'
+                    })
+                });
+
+                log(`📊 Response Status: ${response.status} ${response.statusText}`,
+                    response.ok ? 'success' : 'error');
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    log('✅ Backend API PASSED', 'success');
+                    log('Token received:', 'success', {
+                        tokenLength: data.token?.length,
+                        user: data.user
+                    });
+                    updateStatus('api-status', 'pass');
+                } else {
+                    log('❌ Backend API FAILED', 'error', data);
+                    updateStatus('api-status', 'fail');
+                }
+
+            } catch (error) {
+                log(`💥 Backend API Error: ${error.message}`, 'error');
+                log('Error Details:', 'error', {
+                    name: error.name,
+                    message: error.message,
+                    type: error.constructor.name
+                });
+                updateStatus('api-status', 'fail');
+            }
+        }
+
+        async function testFullLogin() {
+            log('🚀 Starting Full Login Flow Test', 'info');
+            log('This simulates exactly what the ClubFlow frontend does', 'info');
+
+            try {
+                // Step 1: Check if preflight happens automatically
+                log('Step 1: Browser will send automatic OPTIONS preflight...', 'info');
+
+                // Step 2: Make the actual login request
+                log('Step 2: Sending POST request to login...', 'info');
+
+                const response = await fetch(`${API_URL}/api/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        email: 'admin@clubops.com',
+                        password: 'password'
+                    })
+                });
+
+                log(`📊 Response Status: ${response.status} ${response.statusText}`,
+                    response.ok ? 'success' : 'error');
+
+                const contentType = response.headers.get('content-type');
+                log(`Content-Type: ${contentType}`, 'info');
+
+                let data;
+                if (contentType && contentType.includes('application/json')) {
+                    data = await response.json();
+                } else {
+                    const text = await response.text();
+                    log('⚠️ Response is not JSON:', 'warning', { text });
+                    data = { error: 'Non-JSON response', body: text };
+                }
+
+                if (response.ok && data.token) {
+                    log('✅ Full Login Flow PASSED', 'success');
+                    log('Login Successful:', 'success', {
+                        tokenReceived: true,
+                        tokenLength: data.token.length,
+                        user: data.user
+                    });
+                    updateStatus('login-status', 'pass');
+
+                    // Test if we can use the token
+                    log('Step 3: Testing authenticated request...', 'info');
+                    const meResponse = await fetch(`${API_URL}/api/auth/me`, {
+                        headers: {
+                            'Authorization': `Bearer ${data.token}`
+                        }
+                    });
+
+                    if (meResponse.ok) {
+                        const userData = await meResponse.json();
+                        log('✅ Token validation PASSED', 'success', userData);
+                    } else {
+                        log('⚠️ Token validation failed', 'warning');
+                    }
+
+                } else {
+                    log('❌ Full Login Flow FAILED', 'error', data);
+                    updateStatus('login-status', 'fail');
+                }
+
+            } catch (error) {
+                log(`💥 Full Login Flow Error: ${error.message}`, 'error');
+                log('This is the EXACT error your browser is showing!', 'error');
+                log('Error Details:', 'error', {
+                    name: error.name,
+                    message: error.message,
+                    type: error.constructor.name,
+                    stack: error.stack
+                });
+
+                // Additional diagnostics
+                if (error.message.includes('Failed to fetch')) {
+                    log('🔍 Diagnosis: "Failed to fetch" usually means:', 'warning');
+                    log('  1. CORS preflight failed (OPTIONS returned 404/error)', 'warning');
+                    log('  2. Network connectivity issue', 'warning');
+                    log('  3. Backend server is down', 'warning');
+                    log('  4. Browser blocking the request', 'warning');
+                }
+
+                updateStatus('login-status', 'fail');
+            }
+        }
+
+        // Auto-run on load
+        window.addEventListener('load', () => {
+            log('✨ Debug tool loaded and ready', 'success');
+            log('💡 Click the buttons above to run tests', 'info');
+            log('📍 Frontend URL: ' + FRONTEND_URL, 'info');
+            log('📍 Backend URL: ' + API_URL, 'info');
+        });
+    </script>
+</body>
+</html>
