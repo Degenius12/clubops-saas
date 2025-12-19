@@ -8,6 +8,13 @@ const { auth } = require('../middleware/auth');
 const prisma = new PrismaClient();
 const router = express.Router();
 
+// @route   OPTIONS /api/auth/register
+// @desc    Handle CORS preflight for register
+// @access  Public
+router.options('/register', (req, res) => {
+  res.status(200).end();
+});
+
 // @route   POST /api/auth/register
 // @desc    Register new club owner and create club
 // @access  Public
@@ -157,6 +164,13 @@ router.post('/register', [
     }
     res.status(500).json({ error: 'Server error during registration' });
   }
+});
+
+// @route   OPTIONS /api/auth/login
+// @desc    Handle CORS preflight for login
+// @access  Public
+router.options('/login', (req, res) => {
+  res.status(200).end();
 });
 
 // @route   POST /api/auth/login
