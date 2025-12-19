@@ -55,6 +55,12 @@ app.use(cors({
   optionsSuccessStatus: 204
 }));
 
+// CRITICAL: Handle ALL OPTIONS requests FIRST, before any other middleware or routes
+// This ensures CORS preflight requests get 204 responses instead of 404
+app.options('*', (req, res) => {
+  res.status(204).end();
+});
+
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
@@ -724,11 +730,6 @@ app.get('/', (req, res) => {
       subscription: ['/api/subscription', '/api/subscription/plans', '/api/subscription/upgrade']
     }
   });
-});
-
-// Global OPTIONS handler for any route (must come before 404 handler)
-app.options('*', (req, res) => {
-  res.status(204).end();
 });
 
 // Error handling
