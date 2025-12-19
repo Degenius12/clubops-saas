@@ -38,15 +38,20 @@ console.log('- Token found:', !!localStorage.getItem('token'));
 // Add auth token to requests (exclude auth endpoints)
 apiClient.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
-  
+
   // Don't add token to auth endpoints (login, signup, password reset)
   const authEndpoints = ['/api/auth/login', '/api/auth/signup', '/api/auth/register', '/api/auth/forgot-password', '/api/auth/reset-password'];
   const isAuthEndpoint = authEndpoints.some(endpoint => config.url?.includes(endpoint));
-  
+
   if (token && !isAuthEndpoint) {
     config.headers.Authorization = `Bearer ${token}`;
   }
-  
+
+  // CRITICAL FIX: Add cache-busting headers to bypass Vercel's stale CORS cache
+  // This ensures the browser gets fresh OPTIONS responses from the backend
+  config.headers['Cache-Control'] = 'no-cache';
+  config.headers['Pragma'] = 'no-cache';
+
   console.log('🔄 Making request to:', `${config.baseURL}${config.url}`);
   console.log('🔑 Token included:', !isAuthEndpoint && !!token);
   return config;
