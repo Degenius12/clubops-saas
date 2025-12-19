@@ -18,7 +18,9 @@ import {
   BellIcon,
   MagnifyingGlassIcon,
   ChevronLeftIcon,
-  ChevronRightIcon
+  ChevronRightIcon,
+  ShieldCheckIcon,
+  ArrowRightOnRectangleIcon
 } from '@heroicons/react/24/outline'
 
 interface DashboardLayoutProps {
@@ -36,9 +38,11 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
     { name: 'Dancers', href: '/dancers', icon: UsersIcon },
+    { name: 'Door Staff', href: '/door-staff', icon: ArrowRightOnRectangleIcon },
     { name: 'DJ Queue', href: '/queue', icon: MusicalNoteIcon },
     { name: 'VIP Booths', href: '/vip', icon: BuildingStorefrontIcon },
     { name: 'Revenue', href: '/revenue', icon: CurrencyDollarIcon },
+    { name: 'Security', href: '/security', icon: ShieldCheckIcon },
   ]
 
   const saasNavigation = [
@@ -128,16 +132,21 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
             {navigation.map((item) => {
               const Icon = item.icon
               const isActive = isCurrentPath(item.href)
+              // Add data-tour attributes for onboarding
+              const tourAttr = item.name === 'Dancers' ? 'dancer-nav' :
+                               item.name === 'VIP Booths' ? 'vip-nav' :
+                               item.name === 'Security' ? 'security-nav' : undefined
               return (
                 <Link
                   key={item.name}
                   to={item.href}
                   title={sidebarCollapsed ? item.name : undefined}
+                  data-tour={tourAttr}
                   className={`
                     group flex items-center rounded-xl transition-all duration-200 touch-target
                     ${sidebarCollapsed ? 'justify-center p-3' : 'px-3 py-2.5'}
-                    ${isActive 
-                      ? 'bg-gradient-to-r from-gold-500/10 to-transparent text-gold-500 border-l-2 border-gold-500' 
+                    ${isActive
+                      ? 'bg-gradient-to-r from-gold-500/10 to-transparent text-gold-500 border-l-2 border-gold-500'
                       : 'text-text-secondary hover:text-text-primary hover:bg-white/[0.04]'
                     }
                   `}

@@ -190,7 +190,7 @@ const Dashboard: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
+    <div className="space-y-6 max-w-7xl mx-auto" data-tour="dashboard">
       {/* Compact Welcome Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 animate-fade-in">
         <div className="space-y-0.5">
@@ -237,9 +237,10 @@ const Dashboard: React.FC = () => {
         {stats.map((stat, index) => {
           const Icon = stat.icon
           return (
-            <Link 
-              key={stat.name} 
+            <Link
+              key={stat.name}
               to={stat.href}
+              data-tour={stat.name === 'Today Revenue' ? 'revenue-kpi' : undefined}
               className="card-premium p-4 sm:p-5 group touch-target animate-fade-in-up"
               style={{ animationDelay: `${index * 75}ms` }}
             >

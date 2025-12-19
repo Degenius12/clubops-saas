@@ -33,9 +33,14 @@ import AdminDashboard from './components/admin/AdminDashboard'
 // Public Pages
 import InvestorPage from './pages/InvestorPage'
 
+// Onboarding
+import { OnboardingFlow } from './components/onboarding/OnboardingFlow'
+import { useOnboarding } from './contexts/OnboardingContext'
+
 function App() {
   const dispatch = useDispatch<AppDispatch>()
   const { isAuthenticated, token, user } = useSelector((state: RootState) => state.auth)
+  const { isActive: isOnboardingActive } = useOnboarding()
 
   useEffect(() => {
     // Check for existing token and validate user
@@ -56,6 +61,9 @@ function App() {
 
   return (
     <div className="App bg-dark-bg text-white min-h-screen">
+      {/* Onboarding Flow Overlay */}
+      {isOnboardingActive && <OnboardingFlow />}
+
       <Routes>
         {/* Investor Landing Page - Fully Public, No Auth Check */}
         <Route path="/investors" element={<InvestorPage />} />
