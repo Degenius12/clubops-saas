@@ -726,6 +726,11 @@ app.get('/', (req, res) => {
   });
 });
 
+// Global OPTIONS handler for any route (must come before 404 handler)
+app.options('*', (req, res) => {
+  res.status(204).end();
+});
+
 // Error handling
 app.use((err, req, res, next) => {
   console.error('Error:', err);
