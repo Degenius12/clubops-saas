@@ -685,9 +685,9 @@ app.get('/api/financial/transactions', authenticateToken, (req, res) => {
 app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
-    message: 'ClubOps API v3.0.6 - CORS Preflight Fix Deployed',
+    message: 'ClubOps API v3.0.7 - FORCE DEPLOY: CORS Headers Fixed',
     timestamp: new Date().toISOString(),
-    version: '3.0.6',
+    version: '3.0.7',
     database_connected: !!process.env.DATABASE_URL
   });
 });
@@ -695,7 +695,7 @@ app.get('/health', (req, res) => {
 app.get('/', (req, res) => {
   res.json({
     message: 'ClubOps SaaS - Production API with CORS Fix',
-    version: '3.0.6',
+    version: '3.0.7',
     status: 'operational',
     features: [
       'Dancer Management', 
