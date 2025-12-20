@@ -456,7 +456,31 @@ app.get('/api/security/integrity', authenticateToken, (req, res) => {
 });
 
 app.get('/api/security/audit-log', authenticateToken, (req, res) => {
-  res.json(mockAuditLog);
+  const { page = 1, limit = 50, search, startDate, endDate } = req.query;
+
+  // Filter by search if provided
+  let filtered = mockAuditLog;
+  if (search) {
+    const query = search.toLowerCase();
+    filtered = mockAuditLog.filter(entry =>
+      entry.action?.toLowerCase().includes(query) ||
+      entry.details?.toLowerCase().includes(query) ||
+      entry.staffName?.toLowerCase().includes(query)
+    );
+  }
+
+  // Return paginated response
+  const total = filtered.length;
+  const startIndex = (parseInt(page) - 1) * parseInt(limit);
+  const endIndex = startIndex + parseInt(limit);
+  const entries = filtered.slice(startIndex, endIndex);
+
+  res.json({
+    entries,
+    total,
+    page: parseInt(page),
+    limit: parseInt(limit)
+  });
 });
 
 app.get('/api/security/song-comparisons', authenticateToken, (req, res) => {
@@ -685,9 +709,9 @@ app.get('/api/financial/transactions', authenticateToken, (req, res) => {
 app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
-    message: 'ClubOps API v3.0.7 - FORCE DEPLOY: CORS Headers Fixed',
+    message: 'ClubOps API v3.0.8 - Fix audit log response structure',
     timestamp: new Date().toISOString(),
-    version: '3.0.7',
+    version: '3.0.8',
     database_connected: !!process.env.DATABASE_URL
   });
 });
@@ -695,7 +719,7 @@ app.get('/health', (req, res) => {
 app.get('/', (req, res) => {
   res.json({
     message: 'ClubOps SaaS - Production API with CORS Fix',
-    version: '3.0.7',
+    version: '3.0.8',
     status: 'operational',
     features: [
       'Dancer Management', 
