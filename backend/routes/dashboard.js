@@ -194,4 +194,84 @@ router.get('/activity', async (req, res) => {
   }
 });
 
+// @route   GET /api/dashboard/shifts
+// @desc    Get dancer counts by shift
+// @access  Private
+router.get('/shifts', async (req, res) => {
+  try {
+    const { clubId } = req.user;
+
+    // Get all shift configurations for the club
+    const shiftConfigs = await prisma.shiftConfiguration.findMany({
+      where: {
+        clubId,
+        isActive: true
+      },
+      orderBy: { displayOrder: 'asc' }
+    });
+
+    // Get today's check-ins grouped by shift
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const checkIns = await prisma.dancerCheckIn.findMany({
+      where: {
+        clubId,
+        checkedInAt: { gte: today },
+        status: 'CHECKED_IN'
+      },
+      include: {
+        dancer: {
+          select: {
+            id: true,
+            stageName: true
+          }
+        }
+      }
+    });
+
+    // Group dancers by shift
+    const shiftCounts = shiftConfigs.map(shift => {
+      const dancersInShift = checkIns.filter(checkIn =>
+        checkIn.dancerShiftType === shift.shiftType
+      );
+
+      return {
+        id: shift.id,
+        name: shift.name,
+        shiftType: shift.shiftType,
+        startTime: shift.startTime,
+        endTime: shift.endTime,
+        dancerCount: dancersInShift.length,
+        dancers: dancersInShift.map(ci => ({
+          id: ci.dancer.id,
+          stageName: ci.dancer.stageName,
+          checkedInAt: ci.checkedInAt
+        }))
+      };
+    });
+
+    // Get dancers without assigned shift
+    const unassignedDancers = checkIns.filter(checkIn =>
+      !checkIn.dancerShiftType
+    );
+
+    res.json({
+      shifts: shiftCounts,
+      unassigned: {
+        count: unassignedDancers.length,
+        dancers: unassignedDancers.map(ci => ({
+          id: ci.dancer.id,
+          stageName: ci.dancer.stageName,
+          checkedInAt: ci.checkedInAt
+        }))
+      },
+      totalActive: checkIns.length
+    });
+  } catch (error) {
+    console.error('Dashboard shifts error:', error);
+    res.status(500).json({ error: 'Failed to fetch shift data' });
+  }
+});
+
 module.exports = router;

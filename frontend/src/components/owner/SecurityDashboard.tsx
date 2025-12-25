@@ -297,7 +297,7 @@ const SecurityDashboard: React.FC = () => {
   }, [])
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-midnight-950 via-midnight-900 to-midnight-950">
+    <div className="min-h-screen bg-midnight-950">
       {/* Header */}
       <div className="border-b border-white/10 bg-midnight-900/50 backdrop-blur-xl sticky top-0 z-40">
         <div className="max-w-[1800px] mx-auto px-6 py-4">

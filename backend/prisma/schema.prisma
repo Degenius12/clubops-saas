@@ -17,6 +17,7 @@ datasource db {
 
 enum UserRole {
   OWNER
+  SUPER_MANAGER
   MANAGER
   DOOR_STAFF
   VIP_HOST
@@ -34,6 +35,12 @@ enum CheckInStatus {
   CHECKED_IN
   CHECKED_OUT
   NO_SHOW
+}
+
+enum DancerShiftType {
+  DAY
+  NIGHT
+  CUSTOM
 }
 
 enum VipSessionStatus {
@@ -82,13 +89,20 @@ model Club {
   subdomain          String   @unique @db.VarChar(50)
   subscriptionTier   String   @default("free") @map("subscription_tier") @db.VarChar(20)
   subscriptionStatus String   @default("active") @map("subscription_status") @db.VarChar(20)
-  
+
   // Club Settings
   settings           Json     @default("{}")
   barFeeAmount       Decimal  @default(50.00) @map("bar_fee_amount") @db.Decimal(10, 2)
   vipSongRate        Decimal  @default(30.00) @map("vip_song_rate") @db.Decimal(10, 2)
   avgSongDuration    Int      @default(210) @map("avg_song_duration") // seconds (3.5 min)
-  
+
+  // Active Shift Tracking (only one shift can be active at a time)
+  activeShiftId      String?  @map("active_shift_id") @db.Uuid
+  activeShiftLevel   Int?     @map("active_shift_level") // 1, 2, 3, 4, etc.
+  activeShiftName    String?  @map("active_shift_name") @db.VarChar(50)
+  shiftOpenedAt      DateTime? @map("shift_opened_at")
+  shiftOpenedBy      String?  @map("shift_opened_by") @db.Uuid
+
   createdAt          DateTime @default(now()) @map("created_at")
   updatedAt          DateTime @default(now()) @updatedAt @map("updated_at")
 
@@ -104,6 +118,7 @@ model Club {
   usageAnalytics       UsageAnalytics[]
   paymentMethods       PaymentMethod[]
   shifts               Shift[]
+  shiftConfigurations  ShiftConfiguration[]
   dancerCheckIns       DancerCheckIn[]
   songPlayLogs         SongPlayLog[]
   auditLogs            AuditLog[]
@@ -160,16 +175,26 @@ model Shift {
   userId        String      @map("user_id") @db.Uuid
   role          UserRole    // Role during this shift
   status        ShiftStatus @default(ACTIVE)
+
+  // Shift Level Information
+  shiftLevel    Int         @map("shift_level") // 1, 2, 3, 4, etc.
+  shiftName     String      @map("shift_name") @db.VarChar(50) // e.g., "Shift Level 1 (Day Shift)"
+
   startedAt     DateTime    @default(now()) @map("started_at")
   endedAt       DateTime?   @map("ended_at")
-  
+
   // Shift Summary (calculated at end)
   totalCheckIns     Int?    @map("total_check_ins")
   totalVipSessions  Int?    @map("total_vip_sessions")
+  totalRevenue      Decimal? @map("total_revenue") @db.Decimal(10, 2)
   totalCollected    Decimal? @map("total_collected") @db.Decimal(10, 2)
   totalDeferred     Decimal? @map("total_deferred") @db.Decimal(10, 2)
   discrepancyCount  Int?    @map("discrepancy_count")
-  
+
+  // EOS Report
+  eosReport     Json?       @map("eos_report") // Stores the complete EOS report data
+  closedBy      String?     @map("closed_by") @db.Uuid
+
   notes         String?
   createdAt     DateTime    @default(now()) @map("created_at")
 
@@ -181,6 +206,29 @@ model Shift {
   vipSessions   VipSession[]
 
   @@map("shifts")
+}
+
+// ==============================================
+// DANCER SHIFT CONFIGURATION
+// ==============================================
+
+model ShiftConfiguration {
+  id           String           @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  clubId       String           @map("club_id") @db.Uuid
+  name         String           @db.VarChar(50) // "Day Shift", "Night Shift", "Late Night", etc.
+  shiftType    DancerShiftType  // DAY, NIGHT, or CUSTOM
+  startTime    String           @map("start_time") @db.VarChar(10) // e.g., "14:00"
+  endTime      String           @map("end_time") @db.VarChar(10) // e.g., "22:00"
+  isActive     Boolean          @default(true) @map("is_active")
+  displayOrder Int              @default(0) @map("display_order") // For UI ordering
+  createdAt    DateTime         @default(now()) @map("created_at")
+  updatedAt    DateTime         @default(now()) @updatedAt @map("updated_at")
+
+  // Relations
+  club Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
+
+  @@unique([clubId, name])
+  @@map("shift_configurations")
 }
 
 // ==============================================
@@ -279,12 +327,18 @@ model DancerCheckIn {
   dancerId        String        @map("dancer_id") @db.Uuid
   shiftId         String?       @map("shift_id") @db.Uuid
   performedById   String        @map("performed_by_id") @db.Uuid
-  
+
   // Check-in details
   status          CheckInStatus @default(CHECKED_IN)
   checkInMethod   String        @map("check_in_method") @db.VarChar(20) // QR_SCAN, NAME_SEARCH, ID_SCAN
   checkedInAt     DateTime      @default(now()) @map("checked_in_at")
   checkedOutAt    DateTime?     @map("checked_out_at")
+
+  // Dancer Shift Tracking (Day/Night/Custom shifts)
+  dancerShiftType DancerShiftType? @map("dancer_shift_type") // DAY, NIGHT, or CUSTOM
+  dancerShiftName String?          @map("dancer_shift_name") @db.VarChar(50) // Custom shift name
+  dancerShiftStartTime String?     @map("dancer_shift_start_time") @db.VarChar(10) // e.g., "14:00"
+  dancerShiftEndTime   String?     @map("dancer_shift_end_time") @db.VarChar(10) // e.g., "22:00"
   
   // Bar Fee
   barFeeAmount    Decimal       @map("bar_fee_amount") @db.Decimal(10, 2)

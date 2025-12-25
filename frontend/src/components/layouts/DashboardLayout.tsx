@@ -1,8 +1,9 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { RootState, AppDispatch } from '../../store/store'
 import { logout } from '../../store/slices/authSlice'
+import apiClient from '../../config/api'
 import {
   HomeIcon,
   UsersIcon,
@@ -20,7 +21,8 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
   ShieldCheckIcon,
-  ArrowRightOnRectangleIcon
+  ArrowRightOnRectangleIcon,
+  ClockIcon
 } from '@heroicons/react/24/outline'
 
 interface DashboardLayoutProps {
@@ -30,26 +32,62 @@ interface DashboardLayoutProps {
 const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [activeShift, setActiveShift] = useState<any>(null)
   const location = useLocation()
   const navigate = useNavigate()
   const dispatch = useDispatch<AppDispatch>()
   const { user } = useSelector((state: RootState) => state.auth)
 
-  const navigation = [
-    { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
-    { name: 'Dancers', href: '/dancers', icon: UsersIcon },
-    { name: 'Door Staff', href: '/door-staff', icon: ArrowRightOnRectangleIcon },
-    { name: 'DJ Queue', href: '/queue', icon: MusicalNoteIcon },
-    { name: 'VIP Booths', href: '/vip', icon: BuildingStorefrontIcon },
-    { name: 'Revenue', href: '/revenue', icon: CurrencyDollarIcon },
-    { name: 'Security', href: '/security', icon: ShieldCheckIcon },
+  // Role-based navigation - filter based on user role
+  const userRole = user?.role?.toUpperCase() || 'MANAGER'
+
+  // Check if user can manage shifts
+  const canManageShifts = ['MANAGER', 'SUPER_MANAGER', 'OWNER'].includes(userRole)
+
+  // Fetch active shift status
+  useEffect(() => {
+    const fetchShiftStatus = async () => {
+      if (!canManageShifts) return
+
+      try {
+        const response = await apiClient.get('/api/shift-management/status')
+        if (response.data.hasActiveShift) {
+          setActiveShift(response.data)
+        } else {
+          setActiveShift(null)
+        }
+      } catch (error) {
+        console.error('Failed to fetch shift status:', error)
+      }
+    }
+
+    fetchShiftStatus()
+
+    // Poll every 30 seconds for shift status updates
+    const interval = setInterval(fetchShiftStatus, 30000)
+
+    return () => clearInterval(interval)
+  }, [canManageShifts])
+
+  const allNavigation = [
+    { name: 'Dashboard', href: '/dashboard', icon: HomeIcon, roles: ['OWNER', 'SUPER_MANAGER', 'MANAGER', 'DJ', 'VIP_HOST', 'DOOR_STAFF', 'BARTENDER'] },
+    { name: 'Dancers', href: '/dancers', icon: UsersIcon, roles: ['OWNER', 'SUPER_MANAGER', 'MANAGER'] },
+    { name: 'Door Staff', href: '/door-staff', icon: ArrowRightOnRectangleIcon, roles: ['OWNER', 'SUPER_MANAGER', 'MANAGER', 'DOOR_STAFF'] },
+    { name: 'DJ Queue', href: '/queue', icon: MusicalNoteIcon, roles: ['OWNER', 'SUPER_MANAGER', 'MANAGER', 'DJ'] },
+    { name: 'VIP Booths', href: '/vip', icon: BuildingStorefrontIcon, roles: ['OWNER', 'SUPER_MANAGER', 'MANAGER', 'VIP_HOST'] },
+    { name: 'Revenue', href: '/revenue', icon: CurrencyDollarIcon, roles: ['OWNER', 'SUPER_MANAGER', 'MANAGER'] },
+    { name: 'Security', href: '/security', icon: ShieldCheckIcon, roles: ['OWNER', 'SUPER_MANAGER'] },
   ]
 
-  const saasNavigation = [
-    { name: 'Subscription', href: '/subscription', icon: CreditCardIcon },
-    { name: 'Billing', href: '/billing', icon: ChartBarIcon },
-    { name: 'Admin', href: '/admin', icon: CogIcon },
+  const allSaasNavigation = [
+    { name: 'Subscription', href: '/subscription', icon: CreditCardIcon, roles: ['OWNER'] },
+    { name: 'Billing', href: '/billing', icon: ChartBarIcon, roles: ['OWNER'] },
+    { name: 'Admin', href: '/admin', icon: CogIcon, roles: ['OWNER', 'SUPER_MANAGER'] },
   ]
+
+  // Filter navigation based on user role
+  const navigation = allNavigation.filter(item => item.roles.includes(userRole))
+  const saasNavigation = allSaasNavigation.filter(item => item.roles.includes(userRole))
 
   const handleLogout = () => {
     dispatch(logout())
@@ -69,10 +107,10 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       )}
 
       {/* Sidebar */}
-      <div 
+      <div
         className={`
           fixed inset-y-0 left-0 z-50 flex flex-col
-          bg-gradient-to-b from-midnight-900 via-midnight-900 to-midnight-950
+          bg-midnight-900
           border-r border-white/[0.06]
           transform transition-all duration-300 ease-out
           lg:translate-x-0 lg:static lg:inset-0
@@ -91,7 +129,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
             </h1>
           )}
           {sidebarCollapsed && (
-            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-gold-500 to-gold-600 flex items-center justify-center">
+            <div className="w-9 h-9 rounded-lg bg-gold-500 border border-gold-400/20 flex items-center justify-center">
               <span className="text-midnight-900 font-bold text-sm">CO</span>
             </div>
           )}
@@ -146,7 +184,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                     group flex items-center rounded-xl transition-all duration-200 touch-target
                     ${sidebarCollapsed ? 'justify-center p-3' : 'px-3 py-2.5'}
                     ${isActive
-                      ? 'bg-gradient-to-r from-gold-500/10 to-transparent text-gold-500 border-l-2 border-gold-500'
+                      ? 'bg-gold-500/[0.08] text-gold-500 border-l-2 border-gold-500'
                       : 'text-text-secondary hover:text-text-primary hover:bg-white/[0.04]'
                     }
                   `}
@@ -181,8 +219,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                   className={`
                     group flex items-center rounded-xl transition-all duration-200 touch-target
                     ${sidebarCollapsed ? 'justify-center p-3' : 'px-3 py-2.5'}
-                    ${isActive 
-                      ? 'bg-gradient-to-r from-royal-500/10 to-transparent text-royal-400 border-l-2 border-royal-500' 
+                    ${isActive
+                      ? 'bg-royal-500/[0.08] text-royal-400 border-l-2 border-royal-500'
                       : 'text-text-secondary hover:text-text-primary hover:bg-white/[0.04]'
                     }
                   `}
@@ -210,7 +248,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                 group flex items-center rounded-xl transition-all duration-200 touch-target
                 ${sidebarCollapsed ? 'justify-center p-3' : 'px-3 py-2.5'}
                 ${isCurrentPath('/settings')
-                  ? 'bg-gradient-to-r from-electric-500/10 to-transparent text-electric-400 border-l-2 border-electric-500'
+                  ? 'bg-electric-500/[0.08] text-electric-400 border-l-2 border-electric-500'
                   : 'text-text-secondary hover:text-text-primary hover:bg-white/[0.04]'
                 }
               `}
@@ -231,8 +269,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
           {sidebarCollapsed ? (
             <button
               onClick={handleLogout}
-              className="w-10 h-10 rounded-xl bg-gradient-to-br from-gold-500/20 to-gold-600/20 
-                         flex items-center justify-center hover:from-gold-500/30 hover:to-gold-600/30 
+              className="w-10 h-10 rounded-xl bg-gold-500/15 border border-gold-500/20
+                         flex items-center justify-center hover:bg-gold-500/25
                          transition-all duration-200 touch-target"
               title="Logout"
             >
@@ -240,16 +278,18 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
             </button>
           ) : (
             <div className="flex items-center space-x-3 p-2 rounded-xl hover:bg-white/[0.03] transition-colors">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-gold-500 to-gold-600 
+              <div className="w-9 h-9 rounded-xl bg-gold-500 border border-gold-400/20
                             flex items-center justify-center flex-shrink-0">
                 <UserCircleIcon className="h-5 w-5 text-midnight-900" />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-text-primary truncate">
-                  {user?.email || 'User'}
+                  {user?.firstName && user?.lastName
+                    ? `${user.firstName} ${user.lastName}`
+                    : user?.firstName || user?.email || 'User'}
                 </p>
                 <p className="text-xs text-text-tertiary truncate">
-                  {user?.clubName || 'Club'}
+                  {user?.role ? user.role.charAt(0) + user.role.slice(1).toLowerCase().replace('_', ' ') : 'User'}
                 </p>
               </div>
               <button
@@ -280,6 +320,20 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
             >
               <Bars3Icon className="h-5 w-5 text-text-secondary" />
             </button>
+
+            {/* Active Shift Indicator */}
+            {activeShift && (
+              <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-status-success/[0.08] border border-status-success/20 animate-fade-in">
+                <div className="relative">
+                  <ClockIcon className="h-4 w-4 text-status-success" />
+                  <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-status-success rounded-full animate-pulse" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-xs font-medium text-status-success">Shift Level {activeShift.activeShiftLevel}</span>
+                  <span className="text-[10px] text-text-tertiary">{activeShift.activeShiftName}</span>
+                </div>
+              </div>
+            )}
 
             {/* Search */}
             <div className="relative hidden sm:block">
@@ -312,9 +366,9 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
             </button>
 
             {/* User avatar (desktop) */}
-            <div className="hidden lg:block w-9 h-9 rounded-xl bg-gradient-to-br from-gold-500 to-gold-600 
-                          flex items-center justify-center cursor-pointer hover:shadow-glow-gold-subtle 
-                          transition-shadow duration-300">
+            <div className="hidden lg:flex w-9 h-9 rounded-xl bg-gold-500 border border-gold-400/20
+                          items-center justify-center cursor-pointer hover:bg-gold-400
+                          transition-colors duration-200">
               <span className="text-midnight-900 font-semibold text-sm">
                 {user?.email?.charAt(0).toUpperCase() || 'U'}
               </span>

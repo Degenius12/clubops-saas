@@ -39,5 +39,8 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/your-org/clubops-saas.git"
+  },
+  "dependencies": {
+    "@rollup/rollup-win32-x64-msvc": "^4.54.0"
   }
 }

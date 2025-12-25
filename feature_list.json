@@ -1,0 +1,763 @@
+[
+  {
+    "id": 1,
+    "category": "functional",
+    "priority": "critical",
+    "module": "auth",
+    "description": "Manager can log in with email and password",
+    "steps": [
+      "Navigate to login page",
+      "Enter valid manager credentials",
+      "Click login button",
+      "Verify redirect to manager dashboard",
+      "Verify session is created"
+    ],
+    "passes": false
+  },
+  {
+    "id": 2,
+    "category": "functional",
+    "priority": "critical",
+    "module": "auth",
+    "description": "Club owner can log in and access admin panel",
+    "steps": [
+      "Navigate to login page",
+      "Enter owner credentials",
+      "Click login button",
+      "Verify redirect to owner admin dashboard",
+      "Verify owner-level permissions are granted"
+    ],
+    "passes": false
+  },
+  {
+    "id": 3,
+    "category": "functional",
+    "priority": "critical",
+    "module": "auth",
+    "description": "DJ can log in with limited access",
+    "steps": [
+      "Navigate to login page",
+      "Enter DJ credentials",
+      "Click login button",
+      "Verify redirect to DJ queue interface",
+      "Verify only DJ tools are accessible"
+    ],
+    "passes": false
+  },
+  {
+    "id": 4,
+    "category": "functional",
+    "priority": "critical",
+    "module": "dancer-management",
+    "description": "Manager can add a new dancer to the system",
+    "steps": [
+      "Navigate to dancer management",
+      "Click 'Add Dancer' button",
+      "Fill in dancer profile (name, stage name, contact)",
+      "Upload dancer photo",
+      "Save dancer profile",
+      "Verify dancer appears in dancer list"
+    ],
+    "passes": false
+  },
+  {
+    "id": 5,
+    "category": "functional",
+    "priority": "critical",
+    "module": "dancer-management",
+    "description": "Manager can check in a dancer for shift",
+    "steps": [
+      "Navigate to dancer check-in",
+      "Search for dancer by name",
+      "Click check-in button",
+      "Verify dancer status changes to 'On Floor'",
+      "Verify timestamp is recorded"
+    ],
+    "passes": false
+  },
+  {
+    "id": 6,
+    "category": "functional",
+    "priority": "critical",
+    "module": "dancer-management",
+    "description": "Manager can check out a dancer from shift",
+    "steps": [
+      "Find checked-in dancer",
+      "Click check-out button",
+      "Verify dancer status changes to 'Off Floor'",
+      "Verify shift duration is calculated",
+      "Verify fees are calculated based on shift"
+    ],
+    "passes": false
+  },
+  {
+    "id": 7,
+    "category": "functional",
+    "priority": "critical",
+    "module": "dj-queue",
+    "description": "DJ can view the current stage rotation queue",
+    "steps": [
+      "Log in as DJ",
+      "Navigate to queue view",
+      "Verify list of dancers waiting for stage",
+      "Verify current performer is highlighted",
+      "Verify queue order is visible"
+    ],
+    "passes": false
+  },
+  {
+    "id": 8,
+    "category": "functional",
+    "priority": "critical",
+    "module": "dj-queue",
+    "description": "DJ can add dancer to stage queue",
+    "steps": [
+      "View available dancers",
+      "Click 'Add to Queue' on dancer",
+      "Verify dancer appears at end of queue",
+      "Verify queue position number is assigned"
+    ],
+    "passes": false
+  },
+  {
+    "id": 9,
+    "category": "functional",
+    "priority": "critical",
+    "module": "dj-queue",
+    "description": "DJ can advance queue to next performer",
+    "steps": [
+      "View current queue with at least 2 dancers",
+      "Click 'Next Performer' button",
+      "Verify previous performer moves to completed",
+      "Verify next dancer becomes current",
+      "Verify stage time starts tracking"
+    ],
+    "passes": false
+  },
+  {
+    "id": 10,
+    "category": "functional",
+    "priority": "critical",
+    "module": "dj-queue",
+    "description": "DJ can reorder dancers in the queue",
+    "steps": [
+      "View queue with multiple dancers",
+      "Drag dancer to new position",
+      "Verify queue order updates",
+      "Verify position numbers update correctly"
+    ],
+    "passes": false
+  },
+  {
+    "id": 11,
+    "category": "functional",
+    "priority": "critical",
+    "module": "vip-booth",
+    "description": "Manager can create VIP booth reservation",
+    "steps": [
+      "Navigate to VIP management",
+      "Click 'New Reservation'",
+      "Select booth and time slot",
+      "Enter customer details",
+      "Assign minimum spend amount",
+      "Save reservation",
+      "Verify booth shows as reserved"
+    ],
+    "passes": false
+  },
+  {
+    "id": 12,
+    "category": "functional",
+    "priority": "critical",
+    "module": "vip-booth",
+    "description": "Manager can track VIP booth spending in real-time",
+    "steps": [
+      "Navigate to active VIP booths",
+      "Select occupied booth",
+      "View current spend vs minimum",
+      "Add service/bottle to tab",
+      "Verify running total updates",
+      "Verify progress bar updates"
+    ],
+    "passes": false
+  },
+  {
+    "id": 13,
+    "category": "functional",
+    "priority": "high",
+    "module": "vip-booth",
+    "description": "System alerts when VIP booth approaches minimum spend time",
+    "steps": [
+      "Have active booth reservation",
+      "Wait until 15 minutes before time expires",
+      "Verify alert notification appears",
+      "Verify manager dashboard shows warning",
+      "Verify alert includes booth number and shortfall amount"
+    ],
+    "passes": false
+  },
+  {
+    "id": 14,
+    "category": "functional",
+    "priority": "critical",
+    "module": "fraud-prevention",
+    "description": "System detects unusual cash handling patterns",
+    "steps": [
+      "Navigate to fraud detection dashboard",
+      "Trigger test scenario with suspicious pattern",
+      "Verify alert is generated",
+      "Verify alert shows transaction details",
+      "Verify alert is logged in audit trail"
+    ],
+    "passes": false
+  },
+  {
+    "id": 15,
+    "category": "functional",
+    "priority": "critical",
+    "module": "fraud-prevention",
+    "description": "Manager can review and resolve fraud alerts",
+    "steps": [
+      "Navigate to fraud alerts",
+      "View list of pending alerts",
+      "Click on specific alert",
+      "Review transaction details",
+      "Mark as resolved or escalate",
+      "Add resolution notes",
+      "Verify alert status updates"
+    ],
+    "passes": false
+  },
+  {
+    "id": 16,
+    "category": "functional",
+    "priority": "critical",
+    "module": "fraud-prevention",
+    "description": "System tracks dancer tip-out discrepancies",
+    "steps": [
+      "View dancer shift report",
+      "Compare reported earnings vs tip-outs",
+      "Flag discrepancies exceeding threshold",
+      "Generate discrepancy report",
+      "Verify report shows dancer, date, amounts"
+    ],
+    "passes": false
+  },
+  {
+    "id": 17,
+    "category": "functional",
+    "priority": "critical",
+    "module": "revenue-dashboard",
+    "description": "Owner can view daily revenue summary",
+    "steps": [
+      "Log in as owner",
+      "Navigate to dashboard",
+      "Verify today's total revenue displays",
+      "Verify breakdown by category (bar, VIP, door)",
+      "Verify comparison to previous day"
+    ],
+    "passes": false
+  },
+  {
+    "id": 18,
+    "category": "functional",
+    "priority": "critical",
+    "module": "revenue-dashboard",
+    "description": "Owner can view weekly revenue trends",
+    "steps": [
+      "Navigate to revenue analytics",
+      "Select weekly view",
+      "Verify chart displays last 7 days",
+      "Verify each day shows revenue total",
+      "Verify trend line is calculated"
+    ],
+    "passes": false
+  },
+  {
+    "id": 19,
+    "category": "functional",
+    "priority": "high",
+    "module": "revenue-dashboard",
+    "description": "Owner can view monthly revenue report",
+    "steps": [
+      "Navigate to reports section",
+      "Generate monthly report",
+      "Verify total revenue for month",
+      "Verify breakdown by week",
+      "Verify export to PDF works",
+      "Verify export includes charts"
+    ],
+    "passes": false
+  },
+  {
+    "id": 20,
+    "category": "functional",
+    "priority": "high",
+    "module": "revenue-dashboard",
+    "description": "Dashboard updates in real-time without refresh",
+    "steps": [
+      "Open dashboard in browser",
+      "Complete a transaction in another tab",
+      "Verify dashboard numbers update",
+      "Verify no page refresh needed",
+      "Verify update happens within 5 seconds"
+    ],
+    "passes": false
+  },
+  {
+    "id": 21,
+    "category": "functional",
+    "priority": "high",
+    "module": "shift-management",
+    "description": "Manager can create shift schedules",
+    "steps": [
+      "Navigate to scheduling",
+      "Select week to schedule",
+      "Create shift for dancer",
+      "Set start and end times",
+      "Save schedule",
+      "Verify shift appears on calendar"
+    ],
+    "passes": false
+  },
+  {
+    "id": 22,
+    "category": "functional",
+    "priority": "high",
+    "module": "shift-management",
+    "description": "Dancer receives notification of scheduled shift",
+    "steps": [
+      "Create new shift for dancer",
+      "Verify notification is generated",
+      "Log in as dancer",
+      "Verify notification appears",
+      "Verify notification shows date, time, position"
+    ],
+    "passes": false
+  },
+  {
+    "id": 23,
+    "category": "functional",
+    "priority": "medium",
+    "module": "shift-management",
+    "description": "Manager can approve shift swap requests",
+    "steps": [
+      "Have pending swap request from dancer",
+      "Navigate to pending requests",
+      "View swap details",
+      "Approve or deny swap",
+      "Verify both dancers notified",
+      "Verify schedule updates"
+    ],
+    "passes": false
+  },
+  {
+    "id": 24,
+    "category": "functional",
+    "priority": "critical",
+    "module": "fee-tracking",
+    "description": "System calculates dancer house fees correctly",
+    "steps": [
+      "Check in dancer for shift",
+      "Complete shift (check out)",
+      "Verify house fee is calculated",
+      "Verify fee matches club rate structure",
+      "Verify fee appears on dancer's tab"
+    ],
+    "passes": false
+  },
+  {
+    "id": 25,
+    "category": "functional",
+    "priority": "critical",
+    "module": "fee-tracking",
+    "description": "Manager can collect and record dancer tip-out",
+    "steps": [
+      "View dancer's open tab",
+      "Click 'Collect Payment'",
+      "Enter amount collected",
+      "Select payment method",
+      "Record transaction",
+      "Verify balance updates"
+    ],
+    "passes": false
+  },
+  {
+    "id": 26,
+    "category": "functional",
+    "priority": "high",
+    "module": "fee-tracking",
+    "description": "System tracks late fees automatically",
+    "steps": [
+      "Have dancer with overdue payment",
+      "System runs daily fee check",
+      "Verify late fee is added",
+      "Verify dancer is notified",
+      "Verify late fee appears on statement"
+    ],
+    "passes": false
+  },
+  {
+    "id": 27,
+    "category": "functional",
+    "priority": "medium",
+    "module": "reporting",
+    "description": "Manager can generate nightly close-out report",
+    "steps": [
+      "Navigate to reports at end of night",
+      "Click 'Generate Close-Out Report'",
+      "Verify all shifts are closed",
+      "Verify revenue totals are calculated",
+      "Verify report can be printed"
+    ],
+    "passes": false
+  },
+  {
+    "id": 28,
+    "category": "functional",
+    "priority": "medium",
+    "module": "reporting",
+    "description": "Owner can export payroll data",
+    "steps": [
+      "Navigate to payroll export",
+      "Select date range",
+      "Generate export",
+      "Download CSV file",
+      "Verify file contains all dancer shifts",
+      "Verify calculations are correct"
+    ],
+    "passes": false
+  },
+  {
+    "id": 29,
+    "category": "functional",
+    "priority": "high",
+    "module": "multi-club",
+    "description": "Owner can switch between clubs in dashboard",
+    "steps": [
+      "Log in as multi-club owner",
+      "Verify club selector is visible",
+      "Select different club",
+      "Verify dashboard updates to selected club",
+      "Verify all data reflects selected club"
+    ],
+    "passes": false
+  },
+  {
+    "id": 30,
+    "category": "functional",
+    "priority": "high",
+    "module": "multi-club",
+    "description": "Owner can view aggregate data across all clubs",
+    "steps": [
+      "Select 'All Clubs' in selector",
+      "Verify combined revenue is shown",
+      "Verify breakdown by club is available",
+      "Verify comparison charts work"
+    ],
+    "passes": false
+  },
+  {
+    "id": 31,
+    "category": "style",
+    "priority": "high",
+    "module": "ui",
+    "description": "Dashboard is responsive on tablet devices",
+    "steps": [
+      "Open dashboard in tablet viewport (768px)",
+      "Verify all elements are visible",
+      "Verify no horizontal scroll",
+      "Verify navigation is usable",
+      "Verify charts resize correctly"
+    ],
+    "passes": false
+  },
+  {
+    "id": 32,
+    "category": "style",
+    "priority": "high",
+    "module": "ui",
+    "description": "Dashboard is usable on mobile devices",
+    "steps": [
+      "Open dashboard in mobile viewport (375px)",
+      "Verify hamburger menu works",
+      "Verify critical info is visible",
+      "Verify touch targets are adequate",
+      "Verify text is readable"
+    ],
+    "passes": false
+  },
+  {
+    "id": 33,
+    "category": "style",
+    "priority": "medium",
+    "module": "ui",
+    "description": "Dark mode is consistent across all pages",
+    "steps": [
+      "Enable dark mode",
+      "Navigate through all main sections",
+      "Verify no white flash on page transitions",
+      "Verify text contrast meets accessibility",
+      "Verify all components use dark theme"
+    ],
+    "passes": false
+  },
+  {
+    "id": 34,
+    "category": "functional",
+    "priority": "medium",
+    "module": "notifications",
+    "description": "Push notifications work on mobile devices",
+    "steps": [
+      "Enable push notifications in settings",
+      "Trigger notification event",
+      "Verify notification appears on device",
+      "Tap notification",
+      "Verify app opens to relevant section"
+    ],
+    "passes": false
+  },
+  {
+    "id": 35,
+    "category": "functional",
+    "priority": "medium",
+    "module": "settings",
+    "description": "Club can customize fee structures",
+    "steps": [
+      "Navigate to club settings",
+      "Edit house fee structure",
+      "Set different rates for different shifts",
+      "Save settings",
+      "Verify new fees apply to future shifts"
+    ],
+    "passes": false
+  },
+  {
+    "id": 36,
+    "category": "functional",
+    "priority": "low",
+    "module": "settings",
+    "description": "Club can customize VIP booth minimums",
+    "steps": [
+      "Navigate to VIP settings",
+      "Set booth-specific minimums",
+      "Set time-based rate adjustments",
+      "Save settings",
+      "Verify new minimums apply"
+    ],
+    "passes": false
+  },
+  {
+    "id": 37,
+    "category": "functional",
+    "priority": "critical",
+    "module": "security",
+    "description": "Session expires after inactivity",
+    "steps": [
+      "Log in to system",
+      "Leave browser idle for timeout period",
+      "Attempt to perform action",
+      "Verify redirect to login",
+      "Verify session is invalidated"
+    ],
+    "passes": false
+  },
+  {
+    "id": 38,
+    "category": "functional",
+    "priority": "critical",
+    "module": "security",
+    "description": "Role-based access control works correctly",
+    "steps": [
+      "Log in as DJ",
+      "Attempt to access manager-only page",
+      "Verify access is denied",
+      "Verify appropriate error message",
+      "Verify audit log records attempt"
+    ],
+    "passes": false
+  },
+  {
+    "id": 39,
+    "category": "functional",
+    "priority": "high",
+    "module": "audit",
+    "description": "All financial transactions are logged",
+    "steps": [
+      "Perform a financial transaction",
+      "Navigate to audit log",
+      "Find transaction entry",
+      "Verify timestamp is recorded",
+      "Verify user who performed action is logged",
+      "Verify amount and details are captured"
+    ],
+    "passes": false
+  },
+  {
+    "id": 40,
+    "category": "functional",
+    "priority": "high",
+    "module": "backup",
+    "description": "System performs daily automated backups",
+    "steps": [
+      "Check backup configuration",
+      "Verify backup ran successfully",
+      "Verify backup file is accessible",
+      "Test restore from backup",
+      "Verify data integrity after restore"
+    ],
+    "passes": false
+  },
+  {
+    "id": 41,
+    "category": "functional",
+    "priority": "critical",
+    "module": "dj-queue",
+    "description": "Queue persists through page refresh",
+    "steps": [
+      "Create queue with multiple dancers",
+      "Refresh the page",
+      "Verify queue order is preserved",
+      "Verify current performer is still marked"
+    ],
+    "passes": false
+  },
+  {
+    "id": 42,
+    "category": "functional",
+    "priority": "high",
+    "module": "dj-queue",
+    "description": "Multiple stages can have separate queues",
+    "steps": [
+      "Navigate to multi-stage view",
+      "Add dancers to Stage 1 queue",
+      "Add different dancers to Stage 2 queue",
+      "Verify queues are independent",
+      "Verify DJ can manage each separately"
+    ],
+    "passes": false
+  },
+  {
+    "id": 43,
+    "category": "functional",
+    "priority": "high",
+    "module": "dancer-management",
+    "description": "Dancer profile photo uploads correctly",
+    "steps": [
+      "Edit dancer profile",
+      "Click upload photo",
+      "Select image file",
+      "Verify preview shows correctly",
+      "Save profile",
+      "Verify photo appears in dancer list"
+    ],
+    "passes": false
+  },
+  {
+    "id": 44,
+    "category": "functional",
+    "priority": "medium",
+    "module": "dancer-management",
+    "description": "Manager can suspend dancer account",
+    "steps": [
+      "Navigate to dancer profile",
+      "Click suspend account",
+      "Enter reason for suspension",
+      "Confirm suspension",
+      "Verify dancer cannot check in",
+      "Verify suspension is logged"
+    ],
+    "passes": false
+  },
+  {
+    "id": 45,
+    "category": "functional",
+    "priority": "medium",
+    "module": "dancer-management",
+    "description": "Manager can view dancer performance history",
+    "steps": [
+      "Navigate to dancer profile",
+      "Click performance history tab",
+      "Verify shift history is displayed",
+      "Verify earnings are shown",
+      "Verify attendance rate is calculated"
+    ],
+    "passes": false
+  },
+  {
+    "id": 46,
+    "category": "style",
+    "priority": "medium",
+    "module": "ui",
+    "description": "Loading states are shown during data fetch",
+    "steps": [
+      "Navigate to data-heavy page",
+      "Throttle network in dev tools",
+      "Verify loading spinner appears",
+      "Verify skeleton loaders show for content",
+      "Verify content replaces loaders when ready"
+    ],
+    "passes": false
+  },
+  {
+    "id": 47,
+    "category": "style",
+    "priority": "low",
+    "module": "ui",
+    "description": "Error states are user-friendly",
+    "steps": [
+      "Trigger an error condition",
+      "Verify error message is readable",
+      "Verify error suggests next steps",
+      "Verify retry option is available",
+      "Verify no technical jargon shown"
+    ],
+    "passes": false
+  },
+  {
+    "id": 48,
+    "category": "functional",
+    "priority": "high",
+    "module": "integration",
+    "description": "POS system integration syncs transactions",
+    "steps": [
+      "Configure POS integration",
+      "Complete sale in POS",
+      "Verify transaction appears in ClubFlow",
+      "Verify amounts match",
+      "Verify sync happens within 1 minute"
+    ],
+    "passes": false
+  },
+  {
+    "id": 49,
+    "category": "functional",
+    "priority": "medium",
+    "module": "integration",
+    "description": "Door count system integration works",
+    "steps": [
+      "Configure door count integration",
+      "Verify current count displays",
+      "Verify count updates on entry/exit",
+      "Verify capacity alerts trigger correctly"
+    ],
+    "passes": false
+  },
+  {
+    "id": 50,
+    "category": "functional",
+    "priority": "critical",
+    "module": "onboarding",
+    "description": "New club onboarding wizard completes successfully",
+    "steps": [
+      "Start new club setup",
+      "Complete business info step",
+      "Configure staff roles",
+      "Set up fee structures",
+      "Add initial dancers",
+      "Complete wizard",
+      "Verify club is fully functional"
+    ],
+    "passes": false
+  }
+]

@@ -17,7 +17,8 @@
  */
 
 const { VipSession, DancerCheckIn, FinancialTransaction, Shift, CashDrawer, User } = require('../models');
-const { Op } = require('sequelize');
+// Note: Prisma doesn't use Sequelize operators
+const Op = {};
 
 class AnomalyDetectionService {
   constructor() {

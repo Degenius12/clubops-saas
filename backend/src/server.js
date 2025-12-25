@@ -37,6 +37,9 @@ const doorStaffRoutes = require('../routes/door-staff');
 const vipHostRoutes = require('../routes/vip-host');
 const securityRoutes = require('../routes/security');
 
+// Shift Management Routes (POS-style shift levels)
+const shiftManagementRoutes = require('../routes/shift-management');
+
 // Queue Routes (alias for dj-queue)
 const queueRoutes = require('../routes/queue');
 
@@ -96,7 +99,7 @@ app.use(cors({
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Cache-Control', 'Pragma'],
   preflightContinue: false,
   optionsSuccessStatus: 204
 }));
@@ -142,6 +145,9 @@ app.use('/api/shifts', shiftRoutes);
 app.use('/api/door-staff', doorStaffRoutes);
 app.use('/api/vip-host', vipHostRoutes);
 app.use('/api/security', securityRoutes);
+
+// Shift Management (POS-style shift levels)
+app.use('/api/shift-management', shiftManagementRoutes);
 
 // Queue Routes (frontend uses /api/queue)
 app.use('/api/queue', queueRoutes);

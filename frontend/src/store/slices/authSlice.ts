@@ -4,12 +4,19 @@ import apiClient from '../../config/api'
 interface User {
   id: string
   email: string
-  name: string
-  role: 'owner' | 'manager' | 'dj' | 'security'
-  club_id: string
-  subscription_tier: 'free' | 'basic' | 'pro' | 'enterprise'
+  firstName: string
+  lastName: string
+  name?: string // Backwards compatibility
+  role: string // Backend returns uppercase: OWNER, MANAGER, DJ, VIP_HOST, DOOR_STAFF, BARTENDER
+  clubId: string
+  clubName: string
+  subdomain: string
+  subscriptionTier: string
+  subscriptionStatus: string
+  // Backwards compatibility
+  club_id?: string
+  subscription_tier?: string
   ownerName?: string
-  clubName?: string
   phoneNumber?: string
 }
 

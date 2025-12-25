@@ -1,21 +1,16 @@
 // API Configuration
-// FIXED: Always use the correct production URL to avoid Vercel env var issues
 const PRODUCTION_API_URL = 'https://clubops-backend.vercel.app';
-const DEV_API_URL = 'http://localhost:3001';
+const DEV_API_URL = 'http://localhost:3001'; // Backend runs on port 3001 (set in backend/.env)
 
-// Detect production environment
-const isProduction = import.meta.env.PROD || 
-  (typeof window !== 'undefined' && window.location.hostname !== 'localhost');
-
-// FIXED: In production, ALWAYS use the correct backend URL (ignore env vars)
-// This prevents stale Vercel environment variables from breaking the app
-export const API_BASE_URL = isProduction 
-  ? PRODUCTION_API_URL 
-  : (import.meta.env.VITE_API_URL || DEV_API_URL);
+// CRITICAL FIX: Always respect VITE_API_URL if explicitly set (for local development)
+// This allows developers to override the URL regardless of hostname
+export const API_BASE_URL = import.meta.env.VITE_API_URL ||
+  (import.meta.env.PROD ? PRODUCTION_API_URL : DEV_API_URL);
 
 // Log which URL is being used (helpful for debugging)
 console.log('API Base URL:', API_BASE_URL);
-console.log('Environment:', isProduction ? 'production' : 'development');
+console.log('VITE_API_URL:', import.meta.env.VITE_API_URL);
+console.log('Environment Mode:', import.meta.env.MODE);
 
 // Create axios instance with base configuration
 import axios from 'axios';
@@ -32,7 +27,7 @@ const apiClient = axios.create({
 // Log initialization
 console.log('ApiClient initialized');
 console.log('- API Base URL:', API_BASE_URL);
-console.log('- Environment:', isProduction ? 'production' : 'development');
+console.log('- Environment Mode:', import.meta.env.MODE);
 console.log('- Token found:', !!localStorage.getItem('token'));
 
 // Add auth token to requests (exclude auth endpoints)
