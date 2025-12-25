@@ -1,0 +1,62 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(*)",
+      "Glob(*)",
+      "Grep(*)",
+      "Write(./src/**)",
+      "Write(./prisma/**)",
+      "Write(./public/**)",
+      "Write(./*.json)",
+      "Write(./*.md)",
+      "Write(./*.ts)",
+      "Edit(./src/**)",
+      "Edit(./prisma/**)",
+      "Bash(npm run :*)",
+      "Bash(npm install :*)",
+      "Bash(npx prisma :*)",
+      "Bash(git :*)",
+      "Bash(ls :*)",
+      "Bash(cat :*)",
+      "Bash(grep :*)",
+      "Bash(find :*)",
+      "Bash(pwd)",
+      "Bash(node --version)",
+      "Bash(npm --version)",
+      "Task(*)"
+    ],
+    "deny": [
+      "Bash(rm -rf :*)",
+      "Bash(sudo :*)",
+      "Bash(chmod 777 :*)",
+      "Write(./.env*)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": []
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write",
+        "hooks": []
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": []
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": []
+      }
+    ]
+  },
+  "env": {
+    "NODE_ENV": "development"
+  }
+}
