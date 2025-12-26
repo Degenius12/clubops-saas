@@ -522,6 +522,249 @@ router.post('/:id/check-out', auth, async (req, res) => {
   }
 });
 
+// @route   GET /api/dancers/:id/performance-history
+// @desc    Get dancer's performance history (Feature #45)
+// @access  Private (Manager+)
+router.get('/:id/performance-history', auth, authorize('owner', 'manager'), async (req, res) => {
+  try {
+    const { startDate, endDate, limit = 30 } = req.query;
+
+    const dancer = await prisma.entertainer.findFirst({
+      where: {
+        id: req.params.id,
+        clubId: req.user.clubId
+      }
+    });
+
+    if (!dancer) {
+      return res.status(404).json({ error: 'Dancer not found' });
+    }
+
+    // Build date filter
+    const dateFilter = {};
+    if (startDate) dateFilter.gte = new Date(startDate);
+    if (endDate) {
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
+      dateFilter.lte = end;
+    }
+
+    // Get shift history
+    const checkIns = await prisma.entertainerCheckIn.findMany({
+      where: {
+        entertainerId: dancer.id,
+        clubId: req.user.clubId,
+        ...(startDate || endDate ? { checkedInAt: dateFilter } : {})
+      },
+      orderBy: {
+        checkedInAt: 'desc'
+      },
+      take: parseInt(limit),
+      include: {
+        shift: {
+          select: {
+            shiftType: true,
+            startTime: true,
+            endTime: true
+          }
+        }
+      }
+    });
+
+    // Calculate shift duration for each check-in
+    const shiftHistory = checkIns.map(checkIn => {
+      const checkedIn = new Date(checkIn.checkedInAt);
+      const checkedOut = checkIn.checkedOutAt ? new Date(checkIn.checkedOutAt) : null;
+      const durationMs = checkedOut ? checkedOut - checkedIn : 0;
+      const durationHours = durationMs / (1000 * 60 * 60);
+
+      return {
+        id: checkIn.id,
+        checkInDate: checkIn.checkedInAt,
+        checkOutDate: checkIn.checkedOutAt,
+        durationHours: durationHours.toFixed(2),
+        shiftType: checkIn.shift?.shiftType || 'unknown',
+        barFeeAmount: parseFloat(checkIn.barFeeAmount),
+        barFeeStatus: checkIn.barFeeStatus,
+        status: checkIn.status
+      };
+    });
+
+    // Get financial summary
+    const transactions = await prisma.financialTransaction.findMany({
+      where: {
+        entertainerId: dancer.id,
+        clubId: req.user.clubId,
+        ...(startDate || endDate ? { createdAt: dateFilter } : {})
+      }
+    });
+
+    const financialSummary = transactions.reduce((acc, tx) => {
+      const amount = parseFloat(tx.amount);
+
+      if (tx.status === 'PAID') {
+        acc.totalPaid += amount;
+      } else {
+        acc.totalPending += amount;
+      }
+
+      if (tx.category === 'HOUSE_FEE' || tx.transactionType === 'bar_fee') {
+        acc.totalFees += amount;
+      }
+
+      if (tx.category === 'LATE_FEE') {
+        acc.lateFees += amount;
+      }
+
+      return acc;
+    }, {
+      totalPaid: 0,
+      totalPending: 0,
+      totalFees: 0,
+      lateFees: 0
+    });
+
+    // Calculate attendance rate
+    const totalShifts = checkIns.length;
+    const completedShifts = checkIns.filter(c => c.status === 'CHECKED_OUT').length;
+    const attendanceRate = totalShifts > 0 ? (completedShifts / totalShifts * 100).toFixed(1) : 0;
+
+    // Get stage performance count
+    const stagePerformances = await prisma.djQueue.count({
+      where: {
+        entertainerId: dancer.id,
+        clubId: req.user.clubId,
+        status: 'completed',
+        ...(startDate || endDate ? { createdAt: dateFilter } : {})
+      }
+    });
+
+    res.json({
+      dancer: {
+        id: dancer.id,
+        stageName: dancer.stageName,
+        legalName: dancer.legalName,
+        photoUrl: dancer.photoUrl,
+        isActive: dancer.isActive
+      },
+      summary: {
+        totalShifts,
+        completedShifts,
+        attendanceRate: parseFloat(attendanceRate),
+        totalHoursWorked: shiftHistory.reduce((sum, s) => sum + parseFloat(s.durationHours), 0).toFixed(2),
+        stagePerformances,
+        ...financialSummary
+      },
+      shiftHistory,
+      recentTransactions: transactions.slice(0, 10).map(tx => ({
+        id: tx.id,
+        date: tx.createdAt,
+        type: tx.transactionType,
+        category: tx.category,
+        amount: parseFloat(tx.amount),
+        status: tx.status,
+        description: tx.description
+      }))
+    });
+
+  } catch (error) {
+    console.error('Performance history error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// @route   PUT /api/dancers/:id/suspend
+// @desc    Suspend/unsuspend dancer account (Feature #44)
+// @access  Private (Manager+)
+router.put('/:id/suspend', [
+  auth,
+  authorize('owner', 'manager'),
+  body('reason').optional().trim(),
+  body('suspend').isBoolean()
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const dancer = await prisma.entertainer.findFirst({
+      where: {
+        id: req.params.id,
+        clubId: req.user.clubId
+      }
+    });
+
+    if (!dancer) {
+      return res.status(404).json({ error: 'Dancer not found' });
+    }
+
+    // Check if dancer is currently checked in
+    if (req.body.suspend) {
+      const activeCheckIn = await prisma.entertainerCheckIn.findFirst({
+        where: {
+          entertainerId: dancer.id,
+          clubId: req.user.clubId,
+          status: 'CHECKED_IN'
+        }
+      });
+
+      if (activeCheckIn) {
+        return res.status(400).json({
+          error: 'Cannot suspend dancer who is currently checked in',
+          message: 'Please check out the dancer before suspending their account'
+        });
+      }
+    }
+
+    // Update dancer status
+    const updatedDancer = await prisma.entertainer.update({
+      where: {
+        id: req.params.id
+      },
+      data: {
+        isActive: !req.body.suspend
+      }
+    });
+
+    // Create audit log entry
+    await prisma.auditLog.create({
+      data: {
+        clubId: req.user.clubId,
+        userId: req.user.id,
+        action: req.body.suspend ? 'SUSPEND_ENTERTAINER' : 'UNSUSPEND_ENTERTAINER',
+        entityType: 'Entertainer',
+        entityId: dancer.id,
+        changes: {
+          isActive: {
+            from: dancer.isActive,
+            to: !req.body.suspend
+          },
+          reason: req.body.reason || 'No reason provided'
+        },
+        ipAddress: req.ip || req.connection.remoteAddress
+      }
+    });
+
+    res.json({
+      message: req.body.suspend ? 'Dancer suspended successfully' : 'Dancer unsuspended successfully',
+      dancer: {
+        id: updatedDancer.id,
+        stageName: updatedDancer.stageName,
+        legalName: updatedDancer.legalName,
+        isActive: updatedDancer.isActive,
+        status: updatedDancer.isActive ? 'active' : 'suspended'
+      },
+      suspendedAt: req.body.suspend ? new Date() : null,
+      reason: req.body.reason || null
+    });
+
+  } catch (error) {
+    console.error('Suspend dancer error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // @route   DELETE /api/dancers/:id
 // @desc    Deactivate dancer (soft delete)
 // @access  Private (Manager+)

@@ -560,7 +560,7 @@
       "Verify redirect to login",
       "Verify session is invalidated"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 38,
@@ -575,7 +575,7 @@
       "Verify appropriate error message",
       "Verify audit log records attempt"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 39,
@@ -591,7 +591,7 @@
       "Verify user who performed action is logged",
       "Verify amount and details are captured"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 40,
@@ -620,7 +620,7 @@
       "Verify queue order is preserved",
       "Verify current performer is still marked"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 42,
@@ -635,7 +635,7 @@
       "Verify queues are independent",
       "Verify DJ can manage each separately"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 43,
@@ -651,7 +651,7 @@
       "Save profile",
       "Verify photo appears in dancer list"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 44,
@@ -667,7 +667,7 @@
       "Verify dancer cannot check in",
       "Verify suspension is logged"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 45,
@@ -682,7 +682,7 @@
       "Verify earnings are shown",
       "Verify attendance rate is calculated"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 46,
@@ -697,7 +697,7 @@
       "Verify skeleton loaders show for content",
       "Verify content replaces loaders when ready"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 47,
@@ -712,7 +712,7 @@
       "Verify retry option is available",
       "Verify no technical jargon shown"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 48,
