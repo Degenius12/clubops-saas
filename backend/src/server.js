@@ -49,6 +49,9 @@ const scheduleRoutes = require('../routes/schedule');
 // Late Fee Routes (Feature #26)
 const lateFeeRoutes = require('../routes/lateFees');
 
+// Reporting Routes (Feature #27)
+const reportsRoutes = require('../routes/reports');
+
 // Queue Routes (alias for dj-queue)
 const queueRoutes = require('../routes/queue');
 
@@ -166,6 +169,9 @@ app.use('/api/schedule', scheduleRoutes);
 
 // Late Fee Management (Feature #26)
 app.use('/api/late-fees', lateFeeRoutes);
+
+// Reporting System (Feature #27)
+app.use('/api/reports', reportsRoutes);
 
 // Queue Routes (frontend uses /api/queue)
 app.use('/api/queue', queueRoutes);
