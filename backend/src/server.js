@@ -55,6 +55,9 @@ const reportsRoutes = require('../routes/reports');
 // Multi-Club Routes (Features #29-30)
 const multiClubRoutes = require('../routes/multi-club');
 
+// Settings Routes (Features #35-36)
+const settingsRoutes = require('../routes/settings');
+
 // Queue Routes (alias for dj-queue)
 const queueRoutes = require('../routes/queue');
 
@@ -178,6 +181,9 @@ app.use('/api/reports', reportsRoutes);
 
 // Multi-Club Management (Features #29-30)
 app.use('/api/multi-club', multiClubRoutes);
+
+// Club Settings (Features #35-36)
+app.use('/api/settings', settingsRoutes);
 
 // Queue Routes (frontend uses /api/queue)
 app.use('/api/queue', queueRoutes);

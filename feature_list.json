@@ -470,7 +470,7 @@
       "Verify navigation is usable",
       "Verify charts resize correctly"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 32,
@@ -485,7 +485,7 @@
       "Verify touch targets are adequate",
       "Verify text is readable"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 33,
@@ -500,7 +500,7 @@
       "Verify text contrast meets accessibility",
       "Verify all components use dark theme"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 34,
@@ -530,7 +530,7 @@
       "Save settings",
       "Verify new fees apply to future shifts"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 36,
@@ -545,7 +545,7 @@
       "Save settings",
       "Verify new minimums apply"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 37,
