@@ -58,6 +58,11 @@ const multiClubRoutes = require('../routes/multi-club');
 // Settings Routes (Features #35-36)
 const settingsRoutes = require('../routes/settings');
 
+// Compliance & Contract Routes (Contract/Onboarding Module)
+const complianceRoutes = require('../routes/compliance');
+const contractsRoutes = require('../routes/contracts');
+const onboardingRoutes = require('../routes/onboarding');
+
 // Queue Routes (alias for dj-queue)
 const queueRoutes = require('../routes/queue');
 
@@ -184,6 +189,11 @@ app.use('/api/multi-club', multiClubRoutes);
 
 // Club Settings (Features #35-36)
 app.use('/api/settings', settingsRoutes);
+
+// Compliance & Contract Management (Contract/Onboarding Module)
+app.use('/api/compliance', complianceRoutes);
+app.use('/api/contracts', contractsRoutes);
+app.use('/api/onboarding', onboardingRoutes);
 
 // Queue Routes (frontend uses /api/queue)
 app.use('/api/queue', queueRoutes);

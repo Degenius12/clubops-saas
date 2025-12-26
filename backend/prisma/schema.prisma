@@ -99,6 +99,43 @@ enum ShiftSwapStatus {
 }
 
 // ==============================================
+// COMPLIANCE & CONTRACT MANAGEMENT (NEW)
+// ==============================================
+
+enum DocumentType {
+  ENTERTAINER_LICENSE
+  GOVERNMENT_ID
+  PHOTO_ID_SELFIE
+  CONTRACT_1099
+  CONTRACT_W2
+  PROOF_OF_AGE
+  WORK_AUTHORIZATION
+  OTHER_COMPLIANCE
+}
+
+enum DocumentStatus {
+  PENDING_UPLOAD
+  UPLOADED
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+  EXPIRED
+}
+
+enum ContractType {
+  INDEPENDENT_CONTRACTOR_1099
+  EMPLOYEE_W2
+}
+
+enum OnboardingStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  DOCUMENTS_PENDING
+  COMPLIANCE_REVIEW
+  COMPLETED
+}
+
+// ==============================================
 // MULTI-TENANT FOUNDATION
 // ==============================================
 
@@ -153,6 +190,8 @@ model Club {
   scheduledShifts      ScheduledShift[]
   shiftSwaps           ShiftSwap[]
   shiftNotifications   ShiftNotification[]
+  complianceDocuments  ComplianceDocument[]
+  entertainerContracts EntertainerContract[]
 
   @@map("clubs")
 }
@@ -192,6 +231,9 @@ model ClubUser {
   scheduledShiftsCreated ScheduledShift[] @relation("ShiftCreatedBy")
   shiftSwapsReviewed     ShiftSwap[] @relation("SwapReviewedBy")
   shiftNotifications     ShiftNotification[]
+  documentsUploaded      ComplianceDocument[] @relation("DocumentUploadedBy")
+  documentsReviewed      ComplianceDocument[] @relation("DocumentReviewedBy")
+  contractsCreated       EntertainerContract[] @relation("ContractCreatedBy")
 
   @@unique([clubId, email])
   @@map("club_users")
@@ -333,6 +375,16 @@ model Entertainer {
   // Photo for verification
   photoUrl          String?   @map("photo_url") @db.VarChar(500)
 
+  // CONTRACT & COMPLIANCE (NEW)
+  contractType         ContractType?     @map("contract_type")
+  hasSignedContract    Boolean           @default(false) @map("has_signed_contract")
+  onboardingStatus     OnboardingStatus  @default(NOT_STARTED) @map("onboarding_status")
+  onboardingCompletedAt DateTime?        @map("onboarding_completed_at")
+
+  // Age Verification (2257 Compliance)
+  ageVerifiedAt        DateTime?         @map("age_verified_at")
+  ageVerifiedBy        String?           @map("age_verified_by") @db.Uuid
+
   emergencyContact  Json      @default("{}") @map("emergency_contact")
   preferredMusic    Json      @default("[]") @map("preferred_music")
   isActive          Boolean   @default(true) @map("is_active")
@@ -348,6 +400,8 @@ model Entertainer {
   scheduledShifts       ScheduledShift[]
   shiftSwapsRequested   ShiftSwap[]
   shiftNotifications    ShiftNotification[]
+  complianceDocuments   ComplianceDocument[]
+  contracts             EntertainerContract[]
 
   @@map("dancers") // Keep old table name for backward compatibility
 }
@@ -926,4 +980,103 @@ model ShiftNotification {
   @@index([scheduledShiftId])
   @@index([sentAt])
   @@map("shift_notifications")
+}
+
+// ==============================================
+// COMPLIANCE DOCUMENTS & CONTRACTS (NEW)
+// ==============================================
+
+// Compliance Document Storage (Licenses, IDs, Contracts)
+model ComplianceDocument {
+  id             String         @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  clubId         String         @map("club_id") @db.Uuid
+  entertainerId  String         @map("entertainer_id") @db.Uuid
+
+  // Document details
+  documentType   DocumentType   @map("document_type")
+  documentStatus DocumentStatus @default(PENDING_UPLOAD) @map("document_status")
+
+  // S3 Storage
+  fileUrl        String?        @map("file_url") @db.VarChar(500) // S3 URL (signed URLs generated on-demand)
+  s3Bucket       String?        @map("s3_bucket") @db.VarChar(100)
+  s3Key          String?        @map("s3_key") @db.VarChar(500)
+  fileSize       BigInt?        @map("file_size") // Bytes
+  mimeType       String?        @map("mime_type") @db.VarChar(100)
+
+  // Expiration tracking (for licenses)
+  expiresAt      DateTime?      @map("expires_at") @db.Date
+
+  // Upload/Review tracking
+  uploadedById   String?        @map("uploaded_by_id") @db.Uuid
+  uploadedAt     DateTime?      @map("uploaded_at")
+  reviewedById   String?        @map("reviewed_by_id") @db.Uuid
+  reviewedAt     DateTime?      @map("reviewed_at")
+  reviewNotes    String?        @map("review_notes") @db.VarChar(1000)
+
+  // Rejection reason
+  rejectionReason String?       @map("rejection_reason") @db.VarChar(500)
+
+  // Metadata
+  metadata       Json           @default("{}")
+  notes          String?        @db.VarChar(1000)
+
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @default(now()) @updatedAt @map("updated_at")
+
+  // Relations
+  club           Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  entertainer    Entertainer @relation(fields: [entertainerId], references: [id], onDelete: Cascade)
+  uploadedBy     ClubUser? @relation("DocumentUploadedBy", fields: [uploadedById], references: [id])
+  reviewedBy     ClubUser? @relation("DocumentReviewedBy", fields: [reviewedById], references: [id])
+
+  @@index([clubId, entertainerId])
+  @@index([clubId, documentStatus])
+  @@index([clubId, documentStatus, expiresAt]) // For expiring documents query
+  @@index([entertainerId, documentType])
+  @@map("compliance_documents")
+}
+
+// Entertainer Contracts (1099 vs W-2)
+model EntertainerContract {
+  id              String       @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  clubId          String       @map("club_id") @db.Uuid
+  entertainerId   String       @map("entertainer_id") @db.Uuid
+  createdBy       String       @map("created_by") @db.Uuid
+
+  // Contract details
+  contractType    ContractType @map("contract_type")
+
+  // Digital signature
+  signatureData   String?      @map("signature_data") @db.Text // Base64 PNG from canvas
+  signedAt        DateTime?    @map("signed_at")
+  signedIpAddress String?      @map("signed_ip_address") @db.VarChar(45)
+
+  // Contract terms
+  termsHash       String       @map("terms_hash") @db.VarChar(64) // SHA-256 for tamper detection
+  agreedTerms     Json         @map("agreed_terms") // Full contract terms snapshot
+
+  // Validity
+  effectiveDate   DateTime     @map("effective_date") @db.Date
+  expiresAt       DateTime?    @map("expires_at") @db.Date
+  isActive        Boolean      @default(true) @map("is_active")
+
+  // Version tracking
+  contractVersion String       @default("1.0") @map("contract_version") @db.VarChar(20)
+
+  // Metadata
+  metadata        Json         @default("{}")
+  notes           String?      @db.VarChar(1000)
+
+  createdAt       DateTime     @default(now()) @map("created_at")
+  updatedAt       DateTime     @default(now()) @updatedAt @map("updated_at")
+
+  // Relations
+  club            Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  entertainer     Entertainer @relation(fields: [entertainerId], references: [id], onDelete: Cascade)
+  creator         ClubUser @relation("ContractCreatedBy", fields: [createdBy], references: [id])
+
+  @@index([clubId, entertainerId])
+  @@index([clubId, contractType])
+  @@index([entertainerId, isActive])
+  @@map("entertainer_contracts")
 }
