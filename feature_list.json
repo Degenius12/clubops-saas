@@ -426,7 +426,7 @@
       "Verify file contains all dancer shifts",
       "Verify calculations are correct"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 29,

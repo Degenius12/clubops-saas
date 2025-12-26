@@ -423,4 +423,230 @@ router.get('/history', [
   }
 });
 
+// ============================================================================
+// PAYROLL EXPORT (Feature #28)
+// ============================================================================
+
+// @route   GET /api/reports/payroll-export
+// @desc    Export payroll data for entertainers as CSV
+// @access  Private (Owner only)
+router.get('/payroll-export', [
+  auth,
+  authorize('OWNER')
+], async (req, res) => {
+  try {
+    const { clubId } = req.user;
+    const { startDate, endDate, format = 'csv' } = req.query;
+
+    if (!startDate || !endDate) {
+      return res.status(400).json({ error: 'Start date and end date are required' });
+    }
+
+    const start = new Date(startDate);
+    start.setHours(0, 0, 0, 0);
+
+    const end = new Date(endDate);
+    end.setHours(23, 59, 59, 999);
+
+    // Get all entertainer check-ins for the date range
+    const checkIns = await prisma.entertainerCheckIn.findMany({
+      where: {
+        clubId,
+        checkInTime: {
+          gte: start,
+          lte: end
+        }
+      },
+      include: {
+        entertainer: {
+          select: {
+            id: true,
+            stageName: true,
+            legalName: true,
+            phone: true,
+            email: true,
+            taxId: true
+          }
+        }
+      },
+      orderBy: [
+        { entertainerId: 'asc' },
+        { checkInTime: 'asc' }
+      ]
+    });
+
+    // Get all financial transactions for these entertainers
+    const entertainerIds = [...new Set(checkIns.map(c => c.entertainerId))];
+
+    const transactions = await prisma.financialTransaction.findMany({
+      where: {
+        clubId,
+        entertainerId: { in: entertainerIds },
+        createdAt: {
+          gte: start,
+          lte: end
+        }
+      },
+      include: {
+        entertainer: {
+          select: {
+            id: true,
+            stageName: true
+          }
+        }
+      }
+    });
+
+    // Group data by entertainer
+    const payrollData = entertainerIds.map(entertainerId => {
+      const entertainerCheckIns = checkIns.filter(c => c.entertainerId === entertainerId);
+      const entertainerTransactions = transactions.filter(t => t.entertainerId === entertainerId);
+      const entertainer = entertainerCheckIns[0]?.entertainer;
+
+      if (!entertainer) return null;
+
+      // Calculate shift statistics
+      const completedShifts = entertainerCheckIns.filter(c => c.status === 'CHECKED_OUT');
+      const totalShifts = entertainerCheckIns.length;
+
+      const totalMinutes = completedShifts.reduce((sum, c) => {
+        if (c.checkOutTime && c.checkInTime) {
+          return sum + (new Date(c.checkOutTime) - new Date(c.checkInTime)) / (1000 * 60);
+        }
+        return sum;
+      }, 0);
+
+      const totalHours = totalMinutes / 60;
+
+      // Calculate financial totals
+      const financialSummary = entertainerTransactions.reduce((acc, tx) => {
+        const amount = parseFloat(tx.amount);
+        const category = tx.category || 'OTHER';
+
+        if (!acc.byCategory[category]) {
+          acc.byCategory[category] = 0;
+        }
+
+        acc.byCategory[category] += amount;
+        acc.total += amount;
+
+        if (tx.status === 'PAID') {
+          acc.paid += amount;
+        } else if (tx.status === 'PENDING') {
+          acc.pending += amount;
+        }
+
+        return acc;
+      }, {
+        total: 0,
+        paid: 0,
+        pending: 0,
+        byCategory: {}
+      });
+
+      return {
+        entertainerId,
+        stageName: entertainer.stageName,
+        legalName: entertainer.legalName,
+        phone: entertainer.phone,
+        email: entertainer.email,
+        taxId: entertainer.taxId,
+        totalShifts,
+        completedShifts: completedShifts.length,
+        totalHours: parseFloat(totalHours.toFixed(2)),
+        totalFees: parseFloat(financialSummary.total.toFixed(2)),
+        feesPaid: parseFloat(financialSummary.paid.toFixed(2)),
+        feesPending: parseFloat(financialSummary.pending.toFixed(2)),
+        barFees: parseFloat((financialSummary.byCategory['BAR_FEE'] || 0).toFixed(2)),
+        vipFees: parseFloat((financialSummary.byCategory['VIP_HOUSE_FEE'] || 0).toFixed(2)),
+        lateFees: parseFloat((financialSummary.byCategory['LATE_FEE'] || 0).toFixed(2)),
+        otherFees: parseFloat((financialSummary.byCategory['OTHER'] || 0).toFixed(2)),
+        shifts: entertainerCheckIns.map(c => ({
+          date: c.checkInTime.toISOString().split('T')[0],
+          checkIn: c.checkInTime,
+          checkOut: c.checkOutTime,
+          status: c.status,
+          hours: c.checkOutTime && c.checkInTime
+            ? parseFloat(((new Date(c.checkOutTime) - new Date(c.checkInTime)) / (1000 * 60 * 60)).toFixed(2))
+            : null
+        }))
+      };
+    }).filter(Boolean);
+
+    if (format === 'csv') {
+      // Generate CSV
+      const csvHeaders = [
+        'Entertainer ID',
+        'Stage Name',
+        'Legal Name',
+        'Phone',
+        'Email',
+        'Tax ID',
+        'Total Shifts',
+        'Completed Shifts',
+        'Total Hours',
+        'Total Fees',
+        'Fees Paid',
+        'Fees Pending',
+        'Bar Fees',
+        'VIP Fees',
+        'Late Fees',
+        'Other Fees'
+      ];
+
+      const csvRows = payrollData.map(p => [
+        p.entertainerId,
+        p.stageName,
+        p.legalName || '',
+        p.phone || '',
+        p.email || '',
+        p.taxId || '',
+        p.totalShifts,
+        p.completedShifts,
+        p.totalHours,
+        p.totalFees,
+        p.feesPaid,
+        p.feesPending,
+        p.barFees,
+        p.vipFees,
+        p.lateFees,
+        p.otherFees
+      ]);
+
+      const csv = [
+        csvHeaders.join(','),
+        ...csvRows.map(row => row.map(cell =>
+          typeof cell === 'string' && cell.includes(',') ? `"${cell}"` : cell
+        ).join(','))
+      ].join('\n');
+
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', `attachment; filename="payroll_${startDate}_${endDate}.csv"`);
+      return res.send(csv);
+    }
+
+    // Return JSON format
+    res.json({
+      success: true,
+      dateRange: {
+        start: startDate,
+        end: endDate
+      },
+      summary: {
+        totalEntertainers: payrollData.length,
+        totalShifts: payrollData.reduce((sum, p) => sum + p.totalShifts, 0),
+        totalHours: payrollData.reduce((sum, p) => sum + p.totalHours, 0),
+        totalFees: payrollData.reduce((sum, p) => sum + p.totalFees, 0),
+        totalPaid: payrollData.reduce((sum, p) => sum + p.feesPaid, 0),
+        totalPending: payrollData.reduce((sum, p) => sum + p.feesPending, 0)
+      },
+      payrollData
+    });
+
+  } catch (error) {
+    console.error('Payroll export error:', error);
+    res.status(500).json({ error: 'Failed to export payroll data' });
+  }
+});
+
 module.exports = router;
