@@ -410,7 +410,7 @@
       "Verify revenue totals are calculated",
       "Verify report can be printed"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 28,

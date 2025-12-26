@@ -58,7 +58,15 @@
       "Bash(TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7ImlkIjoiN2RiZDQ5OWYtYTg4MC00YWMyLTk1ZDAtYzU1NGRiYmY5ZWI3IiwiY2x1YklkIjoiMWM3Y2MzOGYtOWQ0ZS00OTViLTlmZTEtOWE3YjBjNjNmMDNkIiwicm9sZSI6Ik1BTkFHRVIifSwiaWF0IjoxNzY2NzI5MjI2LCJleHAiOjE3NjY4MTU2MjZ9.uWV5s0IdtVoE3dgRUFjFOFIdTu6kDEVE14tpmqZjgkg\")",
       "Bash(echo \"\n\n=== SESSION: 2025-12-26 ===\nFeature #19: Monthly Revenue Report with PDF Export - COMPLETE ✅\n\nIMPLEMENTED:\n- Enhanced GET /api/revenue/monthly with weekly breakdown\n- New GET /api/revenue/monthly-pdf endpoint \\(Puppeteer-based\\)\n- MonthlyReport.tsx component with:\n  - Year/month selection\n  - Summary cards \\(total, previous month, average weekly\\)\n  - Weekly breakdown bar chart\n  - Weekly breakdown table\n  - Category breakdown table\n  - One-click PDF export\n- Added route /revenue/monthly to App.tsx\n- Added Monthly Report navigation to DashboardLayout\n\nFEATURES COMPLETE: 17/50 \\(34%\\)\n\nFILES:\n- Created: frontend/src/components/revenue/MonthlyReport.tsx \\(520 lines\\)\n- Created: FEATURE_19_STATUS.md\n- Modified: backend/routes/revenue.js \\(enhanced monthly endpoint + PDF\\)\n- Modified: frontend/src/App.tsx \\(added route\\)\n- Modified: frontend/src/components/layouts/DashboardLayout.tsx \\(added nav\\)\n- Modified: feature_list.json \\(Feature #19 passes: true\\)\n\n\")",
       "Bash(echo \"\n\n=== SESSION: 2025-12-26 \\(continued\\) ===\nFeature #20: Real-time Dashboard Updates \\(WebSocket\\) - COMPLETE ✅\n\nIMPLEMENTED:\n- Added revenue-update event handler to Socket.io server\n- Modified /api/fees/collect-payment to emit revenue updates\n- Enhanced useWebSocket hook with RevenueUpdateEvent\n- Integrated real-time updates into Dashboard component\n- Added visual connection indicator \\(green pulse + timestamp\\)\n\nFEATURES COMPLETE: 18/50 \\(36%\\)\n\nFILES:\n- Created: FEATURE_20_STATUS.md\n- Modified: backend/src/server.js \\(added revenue event handler\\)\n- Modified: backend/routes/fees.js \\(emit on payment collection\\)\n- Modified: frontend/src/hooks/useWebSocket.ts \\(revenue event type\\)\n- Modified: frontend/src/components/dashboard/Dashboard.tsx \\(WebSocket integration\\)\n- Modified: feature_list.json \\(Feature #20 passes: true\\)\n\n\")",
-      "Bash(echo:*)"
+      "Bash(echo:*)",
+      "Bash(timeout 5 bash -c \"curl -s http://localhost:5000/health || echo ''Backend not running''\")",
+      "Bash(timeout 15 bash -c \"while ! curl -s http://localhost:3001/api/health > /dev/null 2>&1; do sleep 1; done; echo ''Backend started!''\")",
+      "Bash(timeout 5 bash -c \"kill -9 38592 2>/dev/null || true; echo ''Process killed''\")",
+      "Bash(timeout 15 bash -c \"npm start > /dev/null 2>&1 & echo ''Backend starting...''; sleep 10; curl -s http://localhost:3001/api/health && echo ''Backend ready!'' || echo ''Backend not responding yet''\")",
+      "Bash(timeout 5 bash -c \"kill -9 38592; sleep 2; echo ''Killed process 38592''\")",
+      "Bash(timeout 15 bash:*)",
+      "Bash(tee:*)",
+      "Bash(npx prisma migrate:*)"
     ],
     "deny": [],
     "ask": []

@@ -21,6 +21,7 @@ import Revenue from './components/revenue/Revenue'
 import MonthlyReport from './components/revenue/MonthlyReport'
 import FeeManagement from './components/fees/FeeManagement'
 import DiscrepancyReport from './components/fees/DiscrepancyReport'
+import { LateFeeManagement } from './components/fees/LateFeeManagement'
 import ScheduleManager from './components/schedule/ScheduleManager'
 import Settings from './components/settings/Settings'
 
@@ -41,6 +42,10 @@ import InvestorPage from './pages/InvestorPage'
 // Onboarding
 import { OnboardingFlow } from './components/onboarding/OnboardingFlow'
 import { useOnboarding } from './contexts/OnboardingContext'
+
+// Compliance
+import { EntertainerOnboarding } from './components/onboarding/EntertainerOnboarding'
+import { ComplianceDashboard } from './components/compliance/ComplianceDashboard'
 
 function App() {
   const dispatch = useDispatch<AppDispatch>()
@@ -170,6 +175,14 @@ function App() {
           </ProtectedRoute>
         } />
 
+        <Route path="/fees/late" element={
+          <ProtectedRoute>
+            <DashboardLayout>
+              <LateFeeManagement />
+            </DashboardLayout>
+          </ProtectedRoute>
+        } />
+
         <Route path="/discrepancy" element={
           <ProtectedRoute>
             <DashboardLayout>
@@ -216,6 +229,21 @@ function App() {
             <DashboardLayout>
               <Settings />
             </DashboardLayout>
+          </ProtectedRoute>
+        } />
+
+        {/* Compliance Routes */}
+        <Route path="/compliance" element={
+          <ProtectedRoute>
+            <DashboardLayout>
+              <ComplianceDashboard />
+            </DashboardLayout>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/onboarding/:entertainerId" element={
+          <ProtectedRoute>
+            <EntertainerOnboarding />
           </ProtectedRoute>
         } />
 

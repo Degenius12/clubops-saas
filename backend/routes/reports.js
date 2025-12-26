@@ -32,7 +32,7 @@ router.get('/nightly-closeout', [
     const shifts = await prisma.shift.findMany({
       where: {
         clubId,
-        openedAt: {
+        startedAt: {
           gte: reportDate,
           lte: endDate
         }
@@ -48,7 +48,7 @@ router.get('/nightly-closeout', [
         }
       },
       orderBy: {
-        openedAt: 'asc'
+        startedAt: 'asc'
       }
     });
 
@@ -60,7 +60,7 @@ router.get('/nightly-closeout', [
     const checkIns = await prisma.entertainerCheckIn.findMany({
       where: {
         clubId,
-        checkInTime: {
+        checkedInAt: {
           gte: reportDate,
           lte: endDate
         }
@@ -146,7 +146,7 @@ router.get('/nightly-closeout', [
     const vipSessions = await prisma.vipSession.findMany({
       where: {
         clubId,
-        startTime: {
+        startedAt: {
           gte: reportDate,
           lte: endDate
         }
@@ -179,12 +179,12 @@ router.get('/nightly-closeout', [
 
     // Calculate average session duration
     const completedVipSessions = vipSessions.filter(s =>
-      s.status === 'COMPLETED' && s.startTime && s.endTime
+      s.status === 'COMPLETED' && s.startedAt && s.endedAt
     );
 
     if (completedVipSessions.length > 0) {
       vipSummary.avgSessionDuration = completedVipSessions.reduce((sum, s) => {
-        const duration = (new Date(s.endTime) - new Date(s.startTime)) / (1000 * 60); // minutes
+        const duration = (new Date(s.endedAt) - new Date(s.startedAt)) / (1000 * 60); // minutes
         return sum + duration;
       }, 0) / completedVipSessions.length;
     }
@@ -214,7 +214,7 @@ router.get('/nightly-closeout', [
     const auditLogs = await prisma.auditLog.findMany({
       where: {
         clubId,
-        timestamp: {
+        createdAt: {
           gte: reportDate,
           lte: endDate
         }
@@ -293,12 +293,12 @@ router.get('/nightly-closeout', [
           id: s.id,
           level: s.shiftLevel,
           name: s.shiftName,
-          openedAt: s.openedAt,
-          closedAt: s.closedAt,
+          startedAt: s.startedAt,
+          endedAt: s.endedAt,
           status: s.status,
           openedBy: `${s.user.firstName} ${s.user.lastName}`,
-          openingCash: parseFloat(s.openingCash || 0),
-          closingCash: parseFloat(s.closingCash || 0)
+          totalRevenue: parseFloat(s.totalRevenue || 0),
+          totalCollected: parseFloat(s.totalCollected || 0)
         }))
       },
 
@@ -394,17 +394,17 @@ router.get('/history', [
         status: 'COMPLETED'
       },
       select: {
-        openedAt: true
+        startedAt: true
       },
       orderBy: {
-        openedAt: 'desc'
+        startedAt: 'desc'
       },
       take: parseInt(limit) * 2 // Get more to ensure we have enough unique dates
     });
 
     // Extract unique dates
     const uniqueDates = [...new Set(shifts.map(s => {
-      const date = new Date(s.openedAt);
+      const date = new Date(s.startedAt);
       date.setHours(0, 0, 0, 0);
       return date.toISOString().split('T')[0];
     }))].slice(0, parseInt(limit));
@@ -452,7 +452,7 @@ router.get('/payroll-export', [
     const checkIns = await prisma.entertainerCheckIn.findMany({
       where: {
         clubId,
-        checkInTime: {
+        checkedInAt: {
           gte: start,
           lte: end
         }
@@ -464,14 +464,13 @@ router.get('/payroll-export', [
             stageName: true,
             legalName: true,
             phone: true,
-            email: true,
-            taxId: true
+            email: true
           }
         }
       },
       orderBy: [
         { entertainerId: 'asc' },
-        { checkInTime: 'asc' }
+        { checkedInAt: 'asc' }
       ]
     });
 
@@ -510,8 +509,8 @@ router.get('/payroll-export', [
       const totalShifts = entertainerCheckIns.length;
 
       const totalMinutes = completedShifts.reduce((sum, c) => {
-        if (c.checkOutTime && c.checkInTime) {
-          return sum + (new Date(c.checkOutTime) - new Date(c.checkInTime)) / (1000 * 60);
+        if (c.checkedOutAt && c.checkedInAt) {
+          return sum + (new Date(c.checkedOutAt) - new Date(c.checkedInAt)) / (1000 * 60);
         }
         return sum;
       }, 0);
@@ -550,7 +549,6 @@ router.get('/payroll-export', [
         legalName: entertainer.legalName,
         phone: entertainer.phone,
         email: entertainer.email,
-        taxId: entertainer.taxId,
         totalShifts,
         completedShifts: completedShifts.length,
         totalHours: parseFloat(totalHours.toFixed(2)),
@@ -562,12 +560,12 @@ router.get('/payroll-export', [
         lateFees: parseFloat((financialSummary.byCategory['LATE_FEE'] || 0).toFixed(2)),
         otherFees: parseFloat((financialSummary.byCategory['OTHER'] || 0).toFixed(2)),
         shifts: entertainerCheckIns.map(c => ({
-          date: c.checkInTime.toISOString().split('T')[0],
-          checkIn: c.checkInTime,
-          checkOut: c.checkOutTime,
+          date: c.checkedInAt.toISOString().split('T')[0],
+          checkIn: c.checkedInAt,
+          checkOut: c.checkedOutAt,
           status: c.status,
-          hours: c.checkOutTime && c.checkInTime
-            ? parseFloat(((new Date(c.checkOutTime) - new Date(c.checkInTime)) / (1000 * 60 * 60)).toFixed(2))
+          hours: c.checkedOutAt && c.checkedInAt
+            ? parseFloat(((new Date(c.checkedOutAt) - new Date(c.checkedInAt)) / (1000 * 60 * 60)).toFixed(2))
             : null
         }))
       };
@@ -581,7 +579,6 @@ router.get('/payroll-export', [
         'Legal Name',
         'Phone',
         'Email',
-        'Tax ID',
         'Total Shifts',
         'Completed Shifts',
         'Total Hours',
@@ -600,7 +597,6 @@ router.get('/payroll-export', [
         p.legalName || '',
         p.phone || '',
         p.email || '',
-        p.taxId || '',
         p.totalShifts,
         p.completedShifts,
         p.totalHours,

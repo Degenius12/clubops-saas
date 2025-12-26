@@ -563,9 +563,10 @@ router.get('/:id/performance-history', auth, authorize('owner', 'manager'), asyn
       include: {
         shift: {
           select: {
-            shiftType: true,
-            startTime: true,
-            endTime: true
+            shiftLevel: true,
+            shiftName: true,
+            startedAt: true,
+            endedAt: true
           }
         }
       }
@@ -583,7 +584,8 @@ router.get('/:id/performance-history', auth, authorize('owner', 'manager'), asyn
         checkInDate: checkIn.checkedInAt,
         checkOutDate: checkIn.checkedOutAt,
         durationHours: durationHours.toFixed(2),
-        shiftType: checkIn.shift?.shiftType || 'unknown',
+        shiftLevel: checkIn.shift?.shiftLevel || null,
+        shiftName: checkIn.shift?.shiftName || 'N/A',
         barFeeAmount: parseFloat(checkIn.barFeeAmount),
         barFeeStatus: checkIn.barFeeStatus,
         status: checkIn.status

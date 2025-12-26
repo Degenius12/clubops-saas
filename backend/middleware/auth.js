@@ -63,8 +63,12 @@ const authorize = (...roles) => {
       return res.status(401).json({ error: 'Not authenticated' });
     }
 
-    if (!roles.includes(req.user.role)) {
-      return res.status(403).json({ 
+    // Case-insensitive role comparison
+    const userRole = req.user.role.toUpperCase();
+    const allowedRoles = roles.map(r => r.toUpperCase());
+
+    if (!allowedRoles.includes(userRole)) {
+      return res.status(403).json({
         error: 'Access denied',
         message: `Requires one of: ${roles.join(', ')}`
       });

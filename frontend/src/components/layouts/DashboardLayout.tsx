@@ -26,7 +26,8 @@ import {
   ClockIcon,
   ExclamationTriangleIcon,
   DocumentChartBarIcon,
-  CalendarIcon
+  CalendarIcon,
+  DocumentTextIcon
 } from '@heroicons/react/24/outline'
 
 interface DashboardLayoutProps {
@@ -82,8 +83,10 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
     { name: 'Revenue', href: '/revenue', icon: CurrencyDollarIcon, roles: ['OWNER', 'SUPER_MANAGER', 'MANAGER'] },
     { name: 'Monthly Report', href: '/revenue/monthly', icon: DocumentChartBarIcon, roles: ['OWNER', 'SUPER_MANAGER', 'MANAGER'] },
     { name: 'Fees', href: '/fees', icon: BanknotesIcon, roles: ['OWNER', 'SUPER_MANAGER', 'MANAGER'] },
+    { name: 'Late Fees', href: '/fees/late', icon: ClockIcon, roles: ['OWNER', 'SUPER_MANAGER', 'MANAGER'] },
     { name: 'Discrepancies', href: '/discrepancy', icon: ExclamationTriangleIcon, roles: ['OWNER', 'SUPER_MANAGER', 'MANAGER'] },
     { name: 'Schedule', href: '/schedule', icon: CalendarIcon, roles: ['OWNER', 'SUPER_MANAGER', 'MANAGER'] },
+    { name: 'Compliance', href: '/compliance', icon: DocumentTextIcon, roles: ['OWNER', 'SUPER_MANAGER', 'MANAGER'] },
     { name: 'Security', href: '/security', icon: ShieldCheckIcon, roles: ['OWNER', 'SUPER_MANAGER'] },
   ]
 
