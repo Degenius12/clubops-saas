@@ -441,7 +441,7 @@
       "Verify dashboard updates to selected club",
       "Verify all data reflects selected club"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 30,
@@ -455,7 +455,7 @@
       "Verify breakdown by club is available",
       "Verify comparison charts work"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 31,
