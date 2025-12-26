@@ -4,27 +4,33 @@ import { io, Socket } from 'socket.io-client';
 import { API_BASE_URL } from '../config/api';
 
 // Event Types
-export interface DancerCheckInEvent {
+export interface EntertainerCheckInEvent {
   checkInId: string;
-  dancerId: string;
+  entertainerId: string; // Updated from dancerId
   stageName: string;
   checkInTime: string;
   barFeeStatus: string;
 }
 
-export interface DancerCheckOutEvent {
+// Backward compatibility alias
+export type DancerCheckInEvent = EntertainerCheckInEvent;
+
+export interface EntertainerCheckOutEvent {
   checkInId: string;
-  dancerId: string;
+  entertainerId: string; // Updated from dancerId
   stageName: string;
   checkOutTime: string;
 }
+
+// Backward compatibility alias
+export type DancerCheckOutEvent = EntertainerCheckOutEvent;
 
 export interface VipSessionStartEvent {
   sessionId: string;
   boothId: string;
   boothName: string;
-  dancerId: string;
-  dancerName: string;
+  entertainerId: string; // Updated from dancerId (API still uses dancer_id)
+  entertainerName: string; // Updated from dancerName (API still uses dancer_name)
   startTime: string;
 }
 
@@ -32,8 +38,8 @@ export interface VipSessionEndEvent {
   sessionId: string;
   boothId: string;
   boothName: string;
-  dancerId: string;
-  dancerName: string;
+  entertainerId: string; // Updated from dancerId (API still uses dancer_id)
+  entertainerName: string; // Updated from dancerName (API still uses dancer_name)
   endTime: string;
   songCount: number;
   verificationStatus: string;
@@ -64,10 +70,23 @@ export interface ShiftEvent {
   timestamp: string;
 }
 
+// Revenue Update Event (Feature #20)
+export interface RevenueUpdateEvent {
+  clubId: string;
+  type: string;
+  amount: number;
+  entertainerId?: string;
+  stageName?: string;
+  timestamp: string;
+}
+
 // Hook Options
 interface UseWebSocketOptions {
   clubId: string;
   enabled?: boolean;
+  onEntertainerCheckIn?: (event: EntertainerCheckInEvent) => void;
+  onEntertainerCheckOut?: (event: EntertainerCheckOutEvent) => void;
+  // Backward compatibility aliases
   onDancerCheckIn?: (event: DancerCheckInEvent) => void;
   onDancerCheckOut?: (event: DancerCheckOutEvent) => void;
   onVipSessionStart?: (event: VipSessionStartEvent) => void;
@@ -76,6 +95,7 @@ interface UseWebSocketOptions {
   onNewAlert?: (event: AlertEvent) => void;
   onShiftStart?: (event: ShiftEvent) => void;
   onShiftEnd?: (event: ShiftEvent) => void;
+  onRevenueUpdate?: (event: RevenueUpdateEvent) => void;
 }
 
 // Hook Return Type
@@ -90,14 +110,17 @@ export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
   const {
     clubId,
     enabled = true,
-    onDancerCheckIn,
-    onDancerCheckOut,
+    onEntertainerCheckIn,
+    onEntertainerCheckOut,
+    onDancerCheckIn, // Backward compatibility
+    onDancerCheckOut, // Backward compatibility
     onVipSessionStart,
     onVipSessionEnd,
     onVipSongCount,
     onNewAlert,
     onShiftStart,
     onShiftEnd,
+    onRevenueUpdate,
   } = options;
 
   const socketRef = useRef<Socket | null>(null);
@@ -105,28 +128,31 @@ export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
   const [connectionError, setConnectionError] = useState<string | null>(null);
 
   // Store callbacks in refs to avoid dependency issues
+  // Support both new (entertainer) and old (dancer) callback names
   const callbacksRef = useRef({
-    onDancerCheckIn,
-    onDancerCheckOut,
+    onEntertainerCheckIn: onEntertainerCheckIn || onDancerCheckIn,
+    onEntertainerCheckOut: onEntertainerCheckOut || onDancerCheckOut,
     onVipSessionStart,
     onVipSessionEnd,
     onVipSongCount,
     onNewAlert,
     onShiftStart,
     onShiftEnd,
+    onRevenueUpdate,
   });
 
   // Update refs when callbacks change
   useEffect(() => {
     callbacksRef.current = {
-      onDancerCheckIn,
-      onDancerCheckOut,
+      onEntertainerCheckIn: onEntertainerCheckIn || onDancerCheckIn,
+      onEntertainerCheckOut: onEntertainerCheckOut || onDancerCheckOut,
       onVipSessionStart,
       onVipSessionEnd,
       onVipSongCount,
       onNewAlert,
       onShiftStart,
       onShiftEnd,
+      onRevenueUpdate,
     };
   });
 
@@ -174,14 +200,14 @@ export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
     });
 
     // Business events - use refs to get latest callbacks
-    socket.on('dancer-checked-in', (event: DancerCheckInEvent) => {
-      console.log('📥 Dancer checked in:', event);
-      callbacksRef.current.onDancerCheckIn?.(event);
+    socket.on('dancer-checked-in', (event: EntertainerCheckInEvent) => {
+      console.log('📥 Entertainer checked in:', event);
+      callbacksRef.current.onEntertainerCheckIn?.(event);
     });
 
-    socket.on('dancer-checked-out', (event: DancerCheckOutEvent) => {
-      console.log('📤 Dancer checked out:', event);
-      callbacksRef.current.onDancerCheckOut?.(event);
+    socket.on('dancer-checked-out', (event: EntertainerCheckOutEvent) => {
+      console.log('📤 Entertainer checked out:', event);
+      callbacksRef.current.onEntertainerCheckOut?.(event);
     });
 
     socket.on('vip-session-started', (event: VipSessionStartEvent) => {
@@ -214,6 +240,11 @@ export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
       callbacksRef.current.onShiftEnd?.(event);
     });
 
+    socket.on('revenue-updated', (event: RevenueUpdateEvent) => {
+      console.log('💰 Revenue updated:', event);
+      callbacksRef.current.onRevenueUpdate?.(event);
+    });
+
     return socket;
   }, [clubId, enabled]);
 
@@ -234,11 +265,12 @@ export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
 
   // Setup and cleanup
   useEffect(() => {
-    const socket = connect();
+    connect();
 
     return () => {
-      if (socket) {
-        socket.disconnect();
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+        socketRef.current = null;
       }
     };
   }, [connect]);

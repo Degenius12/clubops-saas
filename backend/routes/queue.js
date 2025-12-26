@@ -96,7 +96,7 @@ router.post('/', async (req, res) => {
     const { dancerId, stageName, songRequest, durationMinutes } = req.body;
 
     // Validate dancer exists
-    const dancer = await prisma.dancer.findFirst({
+    const dancer = await prisma.entertainer.findFirst({
       where: { id: dancerId, clubId }
     });
 

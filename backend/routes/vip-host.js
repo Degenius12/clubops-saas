@@ -64,7 +64,7 @@ router.get('/available-dancers', auth, async (req, res) => {
     today.setHours(0, 0, 0, 0);
 
     // Get checked-in dancers not currently in VIP session
-    const checkedInDancers = await prisma.dancerCheckIn.findMany({
+    const checkedInDancers = await prisma.entertainerCheckIn.findMany({
       where: {
         clubId: req.user.clubId,
         checkedInAt: { gte: today },
@@ -88,14 +88,14 @@ router.get('/available-dancers', auth, async (req, res) => {
         clubId: req.user.clubId,
         status: 'ACTIVE'
       },
-      select: { dancerId: true }
+      select: { entertainerId: true }
     });
 
-    const busyDancerIds = new Set(activeVipDancerIds.map(s => s.dancerId));
+    const busyDancerIds = new Set(activeVipDancerIds.map(s => s.entertainerId));
 
     // Filter to available dancers
     const availableDancers = checkedInDancers
-      .filter(ci => !busyDancerIds.has(ci.dancerId))
+      .filter(ci => !busyDancerIds.has(ci.entertainerId))
       .map(ci => ({
         ...ci.dancer,
         checkInId: ci.id,
@@ -194,7 +194,7 @@ router.post('/sessions/start', [
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const dancerCheckIn = await prisma.dancerCheckIn.findFirst({
+    const entertainerCheckIn = await prisma.entertainerCheckIn.findFirst({
       where: {
         clubId: req.user.clubId,
         dancerId,
@@ -206,7 +206,7 @@ router.post('/sessions/start', [
       }
     });
 
-    if (!dancerCheckIn) {
+    if (!entertainerCheckIn) {
       // Create alert for unchecked dancer
       await prisma.verificationAlert.create({
         data: {
@@ -297,7 +297,7 @@ router.post('/sessions/start', [
           newData: {
             boothId,
             dancerId,
-            stageName: dancerCheckIn.dancer.stageName,
+            stageName: entertainerCheckIn.dancer.stageName,
             customerName,
             songRate: parseFloat(songRate)
           },
@@ -460,7 +460,7 @@ router.post('/sessions/:id/end', [
         await tx.financialTransaction.create({
           data: {
             clubId: req.user.clubId,
-            dancerId: session.dancerId,
+            entertainerId: session.entertainerId,
             transactionType: 'VIP_HOUSE_FEE',
             category: 'VIP_HOUSE_FEE',
             amount: houseFeeOwed,
@@ -490,7 +490,7 @@ router.post('/sessions/:id/end', [
             actualValue: finalSongCount.toString(),
             discrepancy: discrepancy.toString(),
             involvedUserId: req.user.id,
-            involvedDancerId: session.dancerId
+            involvedDancerId: session.entertainerId
           }
         });
       }
@@ -531,7 +531,7 @@ router.post('/sessions/:id/end', [
       req.app.get('io').to(`club-${req.user.clubId}`).emit('vip-session-ended', {
         sessionId: req.params.id,
         boothId: session.boothId,
-        dancerId: session.dancerId
+        entertainerId: session.entertainerId
       });
     }
 
@@ -681,7 +681,7 @@ router.post('/sessions/:id/customer-dispute', [
           title: `Customer dispute: ${session.booth.boothName}`,
           description: `Customer disputed ${session.songCountFinal || session.songCountManual} songs. Reason: ${req.body.reason || 'Not provided'}`,
           involvedUserId: session.startedById,
-          involvedDancerId: session.dancerId
+          involvedDancerId: session.entertainerId
         }
       });
 
@@ -804,7 +804,7 @@ router.get('/sessions/history', auth, async (req, res) => {
       if (startDate) where.startedAt.gte = new Date(startDate);
       if (endDate) where.startedAt.lte = new Date(endDate);
     }
-    if (dancerId) where.dancerId = dancerId;
+    if (dancerId) where.entertainerId = dancerId;
     if (boothId) where.boothId = boothId;
     if (status) where.status = status;
 

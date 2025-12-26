@@ -16,12 +16,18 @@
  * - Time-series decomposition
  */
 
-const { VipSession, DancerCheckIn, FinancialTransaction, Shift, CashDrawer, User } = require('../models');
-// Note: Prisma doesn't use Sequelize operators
-const Op = {};
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
 
 class AnomalyDetectionService {
   constructor() {
+    // Helper to get full name from user object
+    this.getFullName = (user) => {
+      if (!user) return 'Unknown';
+      if (user.name) return user.name; // Legacy support
+      return `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Unknown';
+    };
+
     // Statistical thresholds
     this.THRESHOLDS = {
       Z_SCORE_OUTLIER: 2.5,           // Standard deviations from mean
@@ -110,19 +116,23 @@ class AnomalyDetectionService {
       // Get VIP sessions with all count sources
       const where = {
         clubId,
-        endedAt: { [Op.gte]: startDate },
-        verificationStatus: { [Op.ne]: 'VERIFIED' } // Skip already verified
+        endedAt: { gte: startDate },
+        verificationStatus: { not: 'VERIFIED' } // Skip already verified
       };
 
       if (sessionId) where.id = sessionId;
 
-      const sessions = await VipSession.findAll({
+      const sessions = await prisma.vipSession.findMany({
         where,
-        include: [
-          { model: User, as: 'startedBy', attributes: ['id', 'name', 'email', 'role'] },
-          { model: User, as: 'endedBy', attributes: ['id', 'name', 'email', 'role'] }
-        ],
-        order: [['endedAt', 'DESC']]
+        include: {
+          startedBy: {
+            select: { id: true, firstName: true, lastName: true, email: true, role: true }
+          },
+          endedBy: {
+            select: { id: true, firstName: true, lastName: true, email: true, role: true }
+          }
+        },
+        orderBy: { endedAt: 'desc' }
       });
 
       if (sessions.length === 0) return anomalies;
@@ -156,7 +166,7 @@ class AnomalyDetectionService {
               zScore: analysis.zScore,
               percentile: analysis.percentile,
               vipHostId: session.startedById,
-              vipHostName: session.startedBy?.name,
+              vipHostName: this.getFullName(session.startedBy),
               overridden: !!session.overrideById,
               overrideReason: session.overrideReason
             },
@@ -271,12 +281,12 @@ class AnomalyDetectionService {
 
     try {
       // Get all employees (or specific employee)
-      const employeeWhere = { clubId };
+      const employeeWhere = { clubId, isActive: true };
       if (employeeId) employeeWhere.id = employeeId;
 
-      const employees = await User.findAll({
+      const employees = await prisma.clubUser.findMany({
         where: employeeWhere,
-        attributes: ['id', 'name', 'email', 'role']
+        select: { id: true, firstName: true, lastName: true, email: true, role: true }
       });
 
       for (const employee of employees) {
@@ -302,11 +312,11 @@ class AnomalyDetectionService {
 
     try {
       // Get employee's VIP sessions
-      const vipSessions = await VipSession.findAll({
+      const vipSessions = await prisma.vipSession.findMany({
         where: {
           clubId,
-          endedAt: { [Op.gte]: startDate },
-          [Op.or]: [
+          endedAt: { gte: startDate },
+          OR: [
             { startedById: employee.id },
             { endedById: employee.id }
           ]
@@ -314,10 +324,10 @@ class AnomalyDetectionService {
       });
 
       // Get employee's check-ins (if door staff)
-      const checkIns = await DancerCheckIn.findAll({
+      const checkIns = await prisma.dancerCheckIn.findMany({
         where: {
           clubId,
-          checkedInAt: { [Op.gte]: startDate },
+          checkedInAt: { gte: startDate },
           performedById: employee.id
         }
       });
@@ -361,11 +371,11 @@ class AnomalyDetectionService {
           severity: metrics.avgVariance > 8 ? 'HIGH' : 'MEDIUM',
           entityType: 'User',
           entityId: employee.id,
-          title: `High Variance Pattern: ${employee.name}`,
+          title: `High Variance Pattern: ${this.getFullName(employee)}`,
           message: `Employee has consistently high song count variance (avg ${metrics.avgVariance.toFixed(1)} songs) across ${vipSessions.length} sessions`,
           details: {
             employeeId: employee.id,
-            employeeName: employee.name,
+            employeeName: this.getFullName(employee),
             employeeRole: employee.role,
             avgVariance: metrics.avgVariance,
             sessionCount: vipSessions.length,
@@ -384,11 +394,11 @@ class AnomalyDetectionService {
           severity: 'MEDIUM',
           entityType: 'User',
           entityId: employee.id,
-          title: `Declining Performance: ${employee.name}`,
+          title: `Declining Performance: ${this.getFullName(employee)}`,
           message: `Employee's variance is increasing over time - accuracy declining`,
           details: {
             employeeId: employee.id,
-            employeeName: employee.name,
+            employeeName: this.getFullName(employee),
             trend: metrics.varianceTrend,
             avgVariance: metrics.avgVariance,
             sessionCount: vipSessions.length
@@ -405,11 +415,11 @@ class AnomalyDetectionService {
           severity: metrics.collectionRate < 90 ? 'HIGH' : 'MEDIUM',
           entityType: 'User',
           entityId: employee.id,
-          title: `Low Collection Rate: ${employee.name}`,
+          title: `Low Collection Rate: ${this.getFullName(employee)}`,
           message: `Employee collecting bar fees at only ${metrics.collectionRate.toFixed(1)}% rate (expected ≥${this.THRESHOLDS.COLLECTION_RATE_MIN}%)`,
           details: {
             employeeId: employee.id,
-            employeeName: employee.name,
+            employeeName: this.getFullName(employee),
             collectionRate: metrics.collectionRate,
             checkInCount: checkIns.length,
             missed: checkIns.length - checkIns.filter(c => c.barFeeStatus === 'PAID').length
@@ -426,11 +436,11 @@ class AnomalyDetectionService {
           severity: metrics.flaggedCount >= 5 ? 'CRITICAL' : 'HIGH',
           entityType: 'User',
           entityId: employee.id,
-          title: `Repeated Violations: ${employee.name}`,
+          title: `Repeated Violations: ${this.getFullName(employee)}`,
           message: `Employee has ${metrics.flaggedCount} flagged incidents out of ${vipSessions.length} sessions`,
           details: {
             employeeId: employee.id,
-            employeeName: employee.name,
+            employeeName: this.getFullName(employee),
             flaggedCount: metrics.flaggedCount,
             totalSessions: vipSessions.length,
             flaggedPercentage: ((metrics.flaggedCount / vipSessions.length) * 100).toFixed(1)
@@ -459,13 +469,13 @@ class AnomalyDetectionService {
 
     try {
       // Get daily revenue totals
-      const transactions = await FinancialTransaction.findAll({
+      const transactions = await prisma.financialTransaction.findMany({
         where: {
           clubId,
-          createdAt: { [Op.gte]: startDate }
+          createdAt: { gte: startDate }
         },
-        attributes: ['amount', 'paymentMethod', 'sourceType', 'createdAt'],
-        order: [['createdAt', 'ASC']]
+        select: { amount: true, paymentMethod: true, sourceType: true, createdAt: true },
+        orderBy: { createdAt: 'asc' }
       });
 
       if (transactions.length < 7) return anomalies; // Need at least a week of data
@@ -543,15 +553,16 @@ class AnomalyDetectionService {
     startDate.setDate(startDate.getDate() - period);
 
     try {
-      const drawers = await CashDrawer.findAll({
+      const drawers = await prisma.cashDrawer.findMany({
         where: {
           clubId,
-          closedAt: { [Op.gte]: startDate }
+          closedAt: { gte: startDate }
         },
-        include: [
-          { model: User, as: 'openedBy', attributes: ['id', 'name', 'role'] },
-          { model: User, as: 'closedBy', attributes: ['id', 'name', 'role'] }
-        ]
+        include: {
+          user: {
+            select: { id: true, firstName: true, lastName: true, role: true }
+          }
+        }
       });
 
       for (const drawer of drawers) {
@@ -566,12 +577,12 @@ class AnomalyDetectionService {
             entityType: 'CashDrawer',
             entityId: drawer.id,
             title: `Cash Drawer Variance: $${variance.toFixed(2)}`,
-            message: `Drawer closed by ${drawer.closedBy?.name} has variance of $${variance.toFixed(2)} (${drawer.actualBalance > drawer.expectedBalance ? 'overage' : 'shortage'})`,
+            message: `Drawer closed by ${this.getFullName(drawer.user)} has variance of $${variance.toFixed(2)} (${drawer.actualBalance > drawer.expectedBalance ? 'overage' : 'shortage'})`,
             details: {
               drawerId: drawer.id,
               shiftId: drawer.shiftId,
-              employeeId: drawer.closedById,
-              employeeName: drawer.closedBy?.name,
+              employeeId: drawer.userId,
+              employeeName: this.getFullName(drawer.user),
               openingBalance: drawer.openingBalance,
               expectedBalance: drawer.expectedBalance,
               actualBalance: drawer.actualBalance,
@@ -604,16 +615,20 @@ class AnomalyDetectionService {
 
     try {
       // Look for repeating variance patterns by employee
-      const sessions = await VipSession.findAll({
-        where: {
-          clubId,
-          endedAt: { [Op.gte]: startDate },
-          ...(employeeId && { startedById: employeeId })
+      const where = {
+        clubId,
+        endedAt: { gte: startDate }
+      };
+      if (employeeId) where.startedById = employeeId;
+
+      const sessions = await prisma.vipSession.findMany({
+        where,
+        include: {
+          startedBy: {
+            select: { id: true, firstName: true, lastName: true }
+          }
         },
-        include: [
-          { model: User, as: 'startedBy', attributes: ['id', 'name'] }
-        ],
-        order: [['endedAt', 'ASC']]
+        orderBy: { endedAt: 'asc' }
       });
 
       // Group by employee
@@ -645,11 +660,11 @@ class AnomalyDetectionService {
             severity: 'CRITICAL',
             entityType: 'User',
             entityId: empId,
-            title: `Systematic Over-Reporting: ${data.employee?.name}`,
+            title: `Systematic Over-Reporting: ${this.getFullName(data.employee)}`,
             message: `Employee consistently reports ${(positiveCount / variances.length * 100).toFixed(0)}% of sessions higher than calculated - possible systematic fraud`,
             details: {
               employeeId: empId,
-              employeeName: data.employee?.name,
+              employeeName: this.getFullName(data.employee),
               totalSessions: data.sessions.length,
               overReportedCount: positiveCount,
               percentage: (positiveCount / variances.length * 100).toFixed(1),
@@ -672,11 +687,11 @@ class AnomalyDetectionService {
             severity: 'MEDIUM',
             entityType: 'User',
             entityId: empId,
-            title: `Rounding Pattern: ${data.employee?.name}`,
+            title: `Rounding Pattern: ${this.getFullName(data.employee)}`,
             message: `Employee consistently rounds song counts up in ${(roundedUp / data.sessions.length * 100).toFixed(0)}% of sessions`,
             details: {
               employeeId: empId,
-              employeeName: data.employee?.name,
+              employeeName: this.getFullName(data.employee),
               totalSessions: data.sessions.length,
               roundedUpCount: roundedUp
             },
@@ -702,10 +717,10 @@ class AnomalyDetectionService {
     startDate.setDate(startDate.getDate() - period);
 
     try {
-      const sessions = await VipSession.findAll({
+      const sessions = await prisma.vipSession.findMany({
         where: {
           clubId,
-          endedAt: { [Op.gte]: startDate }
+          endedAt: { gte: startDate }
         }
       });
 

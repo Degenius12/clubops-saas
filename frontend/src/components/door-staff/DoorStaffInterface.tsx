@@ -819,7 +819,7 @@ const DoorStaffInterface: React.FC = () => {
               <XMarkIcon className="h-5 w-5 text-text-tertiary" />
             </button>
             
-            <h2 className="text-xl font-bold text-text-primary mb-6">Check In Dancer</h2>
+            <h2 className="text-xl font-bold text-text-primary mb-6">Check In Entertainer</h2>
             
             {/* Dancer Card */}
             <div className="p-5 rounded-2xl bg-midnight-800/70 border border-white/10 mb-6">

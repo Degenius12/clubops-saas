@@ -214,7 +214,7 @@ router.get('/shifts', async (req, res) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const checkIns = await prisma.dancerCheckIn.findMany({
+    const checkIns = await prisma.entertainerCheckIn.findMany({
       where: {
         clubId,
         checkedInAt: { gte: today },

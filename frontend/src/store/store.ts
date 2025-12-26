@@ -1,10 +1,11 @@
 import { configureStore } from '@reduxjs/toolkit'
 import authSlice from './slices/authSlice'
 import clubSlice from './slices/clubSlice'
-import dancerSlice from './slices/dancerSlice'
+import entertainerSlice from './slices/dancerSlice' // Renamed from dancerSlice (file will be renamed later)
 import queueSlice from './slices/queueSlice'
 import vipSlice from './slices/vipSlice'
 import revenueSlice from './slices/revenueSlice'
+import feesSlice from './slices/feesSlice'
 import subscriptionSlice from './slices/subscriptionSlice'
 // Fraud Prevention Slices
 import shiftSlice from './slices/shiftSlice'
@@ -16,10 +17,12 @@ export const store = configureStore({
   reducer: {
     auth: authSlice,
     club: clubSlice,
-    dancers: dancerSlice,
+    entertainers: entertainerSlice, // Primary name
+    dancers: entertainerSlice, // Backward compatibility alias
     queue: queueSlice,
     vip: vipSlice,
     revenue: revenueSlice,
+    fees: feesSlice,
     subscription: subscriptionSlice,
     // Fraud Prevention Reducers
     shift: shiftSlice,

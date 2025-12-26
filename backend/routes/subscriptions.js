@@ -209,7 +209,7 @@ router.post('/cancel', auth, authorize('owner'), async (req, res) => {
 router.get('/usage', auth, async (req, res) => {
   try {
     const [dancerCount, managerCount, vipRoomCount] = await Promise.all([
-      prisma.dancer.count({
+      prisma.entertainer.count({
         where: { clubId: req.user.clubId, isActive: true }
       }),
       prisma.clubUser.count({

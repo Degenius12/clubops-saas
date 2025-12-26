@@ -1,7 +1,8 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit'
 import apiClient from '../../config/api'
 
-export interface Dancer {
+// Entertainer interface (API still uses /api/dancers endpoint for backward compatibility)
+export interface Entertainer {
   id: string
   name: string
   stage_name: string
@@ -26,35 +27,47 @@ export interface Dancer {
   clubName?: string
 }
 
+// Backward compatibility alias
+export type Dancer = Entertainer
+
 export interface LicenseAlert {
-  dancer_id: string
-  dancer_name: string
+  dancer_id: string // API response field (backward compatibility)
+  dancer_name: string // API response field (backward compatibility)
   license_expiry: string
   days_until_expiry: number
   severity: 'critical' | 'warning' | 'info'
 }
 
-interface DancerState {
-  dancers: Dancer[]
-  activeDancers: Dancer[]
+interface EntertainerState {
+  entertainers: Entertainer[]
+  activeEntertainers: Entertainer[]
   licenseAlerts: LicenseAlert[]
   isLoading: boolean
   loading: boolean // alias for isLoading for compatibility
   error: string | null
-  selectedDancer: Dancer | null
-}const initialState: DancerState = {
-  dancers: [],
-  activeDancers: [],
+  selectedEntertainer: Entertainer | null
+}
+
+// Backward compatibility aliases
+interface DancerState extends EntertainerState {
+  dancers: Entertainer[]
+  activeDancers: Entertainer[]
+  selectedDancer: Entertainer | null
+}
+
+const initialState: EntertainerState = {
+  entertainers: [],
+  activeEntertainers: [],
   licenseAlerts: [],
   isLoading: false,
   loading: false,
   error: null,
-  selectedDancer: null,
+  selectedEntertainer: null,
 }
 
-// Async thunks for dancer management
-export const fetchDancers = createAsyncThunk(
-  'dancers/fetchAll',
+// Async thunks for entertainer management (API endpoints kept as /api/dancers for backward compatibility)
+export const fetchEntertainers = createAsyncThunk(
+  'entertainers/fetchAll',
   async () => {
     const response = await apiClient.get('/api/dancers')
     // Backend returns { dancers: [...], total: N } - extract the array
@@ -62,111 +75,118 @@ export const fetchDancers = createAsyncThunk(
   }
 )
 
-export const checkInDancer = createAsyncThunk(
-  'dancers/checkIn',
-  async ({ dancerId, barFeeAmount }: { dancerId: string; barFeeAmount: number }) => {
-    const response = await apiClient.post(`/api/dancers/${dancerId}/check-in`, {
+export const checkInEntertainer = createAsyncThunk(
+  'entertainers/checkIn',
+  async ({ entertainerId, barFeeAmount }: { entertainerId: string; barFeeAmount: number }) => {
+    const response = await apiClient.post(`/api/dancers/${entertainerId}/check-in`, {
       bar_fee_amount: barFeeAmount
     })
     return response.data
   }
 )
 
-export const checkOutDancer = createAsyncThunk(
-  'dancers/checkOut',
-  async (dancerId: string) => {
-    const response = await apiClient.post(`/api/dancers/${dancerId}/check-out`)
+export const checkOutEntertainer = createAsyncThunk(
+  'entertainers/checkOut',
+  async (entertainerId: string) => {
+    const response = await apiClient.post(`/api/dancers/${entertainerId}/check-out`)
     return response.data
   }
 )
 
-export const createDancer = createAsyncThunk(
-  'dancers/create',
-  async (dancerData: Partial<Dancer>) => {
-    const response = await apiClient.post('/api/dancers', dancerData)
+export const createEntertainer = createAsyncThunk(
+  'entertainers/create',
+  async (entertainerData: Partial<Entertainer>) => {
+    const response = await apiClient.post('/api/dancers', entertainerData)
     return response.data
   }
 )
 
-export const updateDancer = createAsyncThunk(
-  'dancers/update',
-  async ({ id, data }: { id: string; data: Partial<Dancer> }) => {
+export const updateEntertainer = createAsyncThunk(
+  'entertainers/update',
+  async ({ id, data }: { id: string; data: Partial<Entertainer> }) => {
     const response = await apiClient.put(`/api/dancers/${id}`, data)
     return response.data
   }
 )
 
 export const fetchLicenseAlerts = createAsyncThunk(
-  'dancers/fetchLicenseAlerts',
+  'entertainers/fetchLicenseAlerts',
   async () => {
     const response = await apiClient.get('/api/dancers/license-alerts')
     return response.data
   }
 )
 
-const dancerSlice = createSlice({
-  name: 'dancers',
+// Backward compatibility aliases
+export const fetchDancers = fetchEntertainers
+export const checkInDancer = checkInEntertainer
+export const checkOutDancer = checkOutEntertainer
+export const createDancer = createEntertainer
+export const updateDancer = updateEntertainer
+
+const entertainerSlice = createSlice({
+  name: 'entertainers',
   initialState,
   reducers: {
-    setSelectedDancer: (state, action: PayloadAction<Dancer | null>) => {
-      state.selectedDancer = action.payload
+    setSelectedEntertainer: (state, action: PayloadAction<Entertainer | null>) => {
+      state.selectedEntertainer = action.payload
     },
     clearError: (state) => {
       state.error = null
     },
-    updateDancerStatus: (state, action: PayloadAction<{ id: string; status: Dancer['status'] }>) => {
-      const dancer = state.dancers.find(d => d.id === action.payload.id)
-      if (dancer) {
-        dancer.status = action.payload.status
+    updateEntertainerStatus: (state, action: PayloadAction<{ id: string; status: Entertainer['status'] }>) => {
+      const entertainer = state.entertainers.find(e => e.id === action.payload.id)
+      if (entertainer) {
+        entertainer.status = action.payload.status
       }
     }
   },
   extraReducers: (builder) => {
-    // Fetch dancers
+    // Fetch entertainers
     builder
-      .addCase(fetchDancers.pending, (state) => {
+      .addCase(fetchEntertainers.pending, (state) => {
         state.isLoading = true
         state.loading = true
         state.error = null
       })
-      .addCase(fetchDancers.fulfilled, (state, action) => {
+      .addCase(fetchEntertainers.fulfilled, (state, action) => {
         state.isLoading = false
         state.loading = false
-        state.dancers = action.payload
-        state.activeDancers = action.payload.filter((d: Dancer) => d.is_checked_in)
+        state.entertainers = action.payload
+        state.activeEntertainers = action.payload.filter((e: Entertainer) => e.is_checked_in)
       })
-      .addCase(fetchDancers.rejected, (state, action) => {
+      .addCase(fetchEntertainers.rejected, (state, action) => {
         state.isLoading = false
         state.loading = false
-        state.error = action.error.message || 'Failed to fetch dancers'
+        state.error = action.error.message || 'Failed to fetch entertainers'
       })
-      // Check in dancer
-      .addCase(checkInDancer.fulfilled, (state, action) => {
-        const updatedDancer = action.payload
-        const index = state.dancers.findIndex(d => d.id === updatedDancer.id)
+      // Check in entertainer
+      .addCase(checkInEntertainer.fulfilled, (state, action) => {
+        const updatedEntertainer = action.payload
+        const index = state.entertainers.findIndex(e => e.id === updatedEntertainer.id)
         if (index !== -1) {
-          state.dancers[index] = updatedDancer
-          state.activeDancers.push(updatedDancer)
+          state.entertainers[index] = updatedEntertainer
+          state.activeEntertainers.push(updatedEntertainer)
         }
       })
-      // Check out dancer
-      .addCase(checkOutDancer.fulfilled, (state, action) => {
-        const updatedDancer = action.payload
-        const index = state.dancers.findIndex(d => d.id === updatedDancer.id)
+      // Check out entertainer
+      .addCase(checkOutEntertainer.fulfilled, (state, action) => {
+        const updatedEntertainer = action.payload
+        const index = state.entertainers.findIndex(e => e.id === updatedEntertainer.id)
         if (index !== -1) {
-          state.dancers[index] = updatedDancer
-          state.activeDancers = state.activeDancers.filter(d => d.id !== updatedDancer.id)
+          state.entertainers[index] = updatedEntertainer
+          state.activeEntertainers = state.activeEntertainers.filter(e => e.id !== updatedEntertainer.id)
         }
       })
-      // Create dancer
-      .addCase(createDancer.fulfilled, (state, action) => {
-        state.dancers.push(action.payload)
+      // Create entertainer
+      .addCase(createEntertainer.fulfilled, (state, action) => {
+        state.entertainers.push(action.payload)
       })
-      // Update dancer
-      .addCase(updateDancer.fulfilled, (state, action) => {
-        const index = state.dancers.findIndex(d => d.id === action.payload.id)
+      // Update entertainer
+      .addCase(updateEntertainer.fulfilled, (state, action) => {
+        const index = state.entertainers.findIndex(e => e.id === action.payload.id)
         if (index !== -1) {
-          state.dancers[index] = action.payload
+          state.entertainers[index] = action.payload
         }
       })
       // License alerts
@@ -176,9 +196,14 @@ const dancerSlice = createSlice({
   },
 })
 
-export const { setSelectedDancer, clearError, updateDancerStatus } = dancerSlice.actions
+export const { setSelectedEntertainer, clearError, updateEntertainerStatus } = entertainerSlice.actions
 
-// Export addDancer as alias for createDancer to maintain compatibility
-export const addDancer = createDancer
+// Backward compatibility aliases
+export const setSelectedDancer = setSelectedEntertainer
+export const updateDancerStatus = updateEntertainerStatus
 
-export default dancerSlice.reducer
+// Export addEntertainer as alias for createEntertainer to maintain compatibility
+export const addEntertainer = createEntertainer
+export const addDancer = createEntertainer
+
+export default entertainerSlice.reducer

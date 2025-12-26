@@ -30,6 +30,9 @@ const financialRoutes = require('../routes/financial');
 const subscriptionRoutes = require('../routes/subscriptions');
 const analyticsRoutes = require('../routes/analytics');
 const webhookRoutes = require('../routes/webhooks');
+const revenueRoutes = require('../routes/revenue');
+const feesRoutes = require('../routes/fees');
+const discrepancyRoutes = require('../routes/discrepancy');
 
 // Fraud Prevention Routes
 const shiftRoutes = require('../routes/shifts');
@@ -39,6 +42,12 @@ const securityRoutes = require('../routes/security');
 
 // Shift Management Routes (POS-style shift levels)
 const shiftManagementRoutes = require('../routes/shift-management');
+
+// Shift Scheduling Routes (Features #21-23)
+const scheduleRoutes = require('../routes/schedule');
+
+// Late Fee Routes (Feature #26)
+const lateFeeRoutes = require('../routes/lateFees');
 
 // Queue Routes (alias for dj-queue)
 const queueRoutes = require('../routes/queue');
@@ -135,6 +144,9 @@ app.use('/api/dj-queue', djQueueRoutes);
 app.use('/api/music', musicRoutes);
 app.use('/api/vip-rooms', vipRoomRoutes);
 app.use('/api/financial', financialRoutes);
+app.use('/api/revenue', revenueRoutes); // Revenue analytics for owner dashboard
+app.use('/api/fees', feesRoutes); // Fee tracking and tip-out collection
+app.use('/api/discrepancy', discrepancyRoutes); // Tip-out discrepancy tracking (Feature #16)
 
 // SaaS management routes
 app.use('/api/subscriptions', subscriptionRoutes);
@@ -148,6 +160,12 @@ app.use('/api/security', securityRoutes);
 
 // Shift Management (POS-style shift levels)
 app.use('/api/shift-management', shiftManagementRoutes);
+
+// Shift Scheduling (Features #21-23)
+app.use('/api/schedule', scheduleRoutes);
+
+// Late Fee Management (Feature #26)
+app.use('/api/late-fees', lateFeeRoutes);
 
 // Queue Routes (frontend uses /api/queue)
 app.use('/api/queue', queueRoutes);
@@ -227,6 +245,11 @@ io.on('connection', (socket) => {
     socket.to(`club-${data.clubId}`).emit('shift-ended', data);
   });
 
+  // Revenue Events (Feature #20 - Real-time dashboard updates)
+  socket.on('revenue-update', (data) => {
+    socket.to(`club-${data.clubId}`).emit('revenue-updated', data);
+  });
+
   socket.on('disconnect', () => {
     console.log('Client disconnected:', socket.id);
   });
@@ -245,9 +268,14 @@ app.use('*', (req, res) => {
 
 const PORT = process.env.PORT || 5000;
 
+// Initialize scheduled jobs (Feature #26)
+const { initializeScheduledJobs, stopAllJobs } = require('../jobs/scheduler');
+let scheduledJobs;
+
 // Graceful shutdown
 process.on('SIGTERM', async () => {
   console.log('SIGTERM received, shutting down gracefully');
+  if (scheduledJobs) stopAllJobs(scheduledJobs);
   await prisma.$disconnect();
   server.close(() => {
     console.log('Server closed');
@@ -257,6 +285,7 @@ process.on('SIGTERM', async () => {
 
 process.on('SIGINT', async () => {
   console.log('SIGINT received, shutting down gracefully');
+  if (scheduledJobs) stopAllJobs(scheduledJobs);
   await prisma.$disconnect();
   server.close(() => {
     console.log('Server closed');
@@ -268,6 +297,9 @@ server.listen(PORT, () => {
   console.log(`🚀 ClubOps Server running on port ${PORT}`);
   console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🔗 Frontend URL: ${process.env.FRONTEND_URL || 'http://localhost:3000'}`);
+
+  // Start scheduled jobs
+  scheduledJobs = initializeScheduledJobs();
 });
 
 module.exports = { app, io, prisma };

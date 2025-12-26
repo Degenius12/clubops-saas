@@ -52,12 +52,12 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose 
     },
     {
       id: 'nav-dancers',
-      title: 'Dancers',
-      subtitle: 'Manage dancer roster',
+      title: 'Entertainers',
+      subtitle: 'Manage entertainer roster',
       icon: UsersIcon,
       action: () => navigate('/dancers'),
       category: 'navigation',
-      keywords: ['dancers', 'performers', 'roster']
+      keywords: ['entertainers', 'performers', 'roster']
     },
     {
       id: 'nav-vip',

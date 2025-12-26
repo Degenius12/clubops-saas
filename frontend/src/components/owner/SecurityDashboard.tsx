@@ -117,6 +117,11 @@ const formatDuration = (minutes: number) => {
   return hrs > 0 ? `${hrs}h ${mins}m` : `${mins}m`
 }
 
+const capitalize = (str?: string) => {
+  if (!str) return ''
+  return str.charAt(0).toUpperCase() + str.slice(1)
+}
+
 const SecurityDashboard: React.FC = () => {
   const clubId = useClubId()
   
@@ -147,6 +152,18 @@ const SecurityDashboard: React.FC = () => {
     handleFilterComparisons,
     refreshData,
   } = useSecurityDashboard(clubId)
+
+  // Early return if critical data structures are not initialized
+  if (!auditLog || !songComparisons || !anomalies) {
+    return (
+      <div className="min-h-screen bg-midnight-950 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gold-500 mx-auto mb-4"></div>
+          <p className="text-text-secondary">Loading Security Dashboard...</p>
+        </div>
+      </div>
+    )
+  }
 
   // Local UI State
   const [activeTab, setActiveTab] = useState<'overview' | 'comparisons' | 'audit' | 'anomalies' | 'employees'>('overview')
@@ -444,14 +461,14 @@ const SecurityDashboard: React.FC = () => {
                       <div className="flex items-start justify-between mb-4">
                         <p className="text-sm text-text-tertiary">{metric.label}</p>
                         <span className={`px-2 py-0.5 rounded text-xs font-medium ${statusStyles.bg} ${statusStyles.text}`}>
-                          {metric.status.charAt(0).toUpperCase() + metric.status.slice(1)}
+                          {capitalize(metric.status)}
                         </span>
                       </div>
                       
                       <div className="flex items-end justify-between">
                         <div>
                           <p className={`text-4xl font-bold tabular-nums ${getScoreColor(metric.score)}`}>
-                            {metric.score.toFixed(1)}%
+                            {metric.score?.toFixed(1) || '0'}%
                           </p>
                           <div className={`flex items-center gap-1 mt-1 text-sm ${
                             metric.trend === 'up' ? 'text-status-success' : 
@@ -1250,7 +1267,7 @@ const SecurityDashboard: React.FC = () => {
                         <div className="flex items-start justify-between mb-4">
                           <div className="flex items-center gap-3">
                             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-electric-500/20 to-royal-500/20 flex items-center justify-center border border-white/10">
-                              <span className="text-lg font-bold text-electric-400">{employee.userName.charAt(0)}</span>
+                              <span className="text-lg font-bold text-electric-400">{employee.userName?.charAt(0) || '?'}</span>
                             </div>
                             <div>
                               <h3 className="font-semibold text-text-primary">{employee.userName}</h3>
@@ -1258,7 +1275,7 @@ const SecurityDashboard: React.FC = () => {
                             </div>
                           </div>
                           <span className={`px-2 py-1 rounded text-xs font-medium ${statusStyles.bg} ${statusStyles.text} border ${statusStyles.border}`}>
-                            {status.charAt(0).toUpperCase() + status.slice(1)}
+                            {capitalize(status)}
                           </span>
                         </div>
                         
@@ -1271,7 +1288,7 @@ const SecurityDashboard: React.FC = () => {
                                 employee.avgVariance <= 3 ? 'text-status-success' : 
                                 employee.avgVariance <= 6 ? 'text-status-warning' : 'text-status-danger'
                               }`}>
-                                {employee.avgVariance.toFixed(1)}%
+                                {employee.avgVariance?.toFixed(1) || '0'}%
                               </span>
                               {employee.varianceTrend === 'improving' && <ArrowTrendingDownIcon className="h-4 w-4 text-status-success" />}
                               {employee.varianceTrend === 'worsening' && <ArrowTrendingUpIcon className="h-4 w-4 text-status-danger" />}
@@ -1283,7 +1300,7 @@ const SecurityDashboard: React.FC = () => {
                               employee.collectionRate >= 98 ? 'text-status-success' : 
                               employee.collectionRate >= 95 ? 'text-electric-400' : 'text-status-warning'
                             }`}>
-                              {employee.collectionRate.toFixed(1)}%
+                              {employee.collectionRate?.toFixed(1) || '0'}%
                             </span>
                           </div>
                           <div className="p-3 rounded-xl bg-midnight-800/50 border border-white/5">
@@ -1348,7 +1365,7 @@ const SecurityDashboard: React.FC = () => {
                                 emp.avgVariance <= 3 ? 'text-status-success' : 
                                 emp.avgVariance <= 6 ? 'text-status-warning' : 'text-status-danger'
                               }`}>
-                                {emp.avgVariance.toFixed(1)}%
+                                {emp.avgVariance?.toFixed(1) || '0'}%
                               </td>
                               <td className="py-3 text-center">
                                 {emp.varianceTrend === 'improving' && <span className="text-status-success">↓ Better</span>}
@@ -1359,7 +1376,7 @@ const SecurityDashboard: React.FC = () => {
                                 emp.collectionRate >= 98 ? 'text-status-success' : 
                                 emp.collectionRate >= 95 ? 'text-electric-400' : 'text-status-warning'
                               }`}>
-                                {emp.collectionRate.toFixed(1)}%
+                                {emp.collectionRate?.toFixed(1) || '0'}%
                               </td>
                               <td className={`py-3 text-center tabular-nums ${
                                 emp.flaggedIncidents === 0 ? 'text-status-success' : 'text-status-danger'
@@ -1368,7 +1385,7 @@ const SecurityDashboard: React.FC = () => {
                               </td>
                               <td className="py-3 text-center">
                                 <span className={`px-2 py-1 rounded text-xs font-medium ${statusStyles.bg} ${statusStyles.text}`}>
-                                  {status.charAt(0).toUpperCase() + status.slice(1)}
+                                  {capitalize(status)}
                                 </span>
                               </td>
                             </tr>

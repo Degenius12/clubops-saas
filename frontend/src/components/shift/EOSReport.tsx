@@ -132,14 +132,14 @@ const EOSReport: React.FC<EOSReportProps> = ({ shift, summary, onClose, showClos
             </div>
           </div>
 
-          {/* Dancer Check-Ins */}
+          {/* Entertainer Check-Ins */}
           <div className="card-premium p-6 print:bg-white print:border print:border-gray-300">
             <div className="flex items-center gap-3 mb-4">
               <div className="p-3 rounded-xl bg-electric-500/10 print:bg-blue-100">
                 <UsersIcon className="h-6 w-6 text-electric-400 print:text-blue-600" />
               </div>
               <div>
-                <p className="text-sm text-text-tertiary print:text-gray-600">Dancer Check-Ins</p>
+                <p className="text-sm text-text-tertiary print:text-gray-600">Entertainer Check-Ins</p>
                 <p className="text-2xl font-bold font-mono text-text-primary print:text-black">
                   {totalCheckIns}
                 </p>

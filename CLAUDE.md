@@ -38,8 +38,8 @@ NEXTAUTH_URL=http://localhost:3000
 - Session-based with NextAuth
 - `/api/auth/*` routes
 
-### Dancer Management
-- CRUD operations for dancers
+### Entertainer Management
+- CRUD operations for entertainers
 - Check-in/check-out tracking
 - Performance history
 
@@ -68,18 +68,18 @@ NEXTAUTH_URL=http://localhost:3000
 ### File Naming
 - Components: PascalCase (`DancerCard.tsx`)
 - Utilities: camelCase (`formatCurrency.ts`)
-- API routes: kebab-case (`/api/dancer-check-in`)
+- API routes: kebab-case (`/api/entertainer-check-in`)
 
 ### Component Structure
 ```tsx
 // Props interface first
 interface DancerCardProps {
-  dancer: Dancer;
+  entertainer: Dancer;
   onCheckIn: () => void;
 }
 
 // Component with explicit return type
-export function DancerCard({ dancer, onCheckIn }: DancerCardProps): JSX.Element {
+export function DancerCard({ entertainer, onCheckIn }: DancerCardProps): JSX.Element {
   // Hooks first
   const [isLoading, setIsLoading] = useState(false);
   

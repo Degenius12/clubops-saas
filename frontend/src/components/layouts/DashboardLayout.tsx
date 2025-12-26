@@ -11,6 +11,7 @@ import {
   BuildingStorefrontIcon,
   CurrencyDollarIcon,
   CreditCardIcon,
+  BanknotesIcon,
   CogIcon,
   ChartBarIcon,
   UserCircleIcon,
@@ -22,7 +23,10 @@ import {
   ChevronRightIcon,
   ShieldCheckIcon,
   ArrowRightOnRectangleIcon,
-  ClockIcon
+  ClockIcon,
+  ExclamationTriangleIcon,
+  DocumentChartBarIcon,
+  CalendarIcon
 } from '@heroicons/react/24/outline'
 
 interface DashboardLayoutProps {
@@ -71,11 +75,15 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
 
   const allNavigation = [
     { name: 'Dashboard', href: '/dashboard', icon: HomeIcon, roles: ['OWNER', 'SUPER_MANAGER', 'MANAGER', 'DJ', 'VIP_HOST', 'DOOR_STAFF', 'BARTENDER'] },
-    { name: 'Dancers', href: '/dancers', icon: UsersIcon, roles: ['OWNER', 'SUPER_MANAGER', 'MANAGER'] },
+    { name: 'Entertainers', href: '/dancers', icon: UsersIcon, roles: ['OWNER', 'SUPER_MANAGER', 'MANAGER'] },
     { name: 'Door Staff', href: '/door-staff', icon: ArrowRightOnRectangleIcon, roles: ['OWNER', 'SUPER_MANAGER', 'MANAGER', 'DOOR_STAFF'] },
     { name: 'DJ Queue', href: '/queue', icon: MusicalNoteIcon, roles: ['OWNER', 'SUPER_MANAGER', 'MANAGER', 'DJ'] },
     { name: 'VIP Booths', href: '/vip', icon: BuildingStorefrontIcon, roles: ['OWNER', 'SUPER_MANAGER', 'MANAGER', 'VIP_HOST'] },
     { name: 'Revenue', href: '/revenue', icon: CurrencyDollarIcon, roles: ['OWNER', 'SUPER_MANAGER', 'MANAGER'] },
+    { name: 'Monthly Report', href: '/revenue/monthly', icon: DocumentChartBarIcon, roles: ['OWNER', 'SUPER_MANAGER', 'MANAGER'] },
+    { name: 'Fees', href: '/fees', icon: BanknotesIcon, roles: ['OWNER', 'SUPER_MANAGER', 'MANAGER'] },
+    { name: 'Discrepancies', href: '/discrepancy', icon: ExclamationTriangleIcon, roles: ['OWNER', 'SUPER_MANAGER', 'MANAGER'] },
+    { name: 'Schedule', href: '/schedule', icon: CalendarIcon, roles: ['OWNER', 'SUPER_MANAGER', 'MANAGER'] },
     { name: 'Security', href: '/security', icon: ShieldCheckIcon, roles: ['OWNER', 'SUPER_MANAGER'] },
   ]
 
@@ -171,7 +179,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
               const Icon = item.icon
               const isActive = isCurrentPath(item.href)
               // Add data-tour attributes for onboarding
-              const tourAttr = item.name === 'Dancers' ? 'dancer-nav' :
+              const tourAttr = item.name === 'Entertainers' ? 'dancer-nav' :
                                item.name === 'VIP Booths' ? 'vip-nav' :
                                item.name === 'Security' ? 'security-nav' : undefined
               return (
@@ -347,7 +355,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                          text-text-primary placeholder-text-tertiary
                          focus:outline-none focus:border-gold-500/30 focus:ring-1 focus:ring-gold-500/20
                          transition-all duration-200"
-                placeholder="Search dancers, booths..."
+                placeholder="Search entertainers, booths..."
               />
             </div>
           </div>

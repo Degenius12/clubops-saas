@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { RootState, AppDispatch } from '../../store/store'
-import { fetchDancers, addDancer, updateDancer } from '../../store/slices/dancerSlice'
+import { fetchDancers, addDancer, updateDancer, checkInDancer, checkOutDancer } from '../../store/slices/dancerSlice'
 import {
   UserPlusIcon,
   MagnifyingGlassIcon,
@@ -12,7 +12,9 @@ import {
   UserIcon,
   XMarkIcon,
   EyeIcon,
-  ShieldExclamationIcon
+  ShieldExclamationIcon,
+  ArrowRightOnRectangleIcon,
+  ArrowLeftOnRectangleIcon
 } from '@heroicons/react/24/outline'
 
 const DancerManagement: React.FC = () => {
@@ -138,12 +140,34 @@ const DancerManagement: React.FC = () => {
     }
   }
 
+  // Handle check-in
+  const handleCheckIn = async (dancer: any) => {
+    try {
+      await dispatch(checkInDancer({ dancerId: dancer.id, barFeeAmount: 50 })).unwrap()
+      // Refresh dancer list to show updated status
+      dispatch(fetchDancers())
+    } catch (err) {
+      console.error('Failed to check in dancer:', err)
+    }
+  }
+
+  // Handle check-out
+  const handleCheckOut = async (dancer: any) => {
+    try {
+      await dispatch(checkOutDancer(dancer.id)).unwrap()
+      // Refresh dancer list to show updated status
+      dispatch(fetchDancers())
+    } catch (err) {
+      console.error('Failed to check out dancer:', err)
+    }
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-text-primary">Dancer Management</h1>
+          <h1 className="text-2xl font-semibold text-text-primary">Entertainer Management</h1>
           <p className="text-sm text-text-tertiary mt-1">
             Manage profiles, compliance, and check-in status
           </p>
@@ -154,7 +178,7 @@ const DancerManagement: React.FC = () => {
           className="btn-primary flex items-center gap-2 touch-target"
         >
           <UserPlusIcon className="h-5 w-5" />
-          <span>Add Dancer</span>
+          <span>Add Entertainer</span>
         </button>
       </div>
 
@@ -326,14 +350,35 @@ const DancerManagement: React.FC = () => {
 
                 {/* Action Buttons */}
                 <div className="flex gap-2">
-                  <button 
+                  {/* Check-in/Check-out buttons */}
+                  {dancerStatus === 'active' && !dancer.is_checked_in && (
+                    <button
+                      onClick={() => handleCheckIn(dancer)}
+                      className="flex-1 py-2 text-sm font-medium rounded-xl bg-status-success-muted border border-status-success-border text-status-success hover:bg-status-success/20 transition-colors touch-target flex items-center justify-center gap-1.5"
+                    >
+                      <ArrowRightOnRectangleIcon className="h-4 w-4" />
+                      Check In
+                    </button>
+                  )}
+
+                  {dancer.is_checked_in && (
+                    <button
+                      onClick={() => handleCheckOut(dancer)}
+                      className="flex-1 py-2 text-sm font-medium rounded-xl bg-status-warning-muted border border-status-warning-border text-status-warning hover:bg-status-warning/20 transition-colors touch-target flex items-center justify-center gap-1.5"
+                    >
+                      <ArrowLeftOnRectangleIcon className="h-4 w-4" />
+                      Check Out
+                    </button>
+                  )}
+
+                  <button
                     onClick={() => handleViewDancer(dancer)}
                     className="flex-1 btn-secondary py-2 text-sm touch-target"
                   >
                     <EyeIcon className="h-4 w-4 mr-1.5" />
                     View
                   </button>
-                  
+
                   {(isExpiring || isExpired) && (
                     <button className="flex-1 py-2 text-sm font-medium rounded-xl bg-status-danger-muted border border-status-danger-border text-status-danger hover:bg-status-danger/20 transition-colors touch-target">
                       Fix Issues
@@ -376,12 +421,12 @@ const DancerManagement: React.FC = () => {
             <div className="text-2xl font-bold font-mono text-electric-400 tabular-nums">
               {(dancers || []).length}
             </div>
-            <div className="text-xs text-electric-400 mt-1">Total Dancers</div>
+            <div className="text-xs text-electric-400 mt-1">Total Entertainers</div>
           </div>
         </div>
       </div>
 
-      {/* Add Dancer Modal */}
+      {/* Add Entertainer Modal */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="card-premium p-6 w-full max-w-md animate-scale-in">
@@ -443,7 +488,7 @@ const DancerManagement: React.FC = () => {
                   Cancel
                 </button>
                 <button type="submit" className="flex-1 btn-primary py-2.5">
-                  Add Dancer
+                  Add Entertainer
                 </button>
               </div>
             </form>

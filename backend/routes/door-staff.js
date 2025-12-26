@@ -22,7 +22,7 @@ router.get('/checked-in', auth, async (req, res) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const checkIns = await prisma.dancerCheckIn.findMany({
+    const checkIns = await prisma.entertainerCheckIn.findMany({
       where: {
         clubId: req.user.clubId,
         checkedInAt: { gte: today },
@@ -77,7 +77,7 @@ router.get('/dancer/search', auth, async (req, res) => {
       return res.json([]);
     }
 
-    const dancers = await prisma.dancer.findMany({
+    const dancers = await prisma.entertainer.findMany({
       where: {
         clubId: req.user.clubId,
         isActive: true,
@@ -104,17 +104,17 @@ router.get('/dancer/search', auth, async (req, res) => {
     today.setHours(0, 0, 0, 0);
 
     const dancerIds = dancers.map(d => d.id);
-    const todayCheckIns = await prisma.dancerCheckIn.findMany({
+    const todayCheckIns = await prisma.entertainerCheckIn.findMany({
       where: {
         clubId: req.user.clubId,
-        dancerId: { in: dancerIds },
+        entertainerId: { in: dancerIds },
         checkedInAt: { gte: today },
         status: 'CHECKED_IN'
       },
-      select: { dancerId: true }
+      select: { entertainerId: true }
     });
 
-    const checkedInIds = new Set(todayCheckIns.map(c => c.dancerId));
+    const checkedInIds = new Set(todayCheckIns.map(c => c.entertainerId));
 
     const results = dancers.map(d => ({
       ...d,
@@ -137,7 +137,7 @@ router.get('/dancer/search', auth, async (req, res) => {
 // @access  Private
 router.get('/dancer/qr/:code', auth, async (req, res) => {
   try {
-    const dancer = await prisma.dancer.findFirst({
+    const dancer = await prisma.entertainer.findFirst({
       where: {
         clubId: req.user.clubId,
         qrBadgeCode: req.params.code,
@@ -162,10 +162,10 @@ router.get('/dancer/qr/:code', auth, async (req, res) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const existingCheckIn = await prisma.dancerCheckIn.findFirst({
+    const existingCheckIn = await prisma.entertainerCheckIn.findFirst({
       where: {
         clubId: req.user.clubId,
-        dancerId: dancer.id,
+        entertainerId: dancer.id,
         checkedInAt: { gte: today },
         status: 'CHECKED_IN'
       }
@@ -204,7 +204,7 @@ router.post('/checkin', [
     const { dancerId, checkInMethod, barFeeStatus, paymentMethod, notes, waivedReason } = req.body;
 
     // Get dancer details
-    const dancer = await prisma.dancer.findFirst({
+    const dancer = await prisma.entertainer.findFirst({
       where: {
         id: dancerId,
         clubId: req.user.clubId,
@@ -232,7 +232,7 @@ router.post('/checkin', [
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const existingCheckIn = await prisma.dancerCheckIn.findFirst({
+    const existingCheckIn = await prisma.entertainerCheckIn.findFirst({
       where: {
         clubId: req.user.clubId,
         dancerId,
@@ -287,7 +287,7 @@ router.post('/checkin', [
 
     // Create check-in record
     const checkIn = await prisma.$transaction(async (tx) => {
-      const newCheckIn = await tx.dancerCheckIn.create({
+      const newCheckIn = await tx.entertainerCheckIn.create({
         data: {
           clubId: req.user.clubId,
           dancerId,
@@ -380,7 +380,7 @@ router.post('/checkin', [
 // @access  Private
 router.post('/checkout/:checkInId', auth, async (req, res) => {
   try {
-    const checkIn = await prisma.dancerCheckIn.findFirst({
+    const checkIn = await prisma.entertainerCheckIn.findFirst({
       where: {
         id: req.params.checkInId,
         clubId: req.user.clubId,
@@ -395,7 +395,7 @@ router.post('/checkout/:checkInId', auth, async (req, res) => {
       return res.status(404).json({ error: 'Check-in record not found' });
     }
 
-    const updated = await prisma.dancerCheckIn.update({
+    const updated = await prisma.entertainerCheckIn.update({
       where: { id: req.params.checkInId },
       data: {
         status: 'CHECKED_OUT',
@@ -407,7 +407,7 @@ router.post('/checkout/:checkInId', auth, async (req, res) => {
     if (req.app.get('io')) {
       req.app.get('io').to(`club-${req.user.clubId}`).emit('dancer-checked-out', {
         checkInId: req.params.checkInId,
-        dancerId: checkIn.dancerId,
+        entertainerId: checkIn.entertainerId,
         stageName: checkIn.dancer.stageName
       });
     }
@@ -434,7 +434,7 @@ router.post('/barfee/collect/:checkInId', [
   body('paymentMethod').isIn(['CASH', 'CARD'])
 ], async (req, res) => {
   try {
-    const checkIn = await prisma.dancerCheckIn.findFirst({
+    const checkIn = await prisma.entertainerCheckIn.findFirst({
       where: {
         id: req.params.checkInId,
         clubId: req.user.clubId,
@@ -452,7 +452,7 @@ router.post('/barfee/collect/:checkInId', [
     }
 
     const result = await prisma.$transaction(async (tx) => {
-      const updated = await tx.dancerCheckIn.update({
+      const updated = await tx.entertainerCheckIn.update({
         where: { id: req.params.checkInId },
         data: {
           barFeeStatus: 'PAID',
@@ -463,7 +463,7 @@ router.post('/barfee/collect/:checkInId', [
       await tx.financialTransaction.create({
         data: {
           clubId: req.user.clubId,
-          dancerId: checkIn.dancerId,
+          entertainerId: checkIn.entertainerId,
           transactionType: 'BAR_FEE',
           category: 'BAR_FEE',
           amount: checkIn.barFeeAmount,

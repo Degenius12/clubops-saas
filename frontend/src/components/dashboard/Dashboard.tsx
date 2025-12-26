@@ -7,6 +7,7 @@ import { fetchVIPRooms } from '../../store/slices/vipSlice'
 import { fetchRevenue } from '../../store/slices/revenueSlice'
 import apiClient from '../../config/api'
 import ShiftControl from '../shift/ShiftControl'
+import { useWebSocket } from '../../hooks/useWebSocket'
 import {
   UsersIcon,
   MusicalNoteIcon,
@@ -70,6 +71,19 @@ const Dashboard: React.FC = () => {
   // Shift tracking state
   const [shiftData, setShiftData] = useState<any>(null)
   const [loadingShifts, setLoadingShifts] = useState(true)
+  const [lastUpdate, setLastUpdate] = useState<Date | null>(null)
+
+  // Real-time updates with WebSocket (Feature #20)
+  const { isConnected } = useWebSocket({
+    clubId: user?.clubId || '',
+    enabled: !!user?.clubId,
+    // @ts-ignore - Custom event handler for revenue updates
+    onRevenueUpdate: () => {
+      // Refresh revenue data when a payment is collected
+      dispatch(fetchRevenue({ period: 'today' }))
+      setLastUpdate(new Date())
+    }
+  })
 
   useEffect(() => {
     dispatch(fetchDancers())
@@ -102,7 +116,7 @@ const Dashboard: React.FC = () => {
 
   const allStats = [
     {
-      name: 'Active Dancers',
+      name: 'Active Entertainers',
       value: activeDancers,
       total: dancers.length,
       icon: UsersIcon,
@@ -235,6 +249,14 @@ const Dashboard: React.FC = () => {
             Welcome back, <span className="text-gradient-gold">{user?.firstName || user?.name?.split(' ')[0] || 'User'}</span>
           </h1>
           <p className="text-sm text-text-tertiary">
+            {/* Real-time connection indicator (Feature #20) */}
+            {isConnected && lastUpdate && (
+              <span className="text-xs text-text-tertiary flex items-center gap-1">
+                <span className="inline-block w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                Last updated {new Date(lastUpdate).toLocaleTimeString()}
+                <span className="mx-2">•</span>
+              </span>
+            )}
             {user?.clubName || 'Your Club'} • {user?.role ? user.role.charAt(0) + user.role.slice(1).toLowerCase().replace('_', ' ') : 'User'} • {new Date().toLocaleDateString('en-US', {
               weekday: 'long',
               month: 'short',

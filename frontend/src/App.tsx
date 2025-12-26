@@ -18,12 +18,17 @@ import DancerManagement from './components/dancers/DancerManagement'
 import DJQueue from './components/queue/DJQueue'
 import VIPBooths from './components/vip/VIPBooths'
 import Revenue from './components/revenue/Revenue'
+import MonthlyReport from './components/revenue/MonthlyReport'
+import FeeManagement from './components/fees/FeeManagement'
+import DiscrepancyReport from './components/fees/DiscrepancyReport'
+import ScheduleManager from './components/schedule/ScheduleManager'
 import Settings from './components/settings/Settings'
 
 // Role-Based Station Interfaces (Fraud Prevention)
 import VipHostInterface from './components/vip-host/VipHostInterface'
 import DoorStaffInterface from './components/door-staff/DoorStaffInterface'
 import SecurityDashboard from './components/owner/SecurityDashboard'
+import ErrorBoundary from './components/ErrorBoundary'
 
 // SaaS Pages
 import SubscriptionDashboard from './components/subscription/SubscriptionDashboard'
@@ -135,7 +140,9 @@ function App() {
         {/* Owner Security Dashboard - Fraud Detection & Monitoring */}
         <Route path="/security" element={
           <ProtectedRoute>
-            <SecurityDashboard />
+            <ErrorBoundary>
+              <SecurityDashboard />
+            </ErrorBoundary>
           </ProtectedRoute>
         } />
 
@@ -143,6 +150,38 @@ function App() {
           <ProtectedRoute>
             <DashboardLayout>
               <Revenue />
+            </DashboardLayout>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/revenue/monthly" element={
+          <ProtectedRoute>
+            <DashboardLayout>
+              <MonthlyReport />
+            </DashboardLayout>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/fees" element={
+          <ProtectedRoute>
+            <DashboardLayout>
+              <FeeManagement />
+            </DashboardLayout>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/discrepancy" element={
+          <ProtectedRoute>
+            <DashboardLayout>
+              <DiscrepancyReport />
+            </DashboardLayout>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/schedule" element={
+          <ProtectedRoute>
+            <DashboardLayout>
+              <ScheduleManager />
             </DashboardLayout>
           </ProtectedRoute>
         } />

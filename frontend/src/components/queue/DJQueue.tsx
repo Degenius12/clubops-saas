@@ -1,78 +1,95 @@
 import React, { useEffect, useState } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { RootState, AppDispatch } from '../../store/store'
-import { 
-  fetchQueue, 
-  addToQueue, 
-  removeFromQueue, 
-  reorderQueue, 
-  playTrack, 
-  pauseTrack, 
-  nextTrack 
+import {
+  fetchQueue,
+  addToQueue,
+  startPerformance,
+  endPerformance,
+  reorderQueue
 } from '../../store/slices/queueSlice'
+import { fetchDancers } from '../../store/slices/dancerSlice'
 import {
   PlayIcon,
   PauseIcon,
   ForwardIcon,
-  BackwardIcon,
   PlusIcon,
   XMarkIcon,
   Bars3Icon,
-  SpeakerWaveIcon,
-  SpeakerXMarkIcon,
   MusicalNoteIcon,
-  QueueListIcon
+  QueueListIcon,
+  UserGroupIcon,
+  CheckCircleIcon,
+  ClockIcon
 } from '@heroicons/react/24/outline'
 import { PlayIcon as PlaySolidIcon } from '@heroicons/react/24/solid'
 
 const DJQueue: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>()
-  const { 
-    currentQueue, 
-    currentTrack, 
-    isPlaying, 
-    volume, 
-    currentTime, 
-    duration,
-    loading 
+  const {
+    mainQueue,
+    currentPerformances,
+    loading
   } = useSelector((state: RootState) => state.queue)
-  
+
+  const { dancers } = useSelector((state: RootState) => state.dancers)
+
   const [showAddModal, setShowAddModal] = useState(false)
-  const [newTrackUrl, setNewTrackUrl] = useState('')
-  const [newTrackTitle, setNewTrackTitle] = useState('')
+  const [selectedDancer, setSelectedDancer] = useState('')
+  const [selectedStage, setSelectedStage] = useState<'main' | 'vip' | 'side'>('main')
 
   useEffect(() => {
     dispatch(fetchQueue())
+    dispatch(fetchDancers())
   }, [dispatch])
 
-  const handlePlayPause = () => {
-    if (isPlaying) {
-      dispatch(pauseTrack())
-    } else {
-      dispatch(playTrack())
-    }
-  }
+  // Get current performer for main stage
+  const currentPerformer = currentPerformances?.find(p => p.stage === 'main')
 
-  const handleNext = () => {
-    dispatch(nextTrack())
-  }
+  // Get checked-in dancers not already in queue
+  const availableDancers = (dancers || []).filter(dancer => {
+    const isCheckedIn = dancer.is_checked_in
+    const isInQueue = (mainQueue || []).some(item => item.dancer_id === dancer.id)
+    const isPerforming = (currentPerformances || []).some(p => p.dancer_id === dancer.id)
+    return isCheckedIn && !isInQueue && !isPerforming
+  })
 
-  const handleAddTrack = () => {
-    if (newTrackUrl && newTrackTitle) {
+  const handleAddToQueue = () => {
+    if (selectedDancer) {
       dispatch(addToQueue({
-        dancerId: 'temp-dancer-id',
-        songTitle: newTrackTitle,
-        artist: 'Unknown Artist',
-        stage: 'main'
+        dancerId: selectedDancer,
+        songTitle: 'Open Performance',
+        artist: '',
+        stage: selectedStage
       }))
-      setNewTrackUrl('')
-      setNewTrackTitle('')
+      setSelectedDancer('')
       setShowAddModal(false)
+      // Refresh queue
+      setTimeout(() => dispatch(fetchQueue()), 500)
     }
   }
 
-  const handleRemoveTrack = (trackId: string) => {
-    dispatch(removeFromQueue(trackId))
+  const handleNextPerformer = () => {
+    if (mainQueue && mainQueue.length > 0) {
+      const nextItem = mainQueue.find(item => item.status === 'queued')
+      if (nextItem) {
+        dispatch(startPerformance(nextItem.id))
+        // Refresh queue
+        setTimeout(() => dispatch(fetchQueue()), 500)
+      }
+    }
+  }
+
+  const handleEndPerformance = () => {
+    if (currentPerformer && mainQueue) {
+      // Find the queue item for this performer
+      const performanceItem = mainQueue.find(item => item.status === 'current')
+      if (performanceItem) {
+        dispatch(endPerformance(performanceItem.id))
+        // Refresh queue
+        setTimeout(() => dispatch(fetchQueue()), 500)
+      }
+    }
   }
 
   const formatTime = (seconds: number) => {
@@ -81,8 +98,6 @@ const DJQueue: React.FC = () => {
     return `${mins}:${secs.toString().padStart(2, '0')}`
   }
 
-  const progressPercentage = duration > 0 ? (currentTime / duration) * 100 : 0
-
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -90,123 +105,133 @@ const DJQueue: React.FC = () => {
         <div>
           <h1 className="text-2xl font-semibold text-text-primary">DJ Queue</h1>
           <p className="text-sm text-text-tertiary mt-1">
-            Manage music queue and playback
+            Manage stage rotation and performer queue
           </p>
         </div>
-        
+
         <button
           onClick={() => setShowAddModal(true)}
           className="btn-primary flex items-center gap-2 touch-target"
+          disabled={availableDancers.length === 0}
         >
           <PlusIcon className="h-5 w-5" />
-          <span>Add Track</span>
+          <span>Add to Queue</span>
         </button>
       </div>
 
-      {/* Music Player Card */}
+      {/* Current Performer Card */}
       <div className="player-card animate-fade-in-up">
         <div className="flex flex-col lg:flex-row lg:items-center gap-6">
-          
-          {/* Album Art / Visualizer */}
+
+          {/* Performer Visual */}
           <div className="relative w-full lg:w-56 aspect-square lg:aspect-auto lg:h-56 rounded-xl overflow-hidden flex-shrink-0">
             {/* Background gradient */}
             <div className="absolute inset-0 bg-gradient-to-br from-royal-600/40 via-gold-500/30 to-electric-500/40" />
-            
-            {/* Blur overlay for "now playing" effect */}
-            {currentTrack && isPlaying && (
+
+            {/* Blur overlay for "now performing" effect */}
+            {currentPerformer && (
               <div className="absolute inset-0 bg-gradient-to-br from-royal-600/20 via-gold-500/20 to-electric-500/20 animate-pulse" />
             )}
-            
+
             {/* Content */}
             <div className="relative h-full flex flex-col items-center justify-center">
-              {currentTrack ? (
+              {currentPerformer ? (
                 <>
-                  <div className={`p-4 rounded-full bg-midnight-900/50 backdrop-blur-sm ${isPlaying ? 'animate-spin-slow' : ''}`}>
+                  <div className="p-4 rounded-full bg-midnight-900/50 backdrop-blur-sm animate-pulse">
                     <MusicalNoteIcon className="h-12 w-12 text-gold-500" />
                   </div>
                   <div className="mt-4 px-4 text-center">
-                    <span className={`badge-gold text-xs ${isPlaying ? 'animate-pulse' : ''}`}>
-                      {isPlaying ? '♫ Now Playing' : 'Paused'}
+                    <span className="badge-gold text-xs animate-pulse">
+                      ♫ Now Performing
                     </span>
                   </div>
                 </>
               ) : (
                 <>
                   <div className="p-4 rounded-full bg-midnight-900/50 backdrop-blur-sm">
-                    <MusicalNoteIcon className="h-12 w-12 text-text-tertiary" />
+                    <UserGroupIcon className="h-12 w-12 text-text-tertiary" />
                   </div>
-                  <p className="mt-4 text-sm text-text-tertiary">No track selected</p>
+                  <p className="mt-4 text-sm text-text-tertiary">No performer on stage</p>
                 </>
               )}
             </div>
           </div>
 
-          {/* Player Controls */}
+          {/* Performer Info & Controls */}
           <div className="flex-1 space-y-5">
-            {/* Track Info */}
+            {/* Performer Info */}
             <div>
               <h3 className="text-xl font-bold text-text-primary truncate">
-                {currentTrack?.title || 'No Track Playing'}
+                {currentPerformer?.dancer_name || 'Stage Empty'}
               </h3>
               <p className="text-text-secondary mt-1">
-                {currentTrack?.artist || 'Select a track from the queue'}
+                {currentPerformer ? 'Main Stage Performance' : 'Ready for next performer'}
               </p>
             </div>
 
-            {/* Progress Bar */}
-            <div className="space-y-2">
-              <div className="player-progress">
-                <div 
-                  className="player-progress-bar"
-                  style={{ width: `${progressPercentage}%` }}
-                />
+            {/* Progress Bar (if performing) */}
+            {currentPerformer && (
+              <div className="space-y-2">
+                <div className="player-progress">
+                  <div
+                    className="player-progress-bar"
+                    style={{
+                      width: `${Math.max(0, (1 - currentPerformer.remaining_time / currentPerformer.duration) * 100)}%`
+                    }}
+                  />
+                </div>
+                <div className="flex justify-between text-xs text-text-tertiary font-mono tabular-nums">
+                  <span>{formatTime(currentPerformer.duration - currentPerformer.remaining_time)}</span>
+                  <span>{formatTime(currentPerformer.remaining_time)}</span>
+                </div>
               </div>
-              <div className="flex justify-between text-xs text-text-tertiary font-mono tabular-nums">
-                <span>{formatTime(currentTime)}</span>
-                <span>{formatTime(duration)}</span>
-              </div>
-            </div>
+            )}
 
             {/* Control Buttons */}
             <div className="flex items-center justify-center gap-4">
-              <button className="btn-icon touch-target">
-                <BackwardIcon className="h-5 w-5" />
-              </button>
-              
-              <button
-                onClick={handlePlayPause}
-                className="player-btn-play touch-target"
-              >
-                {isPlaying ? (
-                  <PauseIcon className="h-7 w-7" />
-                ) : (
+              {currentPerformer ? (
+                <button
+                  onClick={handleEndPerformance}
+                  className="player-btn-play touch-target"
+                  title="End Performance"
+                >
+                  <CheckCircleIcon className="h-7 w-7" />
+                </button>
+              ) : (
+                <button
+                  onClick={handleNextPerformer}
+                  disabled={!mainQueue || mainQueue.length === 0}
+                  className="player-btn-play touch-target disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Start Next Performer"
+                >
                   <PlaySolidIcon className="h-7 w-7 ml-0.5" />
-                )}
-              </button>
-              
-              <button 
-                onClick={handleNext}
-                className="btn-icon touch-target"
+                </button>
+              )}
+
+              <button
+                onClick={handleNextPerformer}
+                disabled={!mainQueue || mainQueue.length === 0}
+                className="btn-icon touch-target disabled:opacity-50"
+                title="Next Performer"
               >
                 <ForwardIcon className="h-5 w-5" />
               </button>
             </div>
 
-            {/* Volume Control */}
+            {/* Queue Stats */}
             <div className="flex items-center gap-3">
-              <button className="btn-icon w-8 h-8">
-                <SpeakerXMarkIcon className="h-4 w-4" />
-              </button>
-              <div className="flex-1 player-progress">
-                <div 
-                  className="h-full rounded-full bg-electric-500 transition-all duration-150"
-                  style={{ width: `${volume}%` }}
-                />
+              <div className="flex-1 flex items-center gap-2 text-sm">
+                <QueueListIcon className="h-4 w-4 text-text-tertiary" />
+                <span className="text-text-tertiary">In Queue:</span>
+                <span className="text-text-primary font-semibold">{(mainQueue || []).filter(i => i.status === 'queued').length}</span>
               </div>
-              <button className="btn-icon w-8 h-8">
-                <SpeakerWaveIcon className="h-4 w-4" />
-              </button>
-              <span className="text-xs text-text-tertiary font-mono w-10 text-right tabular-nums">{volume}%</span>
+              <div className="flex-1 flex items-center gap-2 text-sm">
+                <ClockIcon className="h-4 w-4 text-text-tertiary" />
+                <span className="text-text-tertiary">Est. Wait:</span>
+                <span className="text-text-primary font-semibold">
+                  {formatTime((mainQueue || []).filter(i => i.status === 'queued').length * 180)}
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -222,7 +247,7 @@ const DJQueue: React.FC = () => {
             <h2 className="text-lg font-semibold text-text-primary">
               Up Next
               <span className="ml-2 text-sm font-normal text-text-tertiary">
-                ({currentQueue.length} tracks)
+                ({(mainQueue || []).filter(i => i.status === 'queued').length} dancers)
               </span>
             </h2>
           </div>
@@ -232,43 +257,40 @@ const DJQueue: React.FC = () => {
           <div className="flex items-center justify-center py-12">
             <div className="w-8 h-8 border-2 border-gold-500 border-t-transparent rounded-full animate-spin"></div>
           </div>
-        ) : currentQueue.length === 0 ? (
+        ) : (mainQueue || []).filter(i => i.status === 'queued').length === 0 ? (
           /* Empty State */
           <div className="text-center py-12">
             <div className="relative inline-block mb-6">
               <div className="absolute inset-0 bg-royal-500/20 rounded-full blur-2xl"></div>
               <div className="relative p-6 rounded-full bg-midnight-800 border border-white/5">
-                <MusicalNoteIcon className="h-12 w-12 text-text-tertiary" />
+                <UserGroupIcon className="h-12 w-12 text-text-tertiary" />
               </div>
             </div>
             <h3 className="text-lg font-medium text-text-primary mb-2">Queue is Empty</h3>
             <p className="text-text-tertiary mb-6 max-w-sm mx-auto">
-              Add some tracks to get the party started
+              {availableDancers.length > 0
+                ? 'Add dancers to the queue to start the rotation'
+                : 'Check in dancers first to add them to the queue'}
             </p>
-            <button
-              onClick={() => setShowAddModal(true)}
-              className="btn-primary touch-target"
-            >
-              <PlusIcon className="h-5 w-5 mr-2" />
-              Add First Track
-            </button>
+            {availableDancers.length > 0 && (
+              <button
+                onClick={() => setShowAddModal(true)}
+                className="btn-primary touch-target"
+              >
+                <PlusIcon className="h-5 w-5 mr-2" />
+                Add First Dancer
+              </button>
+            )}
           </div>
         ) : (
           /* Queue Items */
           <div className="space-y-2">
-            {currentQueue.map((track, index) => {
-              const isCurrentTrack = track.id === currentTrack?.id
-              return (
-                <div 
-                  key={track.id}
-                  className={`
-                    flex items-center gap-4 p-4 rounded-xl border transition-all duration-200
-                    ${isCurrentTrack 
-                      ? 'bg-gold-500/10 border-gold-500/30 glow-gold-subtle' 
-                      : 'bg-midnight-800/50 border-white/5 hover:border-white/10 hover:bg-midnight-800'
-                    }
-                    drag-item animate-fade-in
-                  `}
+            {mainQueue
+              .filter(item => item.status === 'queued')
+              .map((item, index) => (
+                <div
+                  key={item.id}
+                  className="flex items-center gap-4 p-4 rounded-xl border bg-midnight-800/50 border-white/5 hover:border-white/10 hover:bg-midnight-800 transition-all duration-200 drag-item animate-fade-in"
                   style={{ animationDelay: `${index * 30}ms` }}
                 >
                   {/* Drag Handle */}
@@ -276,50 +298,45 @@ const DJQueue: React.FC = () => {
                     <Bars3Icon className="h-5 w-5" />
                   </div>
 
-                  {/* Track Number / Playing Indicator */}
+                  {/* Position Number */}
                   <div className="w-8 flex justify-center">
-                    {isCurrentTrack && isPlaying ? (
-                      <div className="flex items-end gap-0.5 h-4">
-                        <div className="w-1 bg-gold-500 rounded-full animate-bounce" style={{ animationDelay: '0ms', height: '60%' }} />
-                        <div className="w-1 bg-gold-500 rounded-full animate-bounce" style={{ animationDelay: '150ms', height: '100%' }} />
-                        <div className="w-1 bg-gold-500 rounded-full animate-bounce" style={{ animationDelay: '300ms', height: '40%' }} />
-                      </div>
-                    ) : (
-                      <span className={`text-sm font-mono ${isCurrentTrack ? 'text-gold-500' : 'text-text-tertiary'}`}>
-                        {index + 1}
-                      </span>
-                    )}
+                    <span className="text-sm font-mono text-text-tertiary">
+                      {index + 1}
+                    </span>
                   </div>
 
-                  {/* Track Info */}
+                  {/* Dancer Info */}
                   <div className="flex-1 min-w-0">
-                    <h4 className={`font-medium truncate ${isCurrentTrack ? 'text-gold-500' : 'text-text-primary'}`}>
-                      {track.title}
+                    <h4 className="font-medium truncate text-text-primary">
+                      {item.dancer_name}
                     </h4>
                     <p className="text-sm text-text-tertiary truncate">
-                      {track.artist || 'Unknown Artist'}
+                      {item.song_title || 'Open Performance'}
                     </p>
                   </div>
 
                   {/* Duration */}
                   <div className="text-sm text-text-tertiary font-mono tabular-nums hidden sm:block">
-                    {track.duration ? formatTime(track.duration) : '--:--'}
+                    {item.duration ? formatTime(item.duration) : '3:00'}
                   </div>
 
                   {/* Actions */}
                   <div className="flex items-center gap-1">
-                    {!isCurrentTrack && (
+                    {index === 0 && !currentPerformer && (
                       <button
-                        onClick={() => dispatch(playTrack())}
+                        onClick={() => dispatch(startPerformance(item.id)).then(() => dispatch(fetchQueue()))}
                         className="btn-icon w-9 h-9 hover:text-gold-500 touch-target"
-                        title="Play"
+                        title="Start Performance"
                       >
                         <PlayIcon className="h-4 w-4" />
                       </button>
                     )}
-                    
+
                     <button
-                      onClick={() => handleRemoveTrack(track.id)}
+                      onClick={() => {
+                        // Remove from queue - will implement with backend
+                        console.log('Remove', item.id)
+                      }}
                       className="btn-icon w-9 h-9 hover:text-status-danger touch-target"
                       title="Remove"
                     >
@@ -327,57 +344,68 @@ const DJQueue: React.FC = () => {
                     </button>
                   </div>
                 </div>
-              )
-            })}
+              ))}
           </div>
         )}
       </div>
 
-      {/* Add Track Modal */}
+      {/* Add Dancer Modal */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div 
+          <div
             className="card-premium p-6 w-full max-w-md animate-scale-in"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-semibold text-text-primary">Add New Track</h3>
-              <button 
+              <h3 className="text-xl font-semibold text-text-primary">Add Entertainer to Queue</h3>
+              <button
                 onClick={() => setShowAddModal(false)}
                 className="btn-icon"
               >
                 <XMarkIcon className="h-5 w-5" />
               </button>
             </div>
-            
+
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-text-secondary mb-2">
-                  Track Title
+                  Select Dancer
                 </label>
-                <input
-                  type="text"
-                  value={newTrackTitle}
-                  onChange={(e) => setNewTrackTitle(e.target.value)}
+                <select
+                  value={selectedDancer}
+                  onChange={(e) => setSelectedDancer(e.target.value)}
                   className="input-premium"
-                  placeholder="Enter track title"
-                />
+                >
+                  <option value="">Choose a dancer...</option>
+                  {availableDancers.map(dancer => (
+                    <option key={dancer.id} value={dancer.id}>
+                      {dancer.stage_name || dancer.name}
+                    </option>
+                  ))}
+                </select>
+                {availableDancers.length === 0 && (
+                  <p className="text-sm text-text-tertiary mt-2">
+                    No checked-in dancers available. Check in dancers first.
+                  </p>
+                )}
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-text-secondary mb-2">
-                  Track URL or File Path
+                  Stage
                 </label>
-                <input
-                  type="url"
-                  value={newTrackUrl}
-                  onChange={(e) => setNewTrackUrl(e.target.value)}
+                <select
+                  value={selectedStage}
+                  onChange={(e) => setSelectedStage(e.target.value as 'main' | 'vip' | 'side')}
                   className="input-premium"
-                  placeholder="https://example.com/track.mp3"
-                />
+                >
+                  <option value="main">Main Stage</option>
+                  <option value="vip">VIP Stage</option>
+                  <option value="side">Side Stage</option>
+                </select>
               </div>
             </div>
-            
+
             <div className="flex gap-3 mt-6">
               <button
                 onClick={() => setShowAddModal(false)}
@@ -386,11 +414,11 @@ const DJQueue: React.FC = () => {
                 Cancel
               </button>
               <button
-                onClick={handleAddTrack}
-                disabled={!newTrackUrl || !newTrackTitle}
+                onClick={handleAddToQueue}
+                disabled={!selectedDancer}
                 className="flex-1 btn-primary disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none touch-target"
               >
-                Add Track
+                Add to Queue
               </button>
             </div>
           </div>

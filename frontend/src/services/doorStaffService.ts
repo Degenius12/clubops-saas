@@ -2,9 +2,9 @@
 import apiClient from '../config/api';
 
 // Types
-export interface CheckedInDancer {
+export interface CheckedInEntertainer {
   id: string;
-  dancerId: string;
+  entertainerId: string; // Updated from dancerId (API may still use dancer_id)
   shiftId: string;
   checkInTime: string;
   checkOutTime?: string;
@@ -13,7 +13,7 @@ export interface CheckedInDancer {
   barFeePaymentMethod?: 'CASH' | 'CARD';
   notes?: string;
   verifiedBy?: string;
-  dancer: {
+  entertainer: {
     id: string;
     stageName: string;
     firstName?: string;
@@ -28,7 +28,10 @@ export interface CheckedInDancer {
   updatedAt: string;
 }
 
-export interface DancerSearchResult {
+// Backward compatibility alias
+export type CheckedInDancer = CheckedInEntertainer;
+
+export interface EntertainerSearchResult {
   id: string;
   stageName: string;
   firstName?: string;
@@ -41,6 +44,9 @@ export interface DancerSearchResult {
   isCheckedIn: boolean;
   lastCheckIn?: string;
 }
+
+// Backward compatibility alias
+export type DancerSearchResult = EntertainerSearchResult;
 
 export interface VerificationAlert {
   id: string;
@@ -75,7 +81,7 @@ export interface DoorStaffSummary {
 }
 
 export interface CheckInParams {
-  dancerId: string;
+  entertainerId: string; // Updated from dancerId (API may still use dancer_id)
   barFeeAmount: number;
   barFeeStatus: 'PAID' | 'DEFERRED' | 'WAIVED';
   paymentMethod?: 'CASH' | 'CARD';
@@ -84,7 +90,16 @@ export interface CheckInParams {
 
 // API Functions
 export const doorStaffService = {
-  // Get all dancers checked in today
+  // Get all entertainers checked in today
+  getCheckedInEntertainers: async (): Promise<{
+    present: CheckedInEntertainer[];
+    departed: CheckedInEntertainer[];
+  }> => {
+    const response = await apiClient.get('/api/door-staff/checked-in');
+    return response.data;
+  },
+
+  // Backward compatibility alias
   getCheckedInDancers: async (): Promise<{
     present: CheckedInDancer[];
     departed: CheckedInDancer[];
@@ -93,7 +108,15 @@ export const doorStaffService = {
     return response.data;
   },
 
-  // Search dancers by name or badge
+  // Search entertainers by name or badge
+  searchEntertainers: async (query: string): Promise<EntertainerSearchResult[]> => {
+    const response = await apiClient.get('/api/door-staff/dancer/search', {
+      params: { q: query },  // Backend expects 'q' not 'query'
+    });
+    return response.data;
+  },
+
+  // Backward compatibility alias
   searchDancers: async (query: string): Promise<DancerSearchResult[]> => {
     const response = await apiClient.get('/api/door-staff/dancer/search', {
       params: { q: query },  // Backend expects 'q' not 'query'

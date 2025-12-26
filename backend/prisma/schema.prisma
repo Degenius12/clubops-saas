@@ -1,6 +1,6 @@
-// ClubOps SaaS - Prisma Schema
+// ClubFlow SaaS - Prisma Schema
 // Multi-tenant database schema with subscription management
-// Version 2.0 - Added fraud prevention, user roles, VIP Booth tracking
+// Version 2.1 - Dancer → Entertainer terminology update, fraud prevention, VIP Booth tracking
 
 generator client {
   provider = "prisma-client-js"
@@ -43,6 +43,9 @@ enum DancerShiftType {
   CUSTOM
 }
 
+// Alias for backward compatibility - use DancerShiftType in code but think of it as EntertainerShiftType
+// Will fully rename in future breaking change
+
 enum VipSessionStatus {
   ACTIVE
   COMPLETED
@@ -79,6 +82,22 @@ enum AlertStatus {
   DISMISSED
 }
 
+enum ScheduledShiftStatus {
+  SCHEDULED
+  CONFIRMED
+  DECLINED
+  CANCELLED
+  COMPLETED
+  NO_SHOW
+}
+
+enum ShiftSwapStatus {
+  PENDING
+  APPROVED
+  DECLINED
+  CANCELLED
+}
+
 // ==============================================
 // MULTI-TENANT FOUNDATION
 // ==============================================
@@ -96,6 +115,12 @@ model Club {
   vipSongRate        Decimal  @default(30.00) @map("vip_song_rate") @db.Decimal(10, 2)
   avgSongDuration    Int      @default(210) @map("avg_song_duration") // seconds (3.5 min)
 
+  // Late Fee Configuration (Feature #26)
+  lateFeeEnabled     Boolean  @default(true) @map("late_fee_enabled")
+  lateFeeAmount      Decimal  @default(10.00) @map("late_fee_amount") @db.Decimal(10, 2)
+  lateFeeGraceDays   Int      @default(3) @map("late_fee_grace_days") // Days after due date before late fee applies
+  lateFeeFrequency   String   @default("ONE_TIME") @map("late_fee_frequency") @db.VarChar(20) // ONE_TIME or DAILY
+
   // Active Shift Tracking (only one shift can be active at a time)
   activeShiftId      String?  @map("active_shift_id") @db.Uuid
   activeShiftLevel   Int?     @map("active_shift_level") // 1, 2, 3, 4, etc.
@@ -108,7 +133,7 @@ model Club {
 
   // Relations
   users                ClubUser[]
-  dancers              Dancer[]
+  entertainers         Entertainer[]
   djQueue              DjQueue[]
   musicLibrary         MusicLibrary[]
   vipBooths            VipBooth[]
@@ -119,12 +144,15 @@ model Club {
   paymentMethods       PaymentMethod[]
   shifts               Shift[]
   shiftConfigurations  ShiftConfiguration[]
-  dancerCheckIns       DancerCheckIn[]
+  entertainerCheckIns  EntertainerCheckIn[]
   songPlayLogs         SongPlayLog[]
   auditLogs            AuditLog[]
   verificationAlerts   VerificationAlert[]
   anomalyReports       AnomalyReport[]
   cashDrawers          CashDrawer[]
+  scheduledShifts      ScheduledShift[]
+  shiftSwaps           ShiftSwap[]
+  shiftNotifications   ShiftNotification[]
 
   @@map("clubs")
 }
@@ -152,14 +180,18 @@ model ClubUser {
   club                   Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
   recordedTransactions   FinancialTransaction[]
   shifts                 Shift[]
-  performedCheckIns      DancerCheckIn[] @relation("CheckInPerformedBy")
+  performedCheckIns      EntertainerCheckIn[] @relation("CheckInPerformedBy")
   vipSessionsStarted     VipSession[] @relation("VipStartedBy")
   vipSessionsEnded       VipSession[] @relation("VipEndedBy")
+  vipSessionItemsAdded   VipSessionItem[]
   auditLogsCreated       AuditLog[]
   alertsAcknowledged     VerificationAlert[] @relation("AlertAcknowledgedBy")
   alertsResolved         VerificationAlert[] @relation("AlertResolvedBy")
   cashDrawers            CashDrawer[]
   overridesApproved      VipSession[] @relation("OverrideApprovedBy")
+  scheduledShiftsCreated ScheduledShift[] @relation("ShiftCreatedBy")
+  shiftSwapsReviewed     ShiftSwap[] @relation("SwapReviewedBy")
+  shiftNotifications     ShiftNotification[]
 
   @@unique([clubId, email])
   @@map("club_users")
@@ -202,21 +234,21 @@ model Shift {
   club          Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
   user          ClubUser @relation(fields: [userId], references: [id])
   cashDrawer    CashDrawer?
-  checkIns      DancerCheckIn[]
+  checkIns      EntertainerCheckIn[]
   vipSessions   VipSession[]
 
   @@map("shifts")
 }
 
 // ==============================================
-// DANCER SHIFT CONFIGURATION
+// ENTERTAINER SHIFT CONFIGURATION
 // ==============================================
 
 model ShiftConfiguration {
   id           String           @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   clubId       String           @map("club_id") @db.Uuid
   name         String           @db.VarChar(50) // "Day Shift", "Night Shift", "Late Night", etc.
-  shiftType    DancerShiftType  // DAY, NIGHT, or CUSTOM
+  shiftType    DancerShiftType  // DAY, NIGHT, or CUSTOM (represents EntertainerShiftType)
   startTime    String           @map("start_time") @db.VarChar(10) // e.g., "14:00"
   endTime      String           @map("end_time") @db.VarChar(10) // e.g., "22:00"
   isActive     Boolean          @default(true) @map("is_active")
@@ -271,36 +303,36 @@ model CashDrawer {
 }
 
 // ==============================================
-// DANCER MANAGEMENT
+// ENTERTAINER MANAGEMENT
 // ==============================================
 
-model Dancer {
+model Entertainer {
   id                String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   clubId            String    @map("club_id") @db.Uuid
   stageName         String    @map("stage_name") @db.VarChar(100)
   legalName         String?   @map("legal_name") @db.VarChar(200)
   phone             String?   @db.VarChar(20)
   email             String?   @db.VarChar(255)
-  
+
   // License/Compliance
   licenseNumber     String?   @map("license_number") @db.VarChar(100)
   licenseExpiryDate DateTime? @map("license_expiry_date") @db.Date
   licenseStatus     String    @default("valid") @map("license_status") @db.VarChar(20)
-  
+
   // ID Verification (from initial scan)
   idScannedAt       DateTime? @map("id_scanned_at")
   idType            String?   @map("id_type") @db.VarChar(20) // DRIVERS_LICENSE, STATE_ID, PASSPORT
   idNumber          String?   @map("id_number") @db.VarChar(50) // Encrypted
   idState           String?   @map("id_state") @db.VarChar(2)
   dateOfBirth       DateTime? @map("date_of_birth") @db.Date
-  
+
   // QR Badge
   qrBadgeCode       String?   @unique @map("qr_badge_code") @db.VarChar(50)
   qrBadgeIssuedAt   DateTime? @map("qr_badge_issued_at")
-  
+
   // Photo for verification
   photoUrl          String?   @map("photo_url") @db.VarChar(500)
-  
+
   emergencyContact  Json      @default("{}") @map("emergency_contact")
   preferredMusic    Json      @default("[]") @map("preferred_music")
   isActive          Boolean   @default(true) @map("is_active")
@@ -312,19 +344,22 @@ model Dancer {
   djQueue               DjQueue[]
   vipSessions           VipSession[]
   financialTransactions FinancialTransaction[]
-  checkIns              DancerCheckIn[]
+  checkIns              EntertainerCheckIn[]
+  scheduledShifts       ScheduledShift[]
+  shiftSwapsRequested   ShiftSwap[]
+  shiftNotifications    ShiftNotification[]
 
-  @@map("dancers")
+  @@map("dancers") // Keep old table name for backward compatibility
 }
 
 // ==============================================
-// DANCER CHECK-IN (Door Staff)
+// ENTERTAINER CHECK-IN (Door Staff)
 // ==============================================
 
-model DancerCheckIn {
+model EntertainerCheckIn {
   id              String        @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   clubId          String        @map("club_id") @db.Uuid
-  dancerId        String        @map("dancer_id") @db.Uuid
+  entertainerId   String        @map("dancer_id") @db.Uuid // Keep old column name for backward compatibility
   shiftId         String?       @map("shift_id") @db.Uuid
   performedById   String        @map("performed_by_id") @db.Uuid
 
@@ -334,37 +369,37 @@ model DancerCheckIn {
   checkedInAt     DateTime      @default(now()) @map("checked_in_at")
   checkedOutAt    DateTime?     @map("checked_out_at")
 
-  // Dancer Shift Tracking (Day/Night/Custom shifts)
-  dancerShiftType DancerShiftType? @map("dancer_shift_type") // DAY, NIGHT, or CUSTOM
-  dancerShiftName String?          @map("dancer_shift_name") @db.VarChar(50) // Custom shift name
-  dancerShiftStartTime String?     @map("dancer_shift_start_time") @db.VarChar(10) // e.g., "14:00"
-  dancerShiftEndTime   String?     @map("dancer_shift_end_time") @db.VarChar(10) // e.g., "22:00"
-  
+  // Entertainer Shift Tracking (Day/Night/Custom shifts)
+  entertainerShiftType      DancerShiftType? @map("dancer_shift_type") // Keep old column name (represents EntertainerShiftType)
+  entertainerShiftName      String?          @map("dancer_shift_name") @db.VarChar(50)
+  entertainerShiftStartTime String?          @map("dancer_shift_start_time") @db.VarChar(10)
+  entertainerShiftEndTime   String?          @map("dancer_shift_end_time") @db.VarChar(10)
+
   // Bar Fee
   barFeeAmount    Decimal       @map("bar_fee_amount") @db.Decimal(10, 2)
   barFeeStatus    PaymentStatus @default(PENDING) @map("bar_fee_status")
   barFeePaidAt    DateTime?     @map("bar_fee_paid_at")
   barFeeWaivedBy  String?       @map("bar_fee_waived_by") @db.Uuid // Manager who waived
   barFeeWaivedReason String?    @map("bar_fee_waived_reason")
-  
+
   // License verification at check-in
   licenseVerified Boolean       @default(false) @map("license_verified")
   licenseAlert    String?       @map("license_alert") // EXPIRED, EXPIRING_SOON, etc.
-  
-  // Dancer confirmation (mobile app)
-  dancerConfirmed   Boolean     @default(false) @map("dancer_confirmed")
-  dancerConfirmedAt DateTime?   @map("dancer_confirmed_at")
-  
+
+  // Entertainer confirmation (mobile app)
+  entertainerConfirmed   Boolean     @default(false) @map("dancer_confirmed") // Keep old column name
+  entertainerConfirmedAt DateTime?   @map("dancer_confirmed_at") // Keep old column name
+
   notes           String?
   createdAt       DateTime      @default(now()) @map("created_at")
 
   // Relations
   club        Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
-  dancer      Dancer @relation(fields: [dancerId], references: [id])
+  entertainer Entertainer @relation(fields: [entertainerId], references: [id])
   shift       Shift? @relation(fields: [shiftId], references: [id])
   performedBy ClubUser @relation("CheckInPerformedBy", fields: [performedById], references: [id])
 
-  @@map("dancer_check_ins")
+  @@map("dancer_check_ins") // Keep old table name for backward compatibility
 }
 
 // ==============================================
@@ -374,7 +409,7 @@ model DancerCheckIn {
 model DjQueue {
   id              String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   clubId          String    @map("club_id") @db.Uuid
-  dancerId        String    @map("dancer_id") @db.Uuid
+  entertainerId   String    @map("dancer_id") @db.Uuid // Keep old column name for backward compatibility
   stageName       String    @map("stage_name") @db.VarChar(50)
   position        Int
   songRequest     String?   @map("song_request") @db.VarChar(255)
@@ -386,8 +421,8 @@ model DjQueue {
   updatedAt       DateTime  @default(now()) @updatedAt @map("updated_at")
 
   // Relations
-  club   Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
-  dancer Dancer @relation(fields: [dancerId], references: [id], onDelete: Cascade)
+  club        Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  entertainer Entertainer @relation(fields: [entertainerId], references: [id], onDelete: Cascade)
 
   @@map("dj_queue")
 }
@@ -460,9 +495,9 @@ model VipSession {
   id                String           @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   clubId            String           @map("club_id") @db.Uuid
   boothId           String           @map("booth_id") @db.Uuid
-  dancerId          String           @map("dancer_id") @db.Uuid
+  entertainerId     String           @map("dancer_id") @db.Uuid // Keep old column name for backward compatibility
   shiftId           String?          @map("shift_id") @db.Uuid
-  
+
   // Session Staff
   startedById       String           @map("started_by_id") @db.Uuid
   endedById         String?          @map("ended_by_id") @db.Uuid
@@ -495,6 +530,7 @@ model VipSession {
   
   // Financial
   songRate          Decimal          @map("song_rate") @db.Decimal(10, 2)
+  minimumSpend      Decimal?         @map("minimum_spend") @db.Decimal(10, 2) // Required minimum for booth
   houseFeeOwed      Decimal?         @map("house_fee_owed") @db.Decimal(10, 2)
   houseFeeStatus    PaymentStatus    @default(PENDING) @map("house_fee_status")
   houseFeePaidAt    DateTime?        @map("house_fee_paid_at")
@@ -519,13 +555,33 @@ model VipSession {
   // Relations
   club        Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
   booth       VipBooth @relation(fields: [boothId], references: [id])
-  dancer      Dancer @relation(fields: [dancerId], references: [id])
+  entertainer Entertainer @relation(fields: [entertainerId], references: [id])
   shift       Shift? @relation(fields: [shiftId], references: [id])
   startedBy   ClubUser @relation("VipStartedBy", fields: [startedById], references: [id])
   endedBy     ClubUser? @relation("VipEndedBy", fields: [endedById], references: [id])
   overrideBy  ClubUser? @relation("OverrideApprovedBy", fields: [overrideById], references: [id])
+  items       VipSessionItem[]
 
   @@map("vip_sessions")
+}
+
+model VipSessionItem {
+  id          String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  sessionId   String   @map("session_id") @db.Uuid
+  itemType    String   @map("item_type") @db.VarChar(30) // BOTTLE, SERVICE, FOOD, OTHER
+  itemName    String   @map("item_name") @db.VarChar(100)
+  quantity    Int      @default(1)
+  unitPrice   Decimal  @map("unit_price") @db.Decimal(10, 2)
+  totalPrice  Decimal  @map("total_price") @db.Decimal(10, 2)
+  addedById   String   @map("added_by_id") @db.Uuid
+  addedAt     DateTime @default(now()) @map("added_at")
+  notes       String?
+
+  // Relations
+  session   VipSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  addedBy   ClubUser @relation(fields: [addedById], references: [id])
+
+  @@map("vip_session_items")
 }
 
 // ==============================================
@@ -535,7 +591,7 @@ model VipSession {
 model FinancialTransaction {
   id              String        @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   clubId          String        @map("club_id") @db.Uuid
-  dancerId        String?       @map("dancer_id") @db.Uuid
+  entertainerId   String?       @map("dancer_id") @db.Uuid // Keep old column name for backward compatibility
   transactionType String        @map("transaction_type") @db.VarChar(30)
   category        String?       @db.VarChar(30) // BAR_FEE, VIP_HOUSE_FEE, COVER_CHARGE, TIP, etc.
   amount          Decimal       @db.Decimal(10, 2)
@@ -544,17 +600,17 @@ model FinancialTransaction {
   status          PaymentStatus @default(PENDING)
   dueDate         DateTime?     @map("due_date") @db.Date
   paidAt          DateTime?     @map("paid_at")
-  
+
   // Reference to source
   sourceType      String?       @map("source_type") @db.VarChar(30) // CHECK_IN, VIP_SESSION, COVER
   sourceId        String?       @map("source_id") @db.Uuid
-  
+
   recordedBy      String?       @map("recorded_by") @db.Uuid
   createdAt       DateTime      @default(now()) @map("created_at")
 
   // Relations
   club           Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
-  dancer         Dancer? @relation(fields: [dancerId], references: [id])
+  entertainer    Entertainer? @relation(fields: [entertainerId], references: [id])
   recordedByUser ClubUser? @relation(fields: [recordedBy], references: [id])
 
   @@map("financial_transactions")
@@ -627,8 +683,8 @@ model VerificationAlert {
   discrepancy     String?
   
   // Involved parties
-  involvedUserId  String?       @map("involved_user_id") @db.Uuid
-  involvedDancerId String?      @map("involved_dancer_id") @db.Uuid
+  involvedUserId       String?       @map("involved_user_id") @db.Uuid
+  involvedEntertainerId String?      @map("involved_dancer_id") @db.Uuid // Keep old column name for backward compatibility
   
   // Resolution
   acknowledgedById String?      @map("acknowledged_by_id") @db.Uuid
@@ -663,7 +719,7 @@ model AnomalyReport {
   
   // Analysis type
   analysisType    String   @map("analysis_type") @db.VarChar(50)
-  // VIP_ATTENDANT_VARIANCE, DOOR_STAFF_VARIANCE, DANCER_CORRELATION, etc.
+  // VIP_ATTENDANT_VARIANCE, DOOR_STAFF_VARIANCE, ENTERTAINER_CORRELATION, etc.
   
   // Findings
   findingsSummary String   @map("findings_summary")
@@ -671,8 +727,8 @@ model AnomalyReport {
   anomaliesFound  Int      @map("anomalies_found")
   
   // Flagged individuals
-  flaggedUserIds  String[] @map("flagged_user_ids") @db.Uuid
-  flaggedDancerIds String[] @map("flagged_dancer_ids") @db.Uuid
+  flaggedUserIds        String[] @map("flagged_user_ids") @db.Uuid
+  flaggedEntertainerIds String[] @map("flagged_dancer_ids") @db.Uuid // Keep old column name for backward compatibility
   
   // Severity
   overallRisk     AlertSeverity @default(LOW) @map("overall_risk")
@@ -754,4 +810,120 @@ model PaymentMethod {
   club Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
 
   @@map("payment_methods")
+}
+
+// ==============================================
+// SHIFT SCHEDULING SYSTEM (Features #21-23)
+// ==============================================
+
+// Scheduled Shifts - Future planned shifts for entertainers
+model ScheduledShift {
+  id             String               @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  clubId         String               @map("club_id") @db.Uuid
+  entertainerId  String               @map("entertainer_id") @db.Uuid
+  createdBy      String               @map("created_by") @db.Uuid // Manager who created the schedule
+
+  // Shift details
+  shiftDate      DateTime             @map("shift_date") @db.Date
+  startTime      String               @map("start_time") @db.VarChar(10) // "14:00"
+  endTime        String               @map("end_time") @db.VarChar(10) // "22:00"
+  position       String?              @db.VarChar(50) // Optional: "Stage", "Floor", "VIP", etc.
+
+  // Status
+  status         ScheduledShiftStatus @default(SCHEDULED)
+
+  // Entertainer response
+  confirmedAt    DateTime?            @map("confirmed_at")
+  declinedAt     DateTime?            @map("declined_at")
+  declineReason  String?              @map("decline_reason") @db.VarChar(500)
+
+  // Notification tracking
+  notificationSent Boolean            @default(false) @map("notification_sent")
+  notificationSentAt DateTime?        @map("notification_sent_at")
+
+  notes          String?
+  createdAt      DateTime             @default(now()) @map("created_at")
+  updatedAt      DateTime             @default(now()) @updatedAt @map("updated_at")
+
+  // Relations
+  club          Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  entertainer   Entertainer @relation(fields: [entertainerId], references: [id], onDelete: Cascade)
+  creator       ClubUser @relation("ShiftCreatedBy", fields: [createdBy], references: [id])
+  swaps         ShiftSwap[]
+  notifications ShiftNotification[]
+
+  @@index([clubId, shiftDate])
+  @@index([entertainerId, shiftDate])
+  @@index([clubId, status])
+  @@map("scheduled_shifts")
+}
+
+// Shift Swap Requests - Entertainers requesting to swap shifts
+model ShiftSwap {
+  id                  String          @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  clubId              String          @map("club_id") @db.Uuid
+  scheduledShiftId    String          @map("scheduled_shift_id") @db.Uuid
+  requestedBy         String          @map("requested_by") @db.Uuid // Entertainer requesting swap
+  swapWithEntertainerId String?       @map("swap_with_entertainer_id") @db.Uuid // Optional: specific entertainer
+
+  // Request details
+  reason              String          @map("reason") @db.VarChar(500)
+  requestedDate       DateTime        @default(now()) @map("requested_date")
+
+  // Management review
+  status              ShiftSwapStatus @default(PENDING)
+  reviewedBy          String?         @map("reviewed_by") @db.Uuid // Manager who reviewed
+  reviewedAt          DateTime?       @map("reviewed_at")
+  reviewNotes         String?         @map("review_notes") @db.VarChar(500)
+
+  createdAt           DateTime        @default(now()) @map("created_at")
+  updatedAt           DateTime        @default(now()) @updatedAt @map("updated_at")
+
+  // Relations
+  club                Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  scheduledShift      ScheduledShift @relation(fields: [scheduledShiftId], references: [id], onDelete: Cascade)
+  requester           Entertainer @relation(fields: [requestedBy], references: [id])
+  reviewer            ClubUser? @relation("SwapReviewedBy", fields: [reviewedBy], references: [id])
+
+  @@index([clubId, status])
+  @@index([scheduledShiftId])
+  @@map("shift_swaps")
+}
+
+// Shift Notifications - Track notifications sent to entertainers about their shifts
+model ShiftNotification {
+  id                String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  clubId            String    @map("club_id") @db.Uuid
+  entertainerId     String    @map("entertainer_id") @db.Uuid
+  userId            String?   @map("user_id") @db.Uuid // If notification also sent to a user
+  scheduledShiftId  String?   @map("scheduled_shift_id") @db.Uuid
+
+  // Notification details
+  notificationType  String    @map("notification_type") @db.VarChar(50)
+  // SHIFT_SCHEDULED, SHIFT_REMINDER, SHIFT_CANCELLED, SHIFT_SWAP_REQUEST, SHIFT_SWAP_APPROVED
+
+  title             String    @db.VarChar(200)
+  message           String    @db.VarChar(1000)
+
+  // Delivery tracking
+  deliveryMethod    String    @map("delivery_method") @db.VarChar(20) // SMS, EMAIL, PUSH, IN_APP
+  sentAt            DateTime  @default(now()) @map("sent_at")
+  deliveredAt       DateTime? @map("delivered_at")
+  readAt            DateTime? @map("read_at")
+
+  // Metadata
+  metadata          Json      @default("{}")
+
+  createdAt         DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  club              Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  entertainer       Entertainer @relation(fields: [entertainerId], references: [id], onDelete: Cascade)
+  user              ClubUser? @relation(fields: [userId], references: [id])
+  scheduledShift    ScheduledShift? @relation(fields: [scheduledShiftId], references: [id], onDelete: SetNull)
+
+  @@index([clubId, entertainerId])
+  @@index([scheduledShiftId])
+  @@index([sentAt])
+  @@map("shift_notifications")
 }

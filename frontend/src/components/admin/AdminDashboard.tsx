@@ -187,7 +187,7 @@ const AdminDashboard: React.FC = () => {
                   <UsersIcon className="h-6 w-6 text-accent-gold" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-medium text-gray-400">Total Dancers</h3>
+                  <h3 className="text-sm font-medium text-gray-400">Total Entertainers</h3>
                   <p className="text-2xl font-bold text-white">{platformStats.totalDancers}</p>
                   <p className="text-xs text-green-400">+{platformStats.activeDancers} active</p>
                 </div>

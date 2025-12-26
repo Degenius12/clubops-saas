@@ -130,7 +130,7 @@ const FeatureTourStep: React.FC = () => {
       {
         id: 'dancer-management',
         target: '[data-tour="dancer-nav"]',
-        title: 'Dancer Management',
+        title: 'Entertainer Management',
         content: 'Manage your talent roster. Track check-ins, stage rotations, and earnings. All in one place.',
         placement: 'right',
       },

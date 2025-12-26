@@ -1,7 +1,11 @@
 import React, { useEffect, useState, useRef } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { RootState, AppDispatch } from '../../store/store'
-import { fetchRevenue } from '../../store/slices/revenueSlice'
+import {
+  fetchRevenueSummary,
+  fetchWeeklyRevenue,
+  fetchMonthlyRevenue
+} from '../../store/slices/revenueSlice'
 import {
   CurrencyDollarIcon,
   ArrowTrendingUpIcon,
@@ -51,34 +55,45 @@ const useAnimatedCounter = (end: number, duration: number = 800) => {
 
 const Revenue: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>()
-  const { 
-    todayRevenue, 
-    weeklyRevenue, 
-    monthlyRevenue, 
+  const {
+    todayRevenue,
+    barFees,
+    vipFees,
+    coverCharges,
+    otherRevenue,
+    yesterdayTotal,
+    comparisonPercent,
+    weeklyRevenue,
+    weeklyChange,
+    monthlyRevenue,
+    monthlyChange,
     yearlyRevenue,
-    loading 
+    loading
   } = useSelector((state: RootState) => state.revenue)
-  
+
   const [selectedPeriod, setSelectedPeriod] = useState('today')
   const [showExportModal, setShowExportModal] = useState(false)
 
   // Animated values
-  const animatedToday = useAnimatedCounter(todayRevenue || 2847)
-  const animatedWeekly = useAnimatedCounter(weeklyRevenue || 18420)
-  const animatedMonthly = useAnimatedCounter(monthlyRevenue || 48500)
-  const animatedYearly = useAnimatedCounter(yearlyRevenue || 385000)
+  const animatedToday = useAnimatedCounter(todayRevenue)
+  const animatedWeekly = useAnimatedCounter(weeklyRevenue)
+  const animatedMonthly = useAnimatedCounter(monthlyRevenue)
+  const animatedYearly = useAnimatedCounter(yearlyRevenue)
 
   useEffect(() => {
-    dispatch(fetchRevenue({ period: selectedPeriod }))
-  }, [dispatch, selectedPeriod])
+    // Fetch all revenue data on mount
+    dispatch(fetchRevenueSummary())
+    dispatch(fetchWeeklyRevenue())
+    dispatch(fetchMonthlyRevenue())
+  }, [dispatch])
 
   const revenueCards = [
     {
       title: 'Today',
       amount: animatedToday,
-      rawAmount: todayRevenue || 2847,
-      change: '+12.5%',
-      positive: true,
+      rawAmount: todayRevenue,
+      change: comparisonPercent !== 0 ? `${comparisonPercent > 0 ? '+' : ''}${comparisonPercent.toFixed(1)}%` : '—',
+      positive: comparisonPercent >= 0,
       period: 'vs yesterday',
       icon: CurrencyDollarIcon,
       gradient: 'from-electric-500 to-electric-600',
@@ -87,9 +102,9 @@ const Revenue: React.FC = () => {
     {
       title: 'This Week',
       amount: animatedWeekly,
-      rawAmount: weeklyRevenue || 18420,
-      change: '+8.2%',
-      positive: true,
+      rawAmount: weeklyRevenue,
+      change: weeklyChange !== 0 ? `${weeklyChange > 0 ? '+' : ''}${weeklyChange.toFixed(1)}%` : '—',
+      positive: weeklyChange >= 0,
       period: 'vs last week',
       icon: CalendarDaysIcon,
       gradient: 'from-gold-500 to-gold-600',
@@ -98,9 +113,9 @@ const Revenue: React.FC = () => {
     {
       title: 'This Month',
       amount: animatedMonthly,
-      rawAmount: monthlyRevenue || 48500,
-      change: '+15.7%',
-      positive: true,
+      rawAmount: monthlyRevenue,
+      change: monthlyChange !== 0 ? `${monthlyChange > 0 ? '+' : ''}${monthlyChange.toFixed(1)}%` : '—',
+      positive: monthlyChange >= 0,
       period: 'vs last month',
       icon: ChartBarIcon,
       gradient: 'from-royal-500 to-royal-600',
@@ -109,8 +124,8 @@ const Revenue: React.FC = () => {
     {
       title: 'This Year',
       amount: animatedYearly,
-      rawAmount: yearlyRevenue || 385000,
-      change: '+22.1%',
+      rawAmount: yearlyRevenue,
+      change: '—',
       positive: true,
       period: 'vs last year',
       icon: ArrowTrendingUpIcon,
@@ -119,35 +134,37 @@ const Revenue: React.FC = () => {
     }
   ]
 
+  // Calculate percentages from real data
+  const total = todayRevenue || 1
   const revenueBreakdown = [
-    { 
-      category: 'VIP Booth', 
-      amount: (todayRevenue || 2847) * 0.55, 
-      percentage: 55, 
+    {
+      category: 'VIP Fees',
+      amount: vipFees,
+      percentage: Math.round((vipFees / total) * 100),
       color: 'bg-gold-500',
       textColor: 'text-gold-400',
       icon: BuildingStorefrontIcon
     },
-    { 
-      category: 'Bar Fees', 
-      amount: (todayRevenue || 2847) * 0.28, 
-      percentage: 28, 
+    {
+      category: 'Bar Fees',
+      amount: barFees,
+      percentage: Math.round((barFees / total) * 100),
       color: 'bg-royal-500',
       textColor: 'text-royal-400',
       icon: BanknotesIcon
     },
-    { 
-      category: 'Cover Charges', 
-      amount: (todayRevenue || 2847) * 0.12, 
-      percentage: 12, 
+    {
+      category: 'Cover Charges',
+      amount: coverCharges,
+      percentage: Math.round((coverCharges / total) * 100),
       color: 'bg-electric-500',
       textColor: 'text-electric-400',
       icon: TicketIcon
     },
-    { 
-      category: 'Tips & Other', 
-      amount: (todayRevenue || 2847) * 0.05, 
-      percentage: 5, 
+    {
+      category: 'Other Revenue',
+      amount: otherRevenue,
+      percentage: Math.round((otherRevenue / total) * 100),
       color: 'bg-success-500',
       textColor: 'text-success-400',
       icon: SparklesIcon
@@ -173,9 +190,9 @@ const Revenue: React.FC = () => {
   }
 
   const monthlyGoal = 50000
-  const goalProgress = ((monthlyRevenue || 48500) / monthlyGoal) * 100
+  const goalProgress = (monthlyRevenue / monthlyGoal) * 100
   const daysRemaining = 30 - new Date().getDate()
-  const dailyTarget = daysRemaining > 0 ? (monthlyGoal - (monthlyRevenue || 48500)) / daysRemaining : 0
+  const dailyTarget = daysRemaining > 0 ? (monthlyGoal - monthlyRevenue) / daysRemaining : 0
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -316,7 +333,7 @@ const Revenue: React.FC = () => {
               <div>
                 <p className="text-sm text-text-secondary">Revenue Per Hour</p>
                 <p className="text-xl font-bold text-electric-400 font-mono">
-                  ${Math.round((todayRevenue || 2847) / Math.max(new Date().getHours(), 1))}
+                  ${Math.round(todayRevenue / Math.max(new Date().getHours(), 1))}
                 </p>
               </div>
             </div>
@@ -332,7 +349,7 @@ const Revenue: React.FC = () => {
               <div>
                 <p className="text-sm text-text-secondary">Peak Hour Revenue</p>
                 <p className="text-xl font-bold text-gold-400 font-mono">
-                  ${Math.round((todayRevenue || 2847) * 0.35)}
+                  ${Math.round(todayRevenue * 0.35)}
                 </p>
               </div>
             </div>
@@ -348,7 +365,7 @@ const Revenue: React.FC = () => {
               <div>
                 <p className="text-sm text-text-secondary">Avg Transaction</p>
                 <p className="text-xl font-bold text-royal-400 font-mono">
-                  ${Math.round((todayRevenue || 2847) / 24)}
+                  ${todayRevenue > 0 ? Math.round(todayRevenue / 24) : 0}
                 </p>
               </div>
             </div>
@@ -366,7 +383,7 @@ const Revenue: React.FC = () => {
           </div>
           <div className="text-right">
             <p className="text-2xl font-bold text-gold-400 font-mono">
-              ${(monthlyRevenue || 48500).toLocaleString()}
+              ${monthlyRevenue.toLocaleString()}
             </p>
             <p className="text-sm text-text-muted">of ${monthlyGoal.toLocaleString()} goal</p>
           </div>

@@ -24,7 +24,8 @@
   },
   "devDependencies": {
     "concurrently": "^8.2.2",
-    "playwright": "^1.57.0"
+    "playwright": "^1.57.0",
+    "puppeteer": "^24.34.0"
   },
   "keywords": [
     "saas",
@@ -41,6 +42,7 @@
     "url": "git+https://github.com/your-org/clubops-saas.git"
   },
   "dependencies": {
-    "@rollup/rollup-win32-x64-msvc": "^4.54.0"
+    "@rollup/rollup-win32-x64-msvc": "^4.54.0",
+    "node-cron": "^4.2.1"
   }
 }

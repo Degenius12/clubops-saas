@@ -53,7 +53,7 @@ router.get('/integrity', async (req, res) => {
       : 100;
 
     // Get check-ins for compliance
-    const checkIns = await prisma.dancerCheckIn.findMany({
+    const checkIns = await prisma.entertainerCheckIn.findMany({
       where: {
         clubId: req.user.clubId,
         checkedInAt: { gte: startDate }
@@ -120,11 +120,23 @@ router.get('/integrity', async (req, res) => {
       }
     });
 
+    const trend = matchingSessions.length > prevSessions ? 'up' : matchingSessions.length < prevSessions ? 'down' : 'stable';
+
     res.json({
+      // Flat format for frontend compatibility
+      songCountMatchRate: songCountMatchPercent,
+      checkInComplianceRate: checkInCompliancePercent,
+      revenueAccuracyRate: revenueAccuracyPercent,
+      overallIntegrityScore: overallScore,
+      statusBadge: overallScore >= 90 ? 'excellent' : overallScore >= 75 ? 'good' : overallScore >= 60 ? 'warning' : 'critical',
+      trendDirection: trend,
+      lastUpdated: new Date().toISOString(),
+
+      // Detailed format (backwards compatibility)
       overall: {
         score: overallScore,
         status: overallScore >= 90 ? 'excellent' : overallScore >= 75 ? 'good' : overallScore >= 60 ? 'warning' : 'critical',
-        trend: matchingSessions.length > prevSessions ? 'up' : matchingSessions.length < prevSessions ? 'down' : 'stable'
+        trend
       },
       metrics: {
         songCountMatch: {
@@ -214,12 +226,30 @@ router.get('/audit-log', async (req, res) => {
       _count: { id: true }
     });
 
+    // Format response to match frontend expectations
+    const formattedEntries = logs.map(log => ({
+      id: log.id,
+      clubId: log.clubId,
+      userId: log.userId,
+      action: log.action,
+      entityType: log.entityType,
+      entityId: log.entityId,
+      previousData: log.previousData,
+      newData: log.newData,
+      timestamp: log.createdAt,
+      ipAddress: log.ipAddress,
+      user: log.user ? {
+        name: `${log.user.firstName} ${log.user.lastName}`,
+        role: log.user.role,
+        email: log.user.email
+      } : null
+    }));
+
     res.json({
-      logs,
-      summary: {
-        total: logs.length,
-        byAction: actionCounts.reduce((acc, a) => ({ ...acc, [a.action]: a._count.id }), {})
-      }
+      entries: formattedEntries,
+      total: logs.length,
+      page: 1,
+      limit: parseInt(limit)
     });
   } catch (error) {
     console.error('Get audit log error:', error);
@@ -311,6 +341,9 @@ router.get('/comparisons', async (req, res) => {
 
     res.json({
       comparisons,
+      total: comparisons.length,
+      page: 1,
+      limit: parseInt(limit),
       summary: {
         total: comparisons.length,
         matching,
@@ -351,16 +384,23 @@ router.get('/anomalies', async (req, res) => {
       take: parseInt(limit)
     });
 
-    // Status summary
+    // Status summary - map database statuses to frontend expected format
     const statusCounts = await prisma.verificationAlert.groupBy({
       by: ['status'],
       where: { clubId: req.user.clubId },
       _count: { id: true }
     });
 
+    const statusMap = statusCounts.reduce((acc, s) => ({ ...acc, [s.status]: s._count.id }), {});
+
     res.json({
       alerts,
-      summary: statusCounts.reduce((acc, s) => ({ ...acc, [s.status]: s._count.id }), {})
+      statusSummary: {
+        pending: statusMap['OPEN'] || statusMap['PENDING'] || 0,
+        acknowledged: statusMap['ACKNOWLEDGED'] || 0,
+        resolved: statusMap['RESOLVED'] || 0,
+        dismissed: statusMap['DISMISSED'] || 0
+      }
     });
   } catch (error) {
     console.error('Get anomalies error:', error);
@@ -516,7 +556,7 @@ router.get('/employee-performance', async (req, res) => {
         : 0;
 
       // Get check-ins (for door staff)
-      const checkIns = await prisma.dancerCheckIn.findMany({
+      const checkIns = await prisma.entertainerCheckIn.findMany({
         where: {
           performedById: emp.id,
           checkedInAt: { gte: startDate }

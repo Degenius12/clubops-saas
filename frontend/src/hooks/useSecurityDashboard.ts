@@ -45,7 +45,10 @@ export function useSecurityDashboard(clubId: string) {
     error,
   } = useAppSelector((state) => state.security);
 
-  // WebSocket for real-time updates
+  // WebSocket for real-time updates (temporarily disabled to prevent crashes)
+  // TODO: Re-enable when Socket.IO server is fully configured
+  const isConnected = false;
+  /*
   const { isConnected } = useWebSocket({
     clubId,
     enabled: !!clubId,
@@ -66,6 +69,7 @@ export function useSecurityDashboard(clubId: string) {
       dispatch(fetchIntegrityMetrics());
     },
   });
+  */
 
   // Initial data fetch
   useEffect(() => {
@@ -212,10 +216,12 @@ export function useSecurityDashboard(clubId: string) {
     dispatch(fetchReports());
   }, [dispatch, dateFilter]);
 
-  // Computed values
-  const pendingAlertsCount = anomalies.statusSummary.pending;
-  const unviewedReportsCount = reports.filter((r) => !r.viewedByOwner).length;
-  const flaggedComparisonsCount = songComparisons.comparisons.filter((c) => c.flagged).length;
+  // Computed values (with defensive safety checks)
+  const pendingAlertsCount = anomalies?.statusSummary?.pending ?? 0;
+  const unviewedReportsCount = Array.isArray(reports) ? reports.filter((r) => !r.viewedByOwner).length : 0;
+  const flaggedComparisonsCount = (songComparisons && Array.isArray(songComparisons.comparisons))
+    ? songComparisons.comparisons.filter((c) => c.flagged).length
+    : 0;
 
   return {
     // State

@@ -12,7 +12,7 @@
       "Verify redirect to manager dashboard",
       "Verify session is created"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 2,
@@ -27,7 +27,7 @@
       "Verify redirect to owner admin dashboard",
       "Verify owner-level permissions are granted"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 3,
@@ -42,7 +42,7 @@
       "Verify redirect to DJ queue interface",
       "Verify only DJ tools are accessible"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 4,
@@ -58,7 +58,7 @@
       "Save dancer profile",
       "Verify dancer appears in dancer list"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 5,
@@ -73,7 +73,7 @@
       "Verify dancer status changes to 'On Floor'",
       "Verify timestamp is recorded"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 6,
@@ -88,7 +88,7 @@
       "Verify shift duration is calculated",
       "Verify fees are calculated based on shift"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 7,
@@ -103,7 +103,7 @@
       "Verify current performer is highlighted",
       "Verify queue order is visible"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 8,
@@ -117,7 +117,7 @@
       "Verify dancer appears at end of queue",
       "Verify queue position number is assigned"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 9,
@@ -132,7 +132,7 @@
       "Verify next dancer becomes current",
       "Verify stage time starts tracking"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 10,
@@ -146,7 +146,7 @@
       "Verify queue order updates",
       "Verify position numbers update correctly"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 11,
@@ -163,7 +163,7 @@
       "Save reservation",
       "Verify booth shows as reserved"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 12,
@@ -179,7 +179,7 @@
       "Verify running total updates",
       "Verify progress bar updates"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 13,
@@ -194,7 +194,7 @@
       "Verify manager dashboard shows warning",
       "Verify alert includes booth number and shortfall amount"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 14,
@@ -209,7 +209,7 @@
       "Verify alert shows transaction details",
       "Verify alert is logged in audit trail"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 15,
@@ -226,7 +226,7 @@
       "Add resolution notes",
       "Verify alert status updates"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 16,
@@ -241,7 +241,7 @@
       "Generate discrepancy report",
       "Verify report shows dancer, date, amounts"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 17,
@@ -256,7 +256,7 @@
       "Verify breakdown by category (bar, VIP, door)",
       "Verify comparison to previous day"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 18,
@@ -271,7 +271,7 @@
       "Verify each day shows revenue total",
       "Verify trend line is calculated"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 19,
@@ -287,7 +287,7 @@
       "Verify export to PDF works",
       "Verify export includes charts"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 20,
@@ -302,7 +302,7 @@
       "Verify no page refresh needed",
       "Verify update happens within 5 seconds"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 21,
@@ -318,7 +318,7 @@
       "Save schedule",
       "Verify shift appears on calendar"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 22,
@@ -333,7 +333,7 @@
       "Verify notification appears",
       "Verify notification shows date, time, position"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 23,
@@ -349,7 +349,7 @@
       "Verify both dancers notified",
       "Verify schedule updates"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 24,
@@ -364,7 +364,7 @@
       "Verify fee matches club rate structure",
       "Verify fee appears on dancer's tab"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 25,
@@ -380,7 +380,7 @@
       "Record transaction",
       "Verify balance updates"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 26,
@@ -395,7 +395,7 @@
       "Verify dancer is notified",
       "Verify late fee appears on statement"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 27,

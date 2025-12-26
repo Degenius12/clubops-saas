@@ -267,7 +267,7 @@ const Settings: React.FC = () => {
                 {[
                   { key: 'complianceAlerts', title: 'Compliance Alerts', desc: 'License expirations and compliance issues', icon: ShieldCheckIcon, critical: true },
                   { key: 'vipAlerts', title: 'VIP Booth Alerts', desc: 'Session timers and booth status changes', icon: BuildingStorefrontIcon },
-                  { key: 'dancerCheckIns', title: 'Dancer Check-ins', desc: 'Notifications when dancers check in/out', icon: UserCircleIcon },
+                  { key: 'dancerCheckIns', title: 'Entertainer Check-ins', desc: 'Notifications when entertainers check in/out', icon: UserCircleIcon },
                   { key: 'revenueReports', title: 'Revenue Reports', desc: 'Daily and weekly revenue summaries', icon: CreditCardIcon },
                   { key: 'emailAlerts', title: 'Email Notifications', desc: 'Receive notifications via email', icon: BellIcon },
                   { key: 'smsAlerts', title: 'SMS Alerts', desc: 'Text messages for critical alerts', icon: DevicePhoneMobileIcon },
