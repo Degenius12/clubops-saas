@@ -11,22 +11,34 @@ const RATE_LIMITS = {
   enterprise: { requests: 10000, windowMs: 60 * 60 * 1000 }
 };
 
-const rateLimitMiddleware = (req, res, next) => {
-  const tier = req.subscriptionTier || 'free';
-  const limits = RATE_LIMITS[tier];
-
-  const limiter = rateLimit({
+// Create limiters at initialization time (not in request handler)
+const limiters = {};
+for (const [tier, limits] of Object.entries(RATE_LIMITS)) {
+  limiters[tier] = rateLimit({
     windowMs: limits.windowMs,
     max: limits.requests,
     message: `Rate limit exceeded for ${tier} tier. Max ${limits.requests} requests per hour.`,
     standardHeaders: true,
     legacyHeaders: false,
-    keyGenerator: (req) => {
-      return `${req.clubId}-${req.ip}`;
+    skip: (req) => {
+      // Skip if tier doesn't match (let another limiter handle it)
+      const requestTier = req.subscriptionTier || 'free';
+      return requestTier !== tier;
     }
+    // Remove custom keyGenerator to use default (fixes IPv6 issue)
   });
+}
 
-  limiter(req, res, next);
+const rateLimitMiddleware = (req, res, next) => {
+  const tier = req.subscriptionTier || 'free';
+  const limiter = limiters[tier];
+
+  if (!limiter) {
+    // If tier not found, use free tier as fallback
+    limiters.free(req, res, next);
+  } else {
+    limiter(req, res, next);
+  }
 };
 
 module.exports = rateLimitMiddleware;

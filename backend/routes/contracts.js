@@ -28,7 +28,7 @@ Entertainer will provide adult entertainment services at the Club's establishmen
 {club_address}.
 
 3. COMPENSATION
-- House Fee: ${house_fee} per shift
+- House Fee: {house_fee} per shift
 - Stage Performance: Entertainer retains 100% of stage tips
 - Private Room: Entertainer retains percentage per Club policy
 - Payment Schedule: {payment_schedule}
@@ -74,7 +74,7 @@ applicable benefits.
 Employee's position is: Adult Entertainer
 
 3. COMPENSATION
-- Hourly Rate: ${hourly_rate}/hour
+- Hourly Rate: {hourly_rate}/hour
 - Stage Performance Bonus: Per performance
 - Commission: {commission_structure}
 - Pay Schedule: {pay_schedule}
