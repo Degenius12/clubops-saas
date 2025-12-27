@@ -68,7 +68,9 @@
       "Bash(tee:*)",
       "Bash(npx prisma migrate:*)",
       "Bash(timeout 5 bash:*)",
-      "Bash(timeout 10 node:*)"
+      "Bash(timeout 10 node:*)",
+      "Bash(pkill:*)",
+      "Bash(timeout 90 node:*)"
     ],
     "deny": [],
     "ask": []
