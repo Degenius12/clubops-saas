@@ -11,34 +11,23 @@ const RATE_LIMITS = {
   enterprise: { requests: 10000, windowMs: 60 * 60 * 1000 }
 };
 
-// Create limiters at initialization time (not in request handler)
-const limiters = {};
-for (const [tier, limits] of Object.entries(RATE_LIMITS)) {
-  limiters[tier] = rateLimit({
-    windowMs: limits.windowMs,
-    max: limits.requests,
-    message: `Rate limit exceeded for ${tier} tier. Max ${limits.requests} requests per hour.`,
-    standardHeaders: true,
-    legacyHeaders: false,
-    skip: (req) => {
-      // Skip if tier doesn't match (let another limiter handle it)
-      const requestTier = req.subscriptionTier || 'free';
-      return requestTier !== tier;
-    }
-    // Remove custom keyGenerator to use default (fixes IPv6 issue)
-  });
-}
+// Create a single rate limiter at initialization (not per-tier to avoid complexity)
+const defaultLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: (req) => {
+    // Dynamically set max based on subscription tier
+    const tier = req.subscriptionTier || 'free';
+    return RATE_LIMITS[tier]?.requests || RATE_LIMITS.free.requests;
+  },
+  message: (req) => {
+    const tier = req.subscriptionTier || 'free';
+    const limit = RATE_LIMITS[tier]?.requests || RATE_LIMITS.free.requests;
+    return `Rate limit exceeded for ${tier} tier. Max ${limit} requests per hour.`;
+  },
+  standardHeaders: true,
+  legacyHeaders: false
+  // Use default keyGenerator (fixes IPv6 issue)
+});
 
-const rateLimitMiddleware = (req, res, next) => {
-  const tier = req.subscriptionTier || 'free';
-  const limiter = limiters[tier];
-
-  if (!limiter) {
-    // If tier not found, use free tier as fallback
-    limiters.free(req, res, next);
-  } else {
-    limiter(req, res, next);
-  }
-};
-
-module.exports = rateLimitMiddleware;
+// Export the limiter directly - it's already configured to handle all tiers
+module.exports = defaultLimiter;
