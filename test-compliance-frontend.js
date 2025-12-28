@@ -159,8 +159,14 @@ async function testEntertainerOnboarding() {
     console.log(`  Form Fields Found: ${formFields.length}`);
 
     // Check for navigation buttons
-    const hasNextButton = await page.$('button:has-text("Next"), button:has-text("Continue")') !== null;
-    const hasBackButton = await page.$('button:has-text("Back"), button:has-text("Previous")') !== null;
+    const hasNextButton = await page.evaluate(() => {
+      const buttons = Array.from(document.querySelectorAll('button'));
+      return buttons.some(b => b.textContent?.includes('Next') || b.textContent?.includes('Continue'));
+    });
+    const hasBackButton = await page.evaluate(() => {
+      const buttons = Array.from(document.querySelectorAll('button'));
+      return buttons.some(b => b.textContent?.includes('Back') || b.textContent?.includes('Previous'));
+    });
     console.log(`  Has Next Button: ${hasNextButton}, Has Back Button: ${hasBackButton}`);
 
     // Take screenshot
@@ -226,7 +232,10 @@ async function testSignatureCanvas() {
       console.log(`  Canvas Dimensions: ${canvasDimensions.width}x${canvasDimensions.height}`);
 
       // Check for clear/reset button
-      const hasClearButton = await page.$('button:has-text("Clear"), button:has-text("Reset")') !== null;
+      const hasClearButton = await page.evaluate(() => {
+        const buttons = Array.from(document.querySelectorAll('button'));
+        return buttons.some(b => b.textContent?.includes('Clear') || b.textContent?.includes('Reset'));
+      });
       console.log(`  Has Clear Button: ${hasClearButton}`);
     }
 

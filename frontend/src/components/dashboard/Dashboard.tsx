@@ -105,10 +105,10 @@ const Dashboard: React.FC = () => {
   }
 
   // Calculate dashboard metrics
-  const activeDancers = dancers.filter(d => d.status === 'active').length
-  const occupiedRooms = rooms.filter(r => r.status === 'occupied').length
-  const queueLength = currentQueue.length
-  const complianceIssues = dancers.filter(d => d.complianceStatus !== 'valid').length
+  const activeDancers = (dancers || []).filter(d => d.status === 'active').length
+  const occupiedRooms = (rooms || []).filter(r => r.status === 'occupied').length
+  const queueLength = (currentQueue || []).length
+  const complianceIssues = (dancers || []).filter(d => d.complianceStatus !== 'valid').length
 
   // Get user role for filtering
   const userRole = user?.role?.toUpperCase() || 'MANAGER'
@@ -118,7 +118,7 @@ const Dashboard: React.FC = () => {
     {
       name: 'Active Entertainers',
       value: activeDancers,
-      total: dancers.length,
+      total: (dancers || []).length,
       icon: UsersIcon,
       iconBg: 'bg-electric-500/10',
       iconColor: 'text-electric-400',
@@ -130,7 +130,7 @@ const Dashboard: React.FC = () => {
     {
       name: 'VIP Booths',
       value: occupiedRooms,
-      total: rooms.length,
+      total: (rooms || []).length,
       icon: BuildingStorefrontIcon,
       iconBg: 'bg-gold-500/10',
       iconColor: 'text-gold-500',

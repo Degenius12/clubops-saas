@@ -70,7 +70,8 @@
       "Bash(timeout 5 bash:*)",
       "Bash(timeout 10 node:*)",
       "Bash(pkill:*)",
-      "Bash(timeout 90 node:*)"
+      "Bash(timeout 90 node:*)",
+      "Bash(timeout 120 node:*)"
     ],
     "deny": [],
     "ask": []
