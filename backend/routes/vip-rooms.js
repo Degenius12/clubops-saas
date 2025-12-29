@@ -17,12 +17,10 @@ router.get('/', async (req, res) => {
       include: {
         sessions: {
           where: {
-            status: {
-              in: ['ACTIVE', 'PENDING_CHECKOUT']
-            }
+            status: 'ACTIVE'
           },
           include: {
-            dancer: {
+            entertainer: {
               select: {
                 id: true,
                 stageName: true,
@@ -64,7 +62,7 @@ router.get('/', async (req, res) => {
         currentSession = {
           id: activeSession.id,
           dancer_id: activeSession.entertainerId,
-          dancer_name: activeSession.dancer.stageName || activeSession.dancer.legalName,
+          dancer_name: activeSession.entertainer.stageName || activeSession.entertainer.legalName,
           customer_name: activeSession.customerName,
           started_at: activeSession.startedAt,
           song_count: activeSession.songCountManual,
@@ -141,9 +139,7 @@ router.post('/:id/start-session', [
     const existingSession = await prisma.vipSession.findFirst({
       where: {
         boothId,
-        status: {
-          in: ['ACTIVE', 'PENDING_CHECKOUT']
-        }
+        status: 'ACTIVE'
       }
     });
 
@@ -193,7 +189,7 @@ router.post('/:id/start-session', [
         status: 'ACTIVE'
       },
       include: {
-        dancer: {
+        entertainer: {
           select: {
             id: true,
             stageName: true,
@@ -210,7 +206,7 @@ router.post('/:id/start-session', [
         boothId,
         session: {
           id: session.id,
-          dancer_name: session.dancer.stageName || session.dancer.legalName,
+          dancer_name: session.entertainer.stageName || session.entertainer.legalName,
           customer_name: session.customerName,
           started_at: session.startedAt
         }
@@ -221,7 +217,7 @@ router.post('/:id/start-session', [
       id: session.id,
       booth_id: session.boothId,
       dancer_id: session.entertainerId,
-      dancer_name: session.dancer.stageName || session.dancer.legalName,
+      dancer_name: session.entertainer.stageName || session.entertainer.legalName,
       customer_name: session.customerName,
       customer_phone: session.customerPhone,
       started_at: session.startedAt,
@@ -256,12 +252,10 @@ router.put('/:id/update-song-count', [
       where: {
         boothId,
         clubId,
-        status: {
-          in: ['ACTIVE', 'PENDING_CHECKOUT']
-        }
+        status: 'ACTIVE'
       },
       include: {
-        dancer: {
+        entertainer: {
           select: {
             stageName: true,
             legalName: true
@@ -294,7 +288,7 @@ router.put('/:id/update-song-count', [
     res.json({
       id: updatedSession.id,
       song_count: updatedSession.songCountManual,
-      dancer_name: session.dancer.stageName || session.dancer.legalName,
+      dancer_name: session.entertainer.stageName || session.entertainer.legalName,
       customer_name: updatedSession.customerName
     });
   } catch (error) {
@@ -316,12 +310,10 @@ router.post('/:id/end-session', async (req, res) => {
       where: {
         boothId,
         clubId,
-        status: {
-          in: ['ACTIVE', 'PENDING_CHECKOUT']
-        }
+        status: 'ACTIVE'
       },
       include: {
-        dancer: {
+        entertainer: {
           select: {
             stageName: true,
             legalName: true
@@ -368,7 +360,7 @@ router.post('/:id/end-session', async (req, res) => {
 
     res.json({
       id: updatedSession.id,
-      dancer_name: session.dancer.stageName || session.dancer.legalName,
+      dancer_name: session.entertainer.stageName || session.entertainer.legalName,
       customer_name: updatedSession.customerName,
       started_at: updatedSession.startedAt,
       ended_at: updatedSession.endedAt,
@@ -401,7 +393,7 @@ router.get('/:id/sessions', async (req, res) => {
         clubId
       },
       include: {
-        dancer: {
+        entertainer: {
           select: {
             stageName: true,
             legalName: true
@@ -416,7 +408,7 @@ router.get('/:id/sessions', async (req, res) => {
 
     const formattedSessions = sessions.map(session => ({
       id: session.id,
-      dancer_name: session.dancer.stageName || session.dancer.legalName,
+      dancer_name: session.entertainer.stageName || session.entertainer.legalName,
       customer_name: session.customerName,
       started_at: session.startedAt,
       ended_at: session.endedAt,
@@ -458,9 +450,7 @@ router.post('/:id/add-item', [
       where: {
         boothId,
         clubId,
-        status: {
-          in: ['ACTIVE', 'PENDING_CHECKOUT']
-        }
+        status: 'ACTIVE'
       }
     });
 
@@ -527,9 +517,7 @@ router.get('/:id/current-spending', async (req, res) => {
       where: {
         boothId,
         clubId,
-        status: {
-          in: ['ACTIVE', 'PENDING_CHECKOUT']
-        }
+        status: 'ACTIVE'
       },
       include: {
         items: {
@@ -537,7 +525,7 @@ router.get('/:id/current-spending', async (req, res) => {
             addedAt: 'desc'
           }
         },
-        dancer: {
+        entertainer: {
           select: {
             stageName: true,
             legalName: true
@@ -562,7 +550,7 @@ router.get('/:id/current-spending', async (req, res) => {
 
     res.json({
       session_id: session.id,
-      dancer_name: session.dancer.stageName || session.dancer.legalName,
+      dancer_name: session.entertainer.stageName || session.entertainer.legalName,
       customer_name: session.customerName,
       started_at: session.startedAt,
 
@@ -607,9 +595,7 @@ router.get('/check-minimum-spend-alerts', async (req, res) => {
     const sessions = await prisma.vipSession.findMany({
       where: {
         clubId,
-        status: {
-          in: ['ACTIVE', 'PENDING_CHECKOUT']
-        },
+        status: 'ACTIVE',
         minimumSpend: {
           not: null
         }
@@ -622,7 +608,7 @@ router.get('/check-minimum-spend-alerts', async (req, res) => {
             boothNumber: true
           }
         },
-        dancer: {
+        entertainer: {
           select: {
             stageName: true,
             legalName: true
@@ -708,7 +694,7 @@ router.get('/check-minimum-spend-alerts', async (req, res) => {
                 boothNumber: session.booth.boothNumber,
                 boothName: session.booth.boothName,
                 sessionId: session.id,
-                dancerName: session.dancer.stageName || session.dancer.legalName,
+                dancerName: session.entertainer.stageName || session.entertainer.legalName,
                 customerName: session.customerName,
                 minimumSpend,
                 currentSpending: grandTotal,
@@ -726,7 +712,7 @@ router.get('/check-minimum-spend-alerts', async (req, res) => {
               booth_number: session.booth.boothNumber,
               booth_name: session.booth.boothName,
               session_id: session.id,
-              dancer_name: session.dancer.stageName || session.dancer.legalName,
+              dancer_name: session.entertainer.stageName || session.entertainer.legalName,
               customer_name: session.customerName,
               minimum_spend: minimumSpend,
               current_spending: grandTotal,
@@ -791,7 +777,7 @@ router.get('/alerts', async (req, res) => {
                 boothName: true
               }
             },
-            dancer: {
+            entertainer: {
               select: {
                 stageName: true,
                 legalName: true
@@ -820,7 +806,7 @@ router.get('/alerts', async (req, res) => {
             description: alert.description,
             booth_number: session.booth.boothNumber,
             booth_name: session.booth.boothName,
-            dancer_name: session.dancer.stageName || session.dancer.legalName,
+            dancer_name: session.entertainer.stageName || session.entertainer.legalName,
             customer_name: session.customerName,
             minimum_spend: minimumSpend,
             current_spending: grandTotal,

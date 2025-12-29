@@ -221,7 +221,7 @@ router.get('/shifts', async (req, res) => {
         status: 'CHECKED_IN'
       },
       include: {
-        dancer: {
+        entertainer: {
           select: {
             id: true,
             stageName: true
