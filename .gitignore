@@ -92,3 +92,13 @@ build/
 tmp/
 temp/
 nul
+
+# Secrets (never commit)
+.webhook-secret
+backend/.webhook-secret
+
+# Database backups (contain real data)
+backend/backups/
+
+# Stray update files
+backend/package.json.update
