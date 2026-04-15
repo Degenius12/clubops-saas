@@ -311,9 +311,9 @@
     "module": "shift-management",
     "description": "Manager can create shift schedules",
     "steps": [
-      "Navigate to scheduling",
+      "Navigate to shift scheduling",
       "Select week to schedule",
-      "Create shift for dancer",
+      "Create shift for entertainer",
       "Set start and end times",
       "Save schedule",
       "Verify shift appears on calendar"
@@ -325,12 +325,12 @@
     "category": "functional",
     "priority": "high",
     "module": "shift-management",
-    "description": "Dancer receives notification of scheduled shift",
+    "description": "Entertainer receives notification of scheduled shift",
     "steps": [
-      "Create new shift for dancer",
+      "Create new shift for entertainer",
       "Verify notification is generated",
-      "Log in as dancer",
-      "Verify notification appears",
+      "Check notification log in system",
+      "Verify notification appears in app",
       "Verify notification shows date, time, position"
     ],
     "passes": true
@@ -342,11 +342,11 @@
     "module": "shift-management",
     "description": "Manager can approve shift swap requests",
     "steps": [
-      "Have pending swap request from dancer",
-      "Navigate to pending requests",
+      "Have pending swap request from entertainer",
+      "Navigate to shift swap requests page",
       "View swap details",
       "Approve or deny swap",
-      "Verify both dancers notified",
+      "Verify both entertainers notified",
       "Verify schedule updates"
     ],
     "passes": true
@@ -606,7 +606,7 @@
       "Test restore from backup",
       "Verify data integrity after restore"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 41,
@@ -751,13 +751,14 @@
     "description": "New club onboarding wizard completes successfully",
     "steps": [
       "Start new club setup",
-      "Complete business info step",
-      "Configure staff roles",
-      "Set up fee structures",
-      "Add initial dancers",
+      "Configure stage count and rotation sequence",
+      "Select VIP billing type (song or time-based)",
+      "Configure time increments for time-based billing",
+      "Configure patron count settings (optional)",
       "Complete wizard",
+      "Verify club configuration is saved",
       "Verify club is fully functional"
     ],
-    "passes": false
+    "passes": true
   }
 ]

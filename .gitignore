@@ -96,6 +96,7 @@ nul
 # Secrets (never commit)
 .webhook-secret
 backend/.webhook-secret
+.claude/settings.local.json
 
 # Database backups (contain real data)
 backend/backups/
