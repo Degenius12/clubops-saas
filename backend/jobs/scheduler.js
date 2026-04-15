@@ -4,6 +4,8 @@
 const cron = require('node-cron');
 const { processLateFees } = require('./lateFeeProcessor');
 const { processComplianceAlerts } = require('./complianceAlerts');
+const { checkCapacityAlerts } = require('./patronCountAlerts');
+const { performBackup } = require('./backupJob');
 
 /**
  * Initialize all scheduled jobs
@@ -45,6 +47,54 @@ function initializeScheduledJobs() {
 
   console.log('[Job Scheduler] ✓ Compliance alerts scheduled for 6:00 AM daily');
 
+  // Patron Count Capacity Alerts - Runs every 5 minutes
+  // Checks current patron counts against capacity limits (Feature #49)
+  const patronCountAlertsCron = cron.schedule('*/5 * * * *', async () => {
+    try {
+      await checkCapacityAlerts();
+    } catch (error) {
+      console.error('[Job Scheduler] Patron count alerts check failed:', error);
+    }
+  }, {
+    scheduled: true,
+    timezone: "America/New_York" // Adjust to club's timezone
+  });
+
+  console.log('[Job Scheduler] ✓ Patron count capacity alerts scheduled for every 5 minutes');
+
+  // Automated Backups - Daily at 3:00 AM (Feature #40)
+  // Full database backup daily, incremental every 6 hours
+  const dailyBackupCron = cron.schedule('0 3 * * *', async () => {
+    console.log('[Job Scheduler] Running daily database backup...');
+    try {
+      const result = await performBackup('full');
+      console.log('[Job Scheduler] Daily backup complete:', result);
+    } catch (error) {
+      console.error('[Job Scheduler] Daily backup failed:', error);
+    }
+  }, {
+    scheduled: true,
+    timezone: "America/New_York"
+  });
+
+  console.log('[Job Scheduler] ✓ Daily database backup scheduled for 3:00 AM');
+
+  // Incremental backups every 6 hours
+  const incrementalBackupCron = cron.schedule('0 */6 * * *', async () => {
+    console.log('[Job Scheduler] Running incremental backup...');
+    try {
+      const result = await performBackup('incremental');
+      console.log('[Job Scheduler] Incremental backup complete:', result);
+    } catch (error) {
+      console.error('[Job Scheduler] Incremental backup failed:', error);
+    }
+  }, {
+    scheduled: true,
+    timezone: "America/New_York"
+  });
+
+  console.log('[Job Scheduler] ✓ Incremental backups scheduled for every 6 hours');
+
   // TODO: Add more scheduled jobs here
   // - Daily revenue reports
   // - Weekly analytics
@@ -53,7 +103,10 @@ function initializeScheduledJobs() {
 
   return {
     lateFeeCron,
-    complianceAlertsCron
+    complianceAlertsCron,
+    patronCountAlertsCron,
+    dailyBackupCron,
+    incrementalBackupCron
   };
 }
 
@@ -71,6 +124,21 @@ function stopAllJobs(jobs) {
   if (jobs.complianceAlertsCron) {
     jobs.complianceAlertsCron.stop();
     console.log('[Job Scheduler] ✓ Compliance alerts stopped');
+  }
+
+  if (jobs.patronCountAlertsCron) {
+    jobs.patronCountAlertsCron.stop();
+    console.log('[Job Scheduler] ✓ Patron count alerts stopped');
+  }
+
+  if (jobs.dailyBackupCron) {
+    jobs.dailyBackupCron.stop();
+    console.log('[Job Scheduler] ✓ Daily backup stopped');
+  }
+
+  if (jobs.incrementalBackupCron) {
+    jobs.incrementalBackupCron.stop();
+    console.log('[Job Scheduler] ✓ Incremental backup stopped');
   }
 
   console.log('[Job Scheduler] All jobs stopped');

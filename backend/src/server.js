@@ -63,6 +63,18 @@ const complianceRoutes = require('../routes/compliance');
 const contractsRoutes = require('../routes/contracts');
 const onboardingRoutes = require('../routes/onboarding');
 
+// Patron Count Routes (Feature #49 - Door Count Integration)
+const patronCountRoutes = require('../routes/patron-count');
+
+// Club Onboarding Routes (Feature #50 - Club Setup Wizard)
+const clubOnboardingRoutes = require('../routes/club-onboarding');
+
+// Push Notification Routes (Feature #34)
+const pushNotificationRoutes = require('../routes/push-notifications');
+
+// Automated Backup Routes (Feature #40)
+const backupRoutes = require('../routes/backups');
+
 // Queue Routes (alias for dj-queue)
 const queueRoutes = require('../routes/queue');
 
@@ -146,6 +158,9 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api/auth', authRoutes);
 app.use('/api/webhooks', webhookRoutes);
 
+// Patron Count webhook (public, uses HMAC auth instead of JWT)
+app.use('/api/patron-count', patronCountRoutes.public);
+
 // Protected routes with authentication and multi-tenant isolation
 app.use('/api', authMiddleware.auth);
 app.use('/api', multiTenantMiddleware);
@@ -176,7 +191,9 @@ app.use('/api/security', securityRoutes);
 app.use('/api/shift-management', shiftManagementRoutes);
 
 // Shift Scheduling (Features #21-23)
+const scheduledShiftsRoutes = require('../routes/scheduled-shifts');
 app.use('/api/schedule', scheduleRoutes);
+app.use('/api/scheduled-shifts', scheduledShiftsRoutes);
 
 // Late Fee Management (Feature #26)
 app.use('/api/late-fees', lateFeeRoutes);
@@ -194,6 +211,18 @@ app.use('/api/settings', settingsRoutes);
 app.use('/api/compliance', complianceRoutes);
 app.use('/api/contracts', contractsRoutes);
 app.use('/api/onboarding', onboardingRoutes);
+
+// Club Onboarding System (Feature #50 - Club Setup Wizard)
+app.use('/api/club-onboarding', clubOnboardingRoutes);
+
+// Push Notification System (Feature #34)
+app.use('/api/push-notifications', pushNotificationRoutes);
+
+// Automated Backup System (Feature #40)
+app.use('/api/backups', backupRoutes);
+
+// Patron Count System (Feature #49 - Door Count Integration - protected routes)
+app.use('/api/patron-count', patronCountRoutes.protected);
 
 // Queue Routes (frontend uses /api/queue)
 app.use('/api/queue', queueRoutes);

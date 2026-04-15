@@ -165,6 +165,33 @@ model Club {
   shiftOpenedAt      DateTime? @map("shift_opened_at")
   shiftOpenedBy      String?  @map("shift_opened_by") @db.Uuid
 
+  // Patron Count System (Feature #49)
+  doorCountEnabled           Boolean   @default(false) @map("door_count_enabled")
+  capacityLimit              Int?      @map("capacity_limit") // Maximum allowed patrons
+  currentPatronCount         Int       @default(0) @map("current_patron_count")
+  lastCountUpdate            DateTime? @map("last_count_update")
+  doorCountWebhookSecret     String?   @map("door_count_webhook_secret") @db.VarChar(255)
+  trackExits                 Boolean   @default(true) @map("track_exits") // Toggle for entry-only vs net count
+  enableMultiZone            Boolean   @default(false) @map("enable_multi_zone") // Track different areas
+  reEntryFeeEnabled          Boolean   @default(false) @map("re_entry_fee_enabled")
+  reEntryFeeAmount           Decimal?  @default(0.00) @map("re_entry_fee_amount") @db.Decimal(10, 2)
+  autoResetOnShiftChange     Boolean   @default(true) @map("auto_reset_on_shift_change")
+
+  // Stage Configuration (Feature #50 - Club Onboarding)
+  stageCount                 Int       @default(1) @map("stage_count") // Number of stages in the club
+  stageRotationSequence      Json?     @map("stage_rotation_sequence") // Array of stage names, e.g., ["Main Stage", "VIP Stage", "Bar Stage"]
+  stageRotationEnabled       Boolean   @default(false) @map("stage_rotation_enabled") // Whether automatic rotation is enabled
+
+  // VIP Billing Configuration (Feature #50 - Club Onboarding)
+  vipBillingType             String    @default("SONG") @map("vip_billing_type") @db.VarChar(20) // "SONG" or "TIME"
+  vipTimeIncrement           Int?      @map("vip_time_increment") // Minutes per billing increment (e.g., 15, 30, 60)
+  vipTimeRate                Decimal?  @map("vip_time_rate") @db.Decimal(10, 2) // Rate per time increment (if using TIME billing)
+
+  // Club Onboarding Status (Feature #50)
+  onboardingCompleted        Boolean   @default(false) @map("onboarding_completed")
+  onboardingCompletedAt      DateTime? @map("onboarding_completed_at")
+  onboardingStep             Int       @default(0) @map("onboarding_step") // Current step in onboarding process (0 = not started)
+
   createdAt          DateTime @default(now()) @map("created_at")
   updatedAt          DateTime @default(now()) @updatedAt @map("updated_at")
 
@@ -192,6 +219,9 @@ model Club {
   shiftNotifications   ShiftNotification[]
   complianceDocuments  ComplianceDocument[]
   entertainerContracts EntertainerContract[]
+  patronCountLogs      PatronCountLog[]
+  pushSubscriptions    PushSubscription[]
+  pushNotificationLogs PushNotificationLog[]
 
   @@map("clubs")
 }
@@ -234,6 +264,7 @@ model ClubUser {
   documentsUploaded      ComplianceDocument[] @relation("DocumentUploadedBy")
   documentsReviewed      ComplianceDocument[] @relation("DocumentReviewedBy")
   contractsCreated       EntertainerContract[] @relation("ContractCreatedBy")
+  pushSubscriptions      PushSubscription[]
 
   @@unique([clubId, email])
   @@map("club_users")
@@ -402,6 +433,7 @@ model Entertainer {
   shiftNotifications    ShiftNotification[]
   complianceDocuments   ComplianceDocument[]
   contracts             EntertainerContract[]
+  pushSubscriptions     PushSubscription[]
 
   @@map("dancers") // Keep old table name for backward compatibility
 }
@@ -1079,4 +1111,158 @@ model EntertainerContract {
   @@index([clubId, contractType])
   @@index([entertainerId, isActive])
   @@map("entertainer_contracts")
+}
+
+// ==============================================
+// PATRON COUNT SYSTEM (Feature #49)
+// ==============================================
+
+// Patron Count Log - Track all entry/exit events
+model PatronCountLog {
+  id             String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  clubId         String   @map("club_id") @db.Uuid
+
+  // Event details
+  timestamp      DateTime @default(now())
+  previousCount  Int      @map("previous_count") // Count before this event
+  newCount       Int      @map("new_count") // Count after this event
+  delta          Int      // Change (+1 for entry, -1 for exit, or batch amount)
+
+  // Source tracking
+  source         String   @db.VarChar(50) // 'HARDWARE_WEBHOOK', 'MANUAL_OVERRIDE', 'MOBILE_CHECKIN', 'AUTO_RESET'
+  deviceId       String?  @map("device_id") @db.VarChar(100) // Which sensor/camera triggered
+
+  // Optional zone tracking (for multi-zone clubs)
+  zone           String?  @db.VarChar(50) // 'MAIN_FLOOR', 'VIP_SECTION', 'SMOKING_AREA', etc.
+
+  // Metadata
+  metadata       Json?    @default("{}") // Device-specific data (confidence, face_id, etc.)
+  notes          String?  @db.VarChar(500) // For manual adjustments, reason for change
+
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  // Relations
+  club           Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
+
+  @@index([clubId, timestamp])
+  @@index([clubId, source])
+  @@index([clubId, zone, timestamp])
+  @@map("patron_count_logs")
+}
+
+// ==============================================
+// PUSH NOTIFICATION SYSTEM (Feature #34)
+// ==============================================
+
+// Push Subscription - Store user's push notification subscriptions
+model PushSubscription {
+  id             String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  clubId         String   @map("club_id") @db.Uuid
+  userId         String   @map("user_id") @db.Uuid // ClubUser who subscribed
+  entertainerId  String?  @map("entertainer_id") @db.Uuid // If subscription is for entertainer account
+
+  // Web Push API data
+  endpoint       String   @db.VarChar(500)
+  p256dhKey      String   @map("p256dh_key") @db.VarChar(200)
+  authKey        String   @map("auth_key") @db.VarChar(100)
+
+  // Device/Browser information
+  userAgent      String?  @map("user_agent") @db.VarChar(500)
+  deviceType     String?  @map("device_type") @db.VarChar(50) // 'mobile', 'desktop', 'tablet'
+  browserName    String?  @map("browser_name") @db.VarChar(100)
+  browserVersion String?  @map("browser_version") @db.VarChar(50)
+
+  // Subscription preferences
+  enabled        Boolean  @default(true)
+  shiftUpdates   Boolean  @default(true) @map("shift_updates")
+  swapRequests   Boolean  @default(true) @map("swap_requests")
+  emergencyAlerts Boolean @default(true) @map("emergency_alerts")
+  generalUpdates Boolean  @default(false) @map("general_updates")
+
+  // Tracking
+  createdAt      DateTime @default(now()) @map("created_at")
+  lastUsedAt     DateTime @default(now()) @map("last_used_at")
+  failureCount   Int      @default(0) @map("failure_count") // Track failed pushes
+  lastFailureAt  DateTime? @map("last_failure_at")
+
+  // Relations
+  club           Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  user           ClubUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  entertainer    Entertainer? @relation(fields: [entertainerId], references: [id], onDelete: Cascade)
+  notificationLogs PushNotificationLog[]
+
+  @@unique([userId, endpoint]) // User can have one subscription per endpoint
+  @@index([clubId, enabled])
+  @@index([userId, enabled])
+  @@index([failureCount])
+  @@map("push_subscriptions")
+}
+
+// Backup Log - Track all backup operations (Feature #40)
+model BackupLog {
+  id           String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  type         String   @db.VarChar(50) // 'DATABASE', 'INCREMENTAL', 'CONFIG', 'FILES', 'RESTORE'
+  fileName     String   @map("file_name") @db.VarChar(255)
+  filePath     String?  @map("file_path") @db.VarChar(500)
+  size         BigInt?  // File size in bytes
+  checksum     String?  @db.VarChar(64) // SHA-256 hash
+  status       String   @db.VarChar(20) // 'SUCCESS', 'FAILED', 'IN_PROGRESS'
+  error        String?  @db.Text // Error message if failed
+  metadata     Json?    // Additional backup metadata
+  startedAt    DateTime @default(now()) @map("started_at")
+  completedAt  DateTime? @map("completed_at")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@index([type, status])
+  @@index([createdAt])
+  @@map("backup_logs")
+}
+
+// Push Notification Log - Track all sent notifications
+model PushNotificationLog {
+  id                 String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  clubId             String   @map("club_id") @db.Uuid
+  subscriptionId     String   @map("subscription_id") @db.Uuid
+  
+  // Notification content
+  title              String   @db.VarChar(200)
+  body               String   @db.VarChar(500)
+  icon               String?  @db.VarChar(200)
+  image              String?  @db.VarChar(200)
+  url                String?  @db.VarChar(200)
+  
+  // Notification type and context
+  notificationType   String   @map("notification_type") @db.VarChar(50)
+  // 'SHIFT_SCHEDULED', 'SHIFT_REMINDER', 'SHIFT_CANCELLED', 'SWAP_REQUEST', 'SWAP_APPROVED', 'EMERGENCY', etc.
+  
+  relatedEntityType  String?  @map("related_entity_type") @db.VarChar(50) // 'shift', 'swap', 'vip_session', etc.
+  relatedEntityId    String?  @map("related_entity_id") @db.Uuid
+  
+  // Delivery tracking
+  sentAt             DateTime @default(now()) @map("sent_at")
+  deliveredAt        DateTime? @map("delivered_at")
+  clickedAt          DateTime? @map("clicked_at")
+  dismissedAt        DateTime? @map("dismissed_at")
+  
+  // Delivery status
+  status             String   @default("SENT") @db.VarChar(20) // 'SENT', 'DELIVERED', 'FAILED', 'EXPIRED'
+  failureReason      String?  @map("failure_reason") @db.VarChar(200)
+  
+  // Actions taken (if any)
+  action             String?  @db.VarChar(50) // 'view_shift', 'view_swaps', etc.
+  
+  // Metadata
+  metadata           Json     @default("{}")
+  
+  createdAt          DateTime @default(now()) @map("created_at")
+
+  // Relations
+  club               Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  subscription       PushSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  @@index([clubId, sentAt])
+  @@index([subscriptionId, sentAt])
+  @@index([notificationType, sentAt])
+  @@index([status])
+  @@map("push_notification_logs")
 }
