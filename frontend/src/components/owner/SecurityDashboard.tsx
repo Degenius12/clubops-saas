@@ -381,15 +381,16 @@ const SecurityDashboard: React.FC = () => {
               <button
                 onClick={refreshData}
                 disabled={isLoading}
-                className="btn-secondary py-2 px-4 flex items-center gap-2"
+                aria-label="Refresh data"
+                className="btn-secondary touch-target px-4 flex items-center justify-center gap-2"
               >
                 <ArrowPathIcon className={`h-5 w-5 ${isLoading ? 'animate-spin' : ''}`} />
               </button>
-              
+
               {/* Export Button */}
               <button
                 onClick={() => setShowExportModal(true)}
-                className="btn-secondary py-2 px-4 flex items-center gap-2"
+                className="btn-secondary touch-target px-4 flex items-center gap-2"
               >
                 <DocumentArrowDownIcon className="h-5 w-5" />
                 <span>Export</span>
@@ -409,13 +410,13 @@ const SecurityDashboard: React.FC = () => {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`px-4 py-2.5 rounded-xl font-medium text-sm flex items-center gap-2 transition-all whitespace-nowrap
-                  ${activeTab === tab.id 
-                    ? 'bg-gold-500/15 text-gold-500 border border-gold-500/30' 
+                className={`touch-target px-5 rounded-xl font-medium text-sm flex items-center gap-2 transition-all whitespace-nowrap
+                  ${activeTab === tab.id
+                    ? 'bg-gold-500/15 text-gold-500 border border-gold-500/30'
                     : 'text-text-tertiary hover:text-text-secondary hover:bg-white/5'
                   }`}
               >
-                <tab.icon className="h-4 w-4" />
+                <tab.icon className="h-5 w-5" />
                 {tab.label}
               </button>
             ))}
@@ -1413,7 +1414,7 @@ const SecurityDashboard: React.FC = () => {
           <div className="relative w-full max-w-md md:max-w-lg lg:max-w-xl card-premium p-6 animate-scale-in">
             <button
               onClick={() => setShowExportModal(false)}
-              className="absolute top-4 right-4 p-2 rounded-lg hover:bg-white/10 transition-colors"
+              aria-label="Close" className="touch-target absolute top-4 right-4 flex items-center justify-center rounded-lg hover:bg-white/10 transition-colors"
             >
               <XCircleIcon className="h-5 w-5 text-text-tertiary" />
             </button>
@@ -1508,7 +1509,7 @@ const SecurityDashboard: React.FC = () => {
           <div className="relative w-full max-w-md md:max-w-lg lg:max-w-xl card-premium p-6 animate-scale-in">
             <button
               onClick={() => setShowResolveModal(false)}
-              className="absolute top-4 right-4 p-2 rounded-lg hover:bg-white/10 transition-colors"
+              aria-label="Close" className="touch-target absolute top-4 right-4 flex items-center justify-center rounded-lg hover:bg-white/10 transition-colors"
             >
               <XCircleIcon className="h-5 w-5 text-text-tertiary" />
             </button>

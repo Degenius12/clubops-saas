@@ -382,7 +382,7 @@ const BillingPanel: React.FC = () => {
           <div className="relative w-full max-w-md card-premium p-6 animate-scale-in">
             <button
               onClick={() => setShowAddPaymentModal(false)}
-              className="absolute top-4 right-4 p-2 rounded-lg hover:bg-white/10 transition-colors"
+              aria-label="Close" className="touch-target absolute top-4 right-4 flex items-center justify-center rounded-lg hover:bg-white/10 transition-colors"
             >
               <XMarkIcon className="h-5 w-5 text-text-tertiary" />
             </button>

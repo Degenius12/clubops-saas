@@ -418,7 +418,7 @@ const DoorStaffInterface: React.FC = () => {
               <button
                 onClick={() => setShowEndShiftModal(true)}
                 disabled={isEndingShift}
-                className="flex items-center gap-2 text-status-warning hover:text-status-warning/80 transition-colors"
+                className="touch-target flex items-center gap-2 px-3 text-status-warning hover:text-status-warning/80 transition-colors"
               >
                 <StopIcon className="h-5 w-5" />
                 <span className="text-sm font-medium">End Shift</span>
@@ -428,7 +428,7 @@ const DoorStaffInterface: React.FC = () => {
             <button
               onClick={() => setShowStartShiftModal(true)}
               disabled={isStartingShift}
-              className="btn-primary px-4 py-3 flex items-center gap-2"
+              className="btn-primary touch-target px-4 flex items-center gap-2"
             >
               <PlayIcon className="h-5 w-5" />
               <span className="font-medium">{isStartingShift ? 'Starting...' : 'Start Shift'}</span>
@@ -836,7 +836,7 @@ const DoorStaffInterface: React.FC = () => {
                 setShowCheckInModal(false)
                 setSelectedDancer(null)
               }}
-              className="absolute top-4 right-4 p-2 rounded-lg hover:bg-white/10 transition-colors"
+              aria-label="Close" className="touch-target absolute top-4 right-4 flex items-center justify-center rounded-lg hover:bg-white/10 transition-colors"
             >
               <XMarkIcon className="h-5 w-5 text-text-tertiary" />
             </button>
@@ -961,7 +961,7 @@ const DoorStaffInterface: React.FC = () => {
           <div className="relative w-full max-w-md md:max-w-lg lg:max-w-xl card-premium p-6 animate-scale-in">
             <button
               onClick={() => setShowQRScanner(false)}
-              className="absolute top-4 right-4 p-2 rounded-lg hover:bg-white/10 transition-colors"
+              aria-label="Close" className="touch-target absolute top-4 right-4 flex items-center justify-center rounded-lg hover:bg-white/10 transition-colors"
             >
               <XMarkIcon className="h-5 w-5 text-text-tertiary" />
             </button>
@@ -1015,7 +1015,7 @@ const DoorStaffInterface: React.FC = () => {
           <div className="relative w-full max-w-md md:max-w-lg lg:max-w-xl card-premium p-6 animate-scale-in">
             <button
               onClick={() => setShowIDScanner(false)}
-              className="absolute top-4 right-4 p-2 rounded-lg hover:bg-white/10 transition-colors"
+              aria-label="Close" className="touch-target absolute top-4 right-4 flex items-center justify-center rounded-lg hover:bg-white/10 transition-colors"
             >
               <XMarkIcon className="h-5 w-5 text-text-tertiary" />
             </button>
@@ -1069,7 +1069,7 @@ const DoorStaffInterface: React.FC = () => {
           <div className="relative w-full max-w-md md:max-w-lg lg:max-w-xl card-premium p-6 animate-scale-in">
             <button
               onClick={() => setShowStartShiftModal(false)}
-              className="absolute top-4 right-4 p-2 rounded-lg hover:bg-white/10 transition-colors"
+              aria-label="Close" className="touch-target absolute top-4 right-4 flex items-center justify-center rounded-lg hover:bg-white/10 transition-colors"
             >
               <XMarkIcon className="h-5 w-5 text-text-tertiary" />
             </button>
@@ -1130,7 +1130,7 @@ const DoorStaffInterface: React.FC = () => {
           <div className="relative w-full max-w-md md:max-w-lg lg:max-w-xl card-premium p-6 animate-scale-in">
             <button
               onClick={() => setShowEndShiftModal(false)}
-              className="absolute top-4 right-4 p-2 rounded-lg hover:bg-white/10 transition-colors"
+              aria-label="Close" className="touch-target absolute top-4 right-4 flex items-center justify-center rounded-lg hover:bg-white/10 transition-colors"
             >
               <XMarkIcon className="h-5 w-5 text-text-tertiary" />
             </button>

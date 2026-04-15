@@ -192,29 +192,32 @@ const DJQueue: React.FC = () => {
               {currentPerformer ? (
                 <button
                   onClick={handleEndPerformance}
-                  className="player-btn-play touch-target"
+                  aria-label="End performance"
+                  className="player-btn-play touch-target-lg"
                   title="End Performance"
                 >
-                  <CheckCircleIcon className="h-7 w-7" />
+                  <CheckCircleIcon className="h-8 w-8" />
                 </button>
               ) : (
                 <button
                   onClick={handleNextPerformer}
                   disabled={!mainQueue || mainQueue.length === 0}
-                  className="player-btn-play touch-target disabled:opacity-50 disabled:cursor-not-allowed"
+                  aria-label="Start next performer"
+                  className="player-btn-play touch-target-lg disabled:opacity-50 disabled:cursor-not-allowed"
                   title="Start Next Performer"
                 >
-                  <PlaySolidIcon className="h-7 w-7 ml-0.5" />
+                  <PlaySolidIcon className="h-8 w-8 ml-0.5" />
                 </button>
               )}
 
               <button
                 onClick={handleNextPerformer}
                 disabled={!mainQueue || mainQueue.length === 0}
-                className="btn-icon touch-target disabled:opacity-50"
+                aria-label="Skip to next performer"
+                className="btn-icon touch-target flex items-center justify-center disabled:opacity-50"
                 title="Next Performer"
               >
-                <ForwardIcon className="h-5 w-5" />
+                <ForwardIcon className="h-6 w-6" />
               </button>
             </div>
 
@@ -321,14 +324,15 @@ const DJQueue: React.FC = () => {
                   </div>
 
                   {/* Actions */}
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-2">
                     {index === 0 && !currentPerformer && (
                       <button
                         onClick={() => dispatch(startPerformance(item.id)).then(() => dispatch(fetchQueue()))}
-                        className="btn-icon w-9 h-9 hover:text-gold-500 touch-target"
+                        aria-label="Start performance"
+                        className="btn-icon touch-target flex items-center justify-center hover:text-gold-500"
                         title="Start Performance"
                       >
-                        <PlayIcon className="h-4 w-4" />
+                        <PlayIcon className="h-6 w-6" />
                       </button>
                     )}
 
@@ -337,10 +341,11 @@ const DJQueue: React.FC = () => {
                         // Remove from queue - will implement with backend
                         console.log('Remove', item.id)
                       }}
-                      className="btn-icon w-9 h-9 hover:text-status-danger touch-target"
+                      aria-label="Remove from queue"
+                      className="btn-icon touch-target flex items-center justify-center hover:text-status-danger"
                       title="Remove"
                     >
-                      <XMarkIcon className="h-4 w-4" />
+                      <XMarkIcon className="h-6 w-6" />
                     </button>
                   </div>
                 </div>

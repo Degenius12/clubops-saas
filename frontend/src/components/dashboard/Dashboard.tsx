@@ -355,11 +355,11 @@ const Dashboard: React.FC = () => {
                 {stat.trend.isLive ? (
                   <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-status-success/10 text-status-success">
                     <span className="w-1.5 h-1.5 bg-status-success rounded-full animate-pulse" />
-                    <span className="text-[10px] sm:text-xs font-medium">Live</span>
+                    <span className="text-xs sm:text-sm font-medium">Live</span>
                   </span>
                 ) : (
                   <span className={`
-                    inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-medium
+                    inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-xs sm:text-sm font-medium
                     ${stat.trend.positive
                       ? 'bg-status-success/10 text-status-success'
                       : 'bg-status-danger/10 text-status-danger'
@@ -502,11 +502,11 @@ const Dashboard: React.FC = () => {
                   {/* Content */}
                   <div className="flex-1 min-w-0">
                     <p className="text-xs sm:text-sm font-medium text-text-primary truncate">{alert.message}</p>
-                    <p className="text-[10px] sm:text-xs text-text-tertiary mt-0.5">{alert.detail}</p>
+                    <p className="text-xs sm:text-sm text-text-tertiary mt-0.5">{alert.detail}</p>
                   </div>
                   
                   {/* Time */}
-                  <span className="text-[10px] sm:text-xs text-text-muted whitespace-nowrap font-mono flex-shrink-0">
+                  <span className="text-xs sm:text-sm text-text-muted whitespace-nowrap font-mono flex-shrink-0">
                     {alert.time}
                   </span>
                 </div>
@@ -537,7 +537,7 @@ const Dashboard: React.FC = () => {
               <div className="space-y-4">
                 {/* Monthly Total */}
                 <div>
-                  <span className="text-[10px] sm:text-xs text-text-tertiary uppercase tracking-wider">This Month</span>
+                  <span className="text-xs sm:text-sm text-text-tertiary uppercase tracking-wider">This Month</span>
                   <div className="text-2xl sm:text-3xl font-bold font-mono text-text-primary mt-1">
                     <AnimatedNumber value={monthlyRevenue || 0} prefix="$" />
                   </div>
