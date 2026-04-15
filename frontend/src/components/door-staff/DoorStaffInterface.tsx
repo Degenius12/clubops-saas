@@ -28,6 +28,7 @@ import {
 import { useDoorStaffData } from '../../hooks'
 import { useAppSelector } from '../../hooks'
 import toast from 'react-hot-toast'
+import { PatronCountWidget } from './PatronCountWidget'
 
 // Helper function to get clubId - in production, this would come from auth context
 const useClubId = () => {
@@ -356,7 +357,7 @@ const DoorStaffInterface: React.FC = () => {
         <div className="flex items-center gap-4">
           {/* Connection Status */}
           <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${
-            isConnected 
+            isConnected
               ? 'bg-status-success/10 border-status-success/30 text-status-success'
               : 'bg-status-danger/10 border-status-danger/30 text-status-danger'
           }`}>
@@ -367,6 +368,9 @@ const DoorStaffInterface: React.FC = () => {
             )}
             <span className="text-xs font-medium">{isConnected ? 'Live' : 'Offline'}</span>
           </div>
+
+          {/* Patron Count Widget (Feature #49) */}
+          <PatronCountWidget clubId={clubId} compact />
 
           {/* Refresh Button */}
           <button
@@ -936,7 +940,7 @@ const DoorStaffInterface: React.FC = () => {
           ></div>
           
           {/* Modal Content */}
-          <div className="relative w-full max-w-md card-premium p-6 animate-scale-in">
+          <div className="relative w-full max-w-md md:max-w-lg lg:max-w-xl card-premium p-6 animate-scale-in">
             <button
               onClick={() => setShowQRScanner(false)}
               className="absolute top-4 right-4 p-2 rounded-lg hover:bg-white/10 transition-colors"
@@ -990,7 +994,7 @@ const DoorStaffInterface: React.FC = () => {
           ></div>
           
           {/* Modal Content */}
-          <div className="relative w-full max-w-md card-premium p-6 animate-scale-in">
+          <div className="relative w-full max-w-md md:max-w-lg lg:max-w-xl card-premium p-6 animate-scale-in">
             <button
               onClick={() => setShowIDScanner(false)}
               className="absolute top-4 right-4 p-2 rounded-lg hover:bg-white/10 transition-colors"
@@ -1044,7 +1048,7 @@ const DoorStaffInterface: React.FC = () => {
             onClick={() => setShowStartShiftModal(false)}
           ></div>
           
-          <div className="relative w-full max-w-md card-premium p-6 animate-scale-in">
+          <div className="relative w-full max-w-md md:max-w-lg lg:max-w-xl card-premium p-6 animate-scale-in">
             <button
               onClick={() => setShowStartShiftModal(false)}
               className="absolute top-4 right-4 p-2 rounded-lg hover:bg-white/10 transition-colors"
@@ -1105,7 +1109,7 @@ const DoorStaffInterface: React.FC = () => {
             onClick={() => setShowEndShiftModal(false)}
           ></div>
           
-          <div className="relative w-full max-w-md card-premium p-6 animate-scale-in">
+          <div className="relative w-full max-w-md md:max-w-lg lg:max-w-xl card-premium p-6 animate-scale-in">
             <button
               onClick={() => setShowEndShiftModal(false)}
               className="absolute top-4 right-4 p-2 rounded-lg hover:bg-white/10 transition-colors"

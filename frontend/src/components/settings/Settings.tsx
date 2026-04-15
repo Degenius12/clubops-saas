@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { RootState, AppDispatch } from '../../store/store'
 import { updateUser } from '../../store/slices/authSlice'
+import { NotificationSettings } from '../notifications/NotificationSettings'
 import {
   UserCircleIcon,
   BellIcon,
@@ -257,51 +258,57 @@ const Settings: React.FC = () => {
 
           {/* Notifications Tab */}
           {activeTab === 'notifications' && (
-            <div className="card-premium p-6 space-y-6">
-              <div>
-                <h2 className="text-xl font-semibold text-text-primary">Notification Preferences</h2>
-                <p className="text-text-secondary text-sm mt-1">Choose how you want to receive alerts</p>
-              </div>
+            <div className="space-y-6">
+              {/* Push Notifications Section */}
+              <NotificationSettings userId={user?.id} />
 
-              <div className="space-y-1">
-                {[
-                  { key: 'complianceAlerts', title: 'Compliance Alerts', desc: 'License expirations and compliance issues', icon: ShieldCheckIcon, critical: true },
-                  { key: 'vipAlerts', title: 'VIP Booth Alerts', desc: 'Session timers and booth status changes', icon: BuildingStorefrontIcon },
-                  { key: 'dancerCheckIns', title: 'Entertainer Check-ins', desc: 'Notifications when entertainers check in/out', icon: UserCircleIcon },
-                  { key: 'revenueReports', title: 'Revenue Reports', desc: 'Daily and weekly revenue summaries', icon: CreditCardIcon },
-                  { key: 'emailAlerts', title: 'Email Notifications', desc: 'Receive notifications via email', icon: BellIcon },
-                  { key: 'smsAlerts', title: 'SMS Alerts', desc: 'Text messages for critical alerts', icon: DevicePhoneMobileIcon },
-                  { key: 'systemUpdates', title: 'System Updates', desc: 'Platform updates and maintenance notices', icon: CloudIcon },
-                  { key: 'marketingEmails', title: 'Marketing Emails', desc: 'Product news and promotional content', icon: GlobeAltIcon }
-                ].map(({ key, title, desc, icon: Icon, critical }) => (
-                  <div 
-                    key={key} 
-                    className={`flex items-center justify-between p-4 rounded-xl transition-colors ${
-                      critical ? 'bg-gold-500/5 border border-gold-500/10' : 'hover:bg-white/[0.02]'
-                    }`}
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className={`p-2.5 rounded-xl ${critical ? 'bg-gold-500/10' : 'bg-midnight-800'}`}>
-                        <Icon className={`w-5 h-5 ${critical ? 'text-gold-400' : 'text-text-tertiary'}`} />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h4 className="text-text-primary font-medium">{title}</h4>
-                          {critical && (
-                            <span className="px-2 py-0.5 text-[10px] font-medium bg-gold-500/20 text-gold-400 rounded-full uppercase">
-                              Important
-                            </span>
-                          )}
+              {/* Email & SMS Notifications Section */}
+              <div className="card-premium p-6 space-y-6">
+                <div>
+                  <h2 className="text-xl font-semibold text-text-primary">Email & SMS Preferences</h2>
+                  <p className="text-text-secondary text-sm mt-1">Choose how you want to receive alerts via email and SMS</p>
+                </div>
+
+                <div className="space-y-1">
+                  {[
+                    { key: 'complianceAlerts', title: 'Compliance Alerts', desc: 'License expirations and compliance issues', icon: ShieldCheckIcon, critical: true },
+                    { key: 'vipAlerts', title: 'VIP Booth Alerts', desc: 'Session timers and booth status changes', icon: BuildingStorefrontIcon },
+                    { key: 'dancerCheckIns', title: 'Entertainer Check-ins', desc: 'Notifications when entertainers check in/out', icon: UserCircleIcon },
+                    { key: 'revenueReports', title: 'Revenue Reports', desc: 'Daily and weekly revenue summaries', icon: CreditCardIcon },
+                    { key: 'emailAlerts', title: 'Email Notifications', desc: 'Receive notifications via email', icon: BellIcon },
+                    { key: 'smsAlerts', title: 'SMS Alerts', desc: 'Text messages for critical alerts', icon: DevicePhoneMobileIcon },
+                    { key: 'systemUpdates', title: 'System Updates', desc: 'Platform updates and maintenance notices', icon: CloudIcon },
+                    { key: 'marketingEmails', title: 'Marketing Emails', desc: 'Product news and promotional content', icon: GlobeAltIcon }
+                  ].map(({ key, title, desc, icon: Icon, critical }) => (
+                    <div 
+                      key={key} 
+                      className={`flex items-center justify-between p-4 rounded-xl transition-colors ${
+                        critical ? 'bg-gold-500/5 border border-gold-500/10' : 'hover:bg-white/[0.02]'
+                      }`}
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className={`p-2.5 rounded-xl ${critical ? 'bg-gold-500/10' : 'bg-midnight-800'}`}>
+                          <Icon className={`w-5 h-5 ${critical ? 'text-gold-400' : 'text-text-tertiary'}`} />
                         </div>
-                        <p className="text-text-muted text-sm">{desc}</p>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h4 className="text-text-primary font-medium">{title}</h4>
+                            {critical && (
+                              <span className="px-2 py-0.5 text-[10px] font-medium bg-gold-500/20 text-gold-400 rounded-full uppercase">
+                                Important
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-text-muted text-sm">{desc}</p>
+                        </div>
                       </div>
+                      <Toggle 
+                        enabled={notifications[key as keyof typeof notifications]} 
+                        onChange={() => handleNotificationToggle(key)} 
+                      />
                     </div>
-                    <Toggle 
-                      enabled={notifications[key as keyof typeof notifications]} 
-                      onChange={() => handleNotificationToggle(key)} 
-                    />
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             </div>
           )}

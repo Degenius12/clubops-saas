@@ -479,7 +479,7 @@ const POSSystem: React.FC = () => {
         {/* Receipt Modal */}
         {showReceipt && lastTransaction && (
           <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-50">
-            <div className="bg-white text-black rounded-xl p-8 max-w-md w-full mx-4">
+            <div className="bg-white text-black rounded-xl p-8 max-w-md md:max-w-lg lg:max-w-xl w-full mx-4">
               <div className="text-center mb-6">
                 <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
                   <Check className="text-green-600" size={32} />

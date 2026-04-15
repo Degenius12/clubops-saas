@@ -353,7 +353,7 @@ const DJQueue: React.FC = () => {
       {showAddModal && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div
-            className="card-premium p-6 w-full max-w-md animate-scale-in"
+            className="card-premium p-6 w-full max-w-md md:max-w-lg lg:max-w-xl animate-scale-in"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-6">

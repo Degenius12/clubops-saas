@@ -752,7 +752,7 @@ const VipHostInterface: React.FC = () => {
       {/* Start Session Modal */}
       {showStartModal && selectedBooth && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="card-premium p-6 w-full max-w-md animate-scale-in">
+          <div className="card-premium p-6 w-full max-w-md md:max-w-lg lg:max-w-xl animate-scale-in">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-semibold text-text-primary">Start VIP Session</h3>
               <button
@@ -874,7 +874,7 @@ const VipHostInterface: React.FC = () => {
       {/* End Session Confirmation Modal */}
       {showEndModal && localSelectedSession && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="card-premium p-6 w-full max-w-md animate-scale-in">
+          <div className="card-premium p-6 w-full max-w-md md:max-w-lg lg:max-w-xl animate-scale-in">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-semibold text-text-primary">End Session</h3>
               <button
@@ -1085,7 +1085,7 @@ const VipHostInterface: React.FC = () => {
             onClick={() => setShowStartShiftModal(false)}
           ></div>
           
-          <div className="relative w-full max-w-md card-premium p-6 animate-scale-in">
+          <div className="relative w-full max-w-md md:max-w-lg lg:max-w-xl card-premium p-6 animate-scale-in">
             <button
               onClick={() => setShowStartShiftModal(false)}
               className="absolute top-4 right-4 p-2 rounded-lg hover:bg-white/10 transition-colors"
@@ -1146,7 +1146,7 @@ const VipHostInterface: React.FC = () => {
             onClick={() => setShowEndShiftModal(false)}
           ></div>
           
-          <div className="relative w-full max-w-md card-premium p-6 animate-scale-in">
+          <div className="relative w-full max-w-md md:max-w-lg lg:max-w-xl card-premium p-6 animate-scale-in">
             <button
               onClick={() => setShowEndShiftModal(false)}
               className="absolute top-4 right-4 p-2 rounded-lg hover:bg-white/10 transition-colors"

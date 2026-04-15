@@ -1410,7 +1410,7 @@ const SecurityDashboard: React.FC = () => {
             onClick={() => setShowExportModal(false)}
           ></div>
           
-          <div className="relative w-full max-w-md card-premium p-6 animate-scale-in">
+          <div className="relative w-full max-w-md md:max-w-lg lg:max-w-xl card-premium p-6 animate-scale-in">
             <button
               onClick={() => setShowExportModal(false)}
               className="absolute top-4 right-4 p-2 rounded-lg hover:bg-white/10 transition-colors"
@@ -1505,7 +1505,7 @@ const SecurityDashboard: React.FC = () => {
             onClick={() => setShowResolveModal(false)}
           ></div>
           
-          <div className="relative w-full max-w-md card-premium p-6 animate-scale-in">
+          <div className="relative w-full max-w-md md:max-w-lg lg:max-w-xl card-premium p-6 animate-scale-in">
             <button
               onClick={() => setShowResolveModal(false)}
               className="absolute top-4 right-4 p-2 rounded-lg hover:bg-white/10 transition-colors"

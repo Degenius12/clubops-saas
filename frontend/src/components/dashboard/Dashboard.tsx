@@ -8,6 +8,7 @@ import { fetchRevenue } from '../../store/slices/revenueSlice'
 import apiClient from '../../config/api'
 import ShiftControl from '../shift/ShiftControl'
 import { useWebSocket } from '../../hooks/useWebSocket'
+import { usePatronCount } from '../../hooks'
 import {
   UsersIcon,
   MusicalNoteIcon,
@@ -20,7 +21,8 @@ import {
   PlusIcon,
   PlayIcon,
   SparklesIcon,
-  ArrowTrendingUpIcon
+  ArrowTrendingUpIcon,
+  UserGroupIcon
 } from '@heroicons/react/24/outline'
 
 // Animated number component with spring physics feel
@@ -84,6 +86,9 @@ const Dashboard: React.FC = () => {
       setLastUpdate(new Date())
     }
   })
+
+  // Patron Count Hook (Feature #49)
+  const { patronCount } = usePatronCount(user?.clubId || '')
 
   useEffect(() => {
     dispatch(fetchDancers())
@@ -163,6 +168,36 @@ const Dashboard: React.FC = () => {
       href: '/revenue',
       trend: { value: '+18%', positive: true },
       roles: ['OWNER', 'MANAGER'] // Only Owner and Manager see revenue
+    },
+    {
+      name: 'Patron Count',
+      value: patronCount?.currentCount || 0,
+      total: patronCount?.capacityLimit || null,
+      icon: UserGroupIcon,
+      iconBg: patronCount && patronCount.percentFull >= 100
+        ? 'bg-status-danger/10'
+        : patronCount && patronCount.percentFull >= 80
+        ? 'bg-status-warning/10'
+        : 'bg-royal-500/10',
+      iconColor: patronCount && patronCount.percentFull >= 100
+        ? 'text-status-danger'
+        : patronCount && patronCount.percentFull >= 80
+        ? 'text-status-warning'
+        : 'text-royal-400',
+      accentColor: patronCount && patronCount.percentFull >= 100
+        ? 'status-danger'
+        : patronCount && patronCount.percentFull >= 80
+        ? 'status-warning'
+        : 'royal-500',
+      href: '/door-staff',
+      trend: {
+        value: patronCount?.capacityLimit
+          ? `${patronCount.percentFull.toFixed(0)}% full`
+          : 'Live',
+        positive: (patronCount?.percentFull || 0) < 80,
+        isLive: true
+      },
+      roles: ['OWNER', 'MANAGER', 'DOOR_STAFF'] // Door staff, managers and owners see patron count
     }
   ]
 
