@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClubFlow Push Notifications Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+            background: #0f0f23;
+            color: #fff;
+        }
+        
+        .test-section {
+            background: #1a1a2e;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+        
+        .success {
+            background: #064e3b;
+            border: 1px solid #047857;
+            color: #10b981;
+        }
+        
+        .error {
+            background: #7f1d1d;
+            border: 1px solid #dc2626;
+            color: #f87171;
+        }
+        
+        .warning {
+            background: #78350f;
+            border: 1px solid #d97706;
+            color: #fbbf24;
+        }
+        
+        .info {
+            background: #1e3a8a;
+            border: 1px solid #3b82f6;
+            color: #60a5fa;
+        }
+        
+        button {
+            background: #d97706;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+            font-weight: 500;
+        }
+        
+        button:hover {
+            background: #b45309;
+        }
+        
+        button:disabled {
+            background: #374151;
+            color: #9ca3af;
+            cursor: not-allowed;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-supported { background: #10b981; }
+        .status-unsupported { background: #ef4444; }
+        .status-unknown { background: #6b7280; }
+        
+        pre {
+            background: #111827;
+            border: 1px solid #374151;
+            border-radius: 4px;
+            padding: 12px;
+            overflow-x: auto;
+            font-size: 14px;
+        }
+        
+        .notification-preview {
+            background: #1f2937;
+            border: 1px solid #374151;
+            border-radius: 8px;
+            padding: 16px;
+            margin: 10px 0;
+            position: relative;
+        }
+        
+        .notification-preview::before {
+            content: "📱";
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            font-size: 20px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>🧪 ClubFlow Push Notifications Test Suite</h1>
+        <p>Comprehensive testing for web push notification functionality</p>
+    </header>
+
+    <main>
+        <!-- Browser Support Check -->
+        <section class="test-section">
+            <h2>🔍 Browser Support Check</h2>
+            <div id="browser-support-results"></div>
+        </section>
+
+        <!-- Service Worker Registration -->
+        <section class="test-section">
+            <h2>🔧 Service Worker Registration</h2>
+            <button onclick="testServiceWorkerRegistration()">Test Service Worker</button>
+            <div id="sw-results"></div>
+        </section>
+
+        <!-- Permission Testing -->
+        <section class="test-section">
+            <h2>🔐 Notification Permission</h2>
+            <p>Current status: <span id="permission-status">Unknown</span></p>
+            <button onclick="requestNotificationPermission()">Request Permission</button>
+            <button onclick="checkPermissionStatus()">Check Status</button>
+            <div id="permission-results"></div>
+        </section>
+
+        <!-- Push Subscription Testing -->
+        <section class="test-section">
+            <h2>📱 Push Subscription</h2>
+            <button onclick="testPushSubscription()">Subscribe to Push</button>
+            <button onclick="testUnsubscribe()">Unsubscribe</button>
+            <button onclick="getSubscriptionInfo()">Get Subscription Info</button>
+            <div id="subscription-results"></div>
+        </section>
+
+        <!-- Notification Testing -->
+        <section class="test-section">
+            <h2>📢 Notification Testing</h2>
+            <button onclick="showLocalNotification()">Show Local Notification</button>
+            <button onclick="testPushNotification()">Test Push Notification</button>
+            <button onclick="testEmergencyAlert()">Test Emergency Alert</button>
+            <div id="notification-results"></div>
+        </section>
+
+        <!-- Settings Testing -->
+        <section class="test-section">
+            <h2>⚙️ Settings & Preferences</h2>
+            <button onclick="testPreferencesUpdate()">Test Preferences Update</button>
+            <button onclick="testGetSubscriptions()">Get User Subscriptions</button>
+            <div id="settings-results"></div>
+        </section>
+
+        <!-- API Testing -->
+        <section class="test-section">
+            <h2>🌐 API Connectivity</h2>
+            <button onclick="testBackendAPI()">Test Backend API</button>
+            <button onclick="testVapidKey()">Test VAPID Key</button>
+            <div id="api-results"></div>
+        </section>
+
+        <!-- Debug Information -->
+        <section class="test-section">
+            <h2>🐛 Debug Information</h2>
+            <button onclick="collectDebugInfo()">Collect Debug Info</button>
+            <div id="debug-info"></div>
+        </section>
+    </main>
+
+    <script>
+        // Configuration
+        const API_BASE = 'http://localhost:5000';
+        let authToken = null;
+        let currentSubscription = null;
+
+        // Utility functions
+        function addResult(containerId, message, type = 'info') {
+            const container = document.getElementById(containerId);
+            const div = document.createElement('div');
+            div.className = `test-result ${type}`;
+            div.innerHTML = message;
+            container.appendChild(div);
+            console.log(`[${type.toUpperCase()}] ${message.replace(/<[^>]*>/g, '')}`);
+        }
+
+        function clearResults(containerId) {
+            document.getElementById(containerId).innerHTML = '';
+        }
+
+        async function makeAuthenticatedRequest(url, options = {}) {
+            try {
+                const response = await fetch(url, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...(authToken && { 'Authorization': `Bearer ${authToken}` }),
+                        ...options.headers
+                    },
+                    ...options
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                return await response.json();
+            } catch (error) {
+                console.error('API Request failed:', error);
+                throw error;
+            }
+        }
+
+        // Browser Support Testing
+        function testBrowserSupport() {
+            clearResults('browser-support-results');
+            
+            const tests = [
+                { 
+                    name: 'Service Workers', 
+                    test: () => 'serviceWorker' in navigator 
+                },
+                { 
+                    name: 'Push Manager', 
+                    test: () => 'PushManager' in window 
+                },
+                { 
+                    name: 'Notifications API', 
+                    test: () => 'Notification' in window 
+                },
+                { 
+                    name: 'Background Sync', 
+                    test: () => 'serviceWorker' in navigator && 'sync' in window.ServiceWorkerRegistration.prototype 
+                },
+                { 
+                    name: 'Web App Manifest', 
+                    test: () => 'onbeforeinstallprompt' in window 
+                }
+            ];
+
+            tests.forEach(({ name, test }) => {
+                const supported = test();
+                const status = supported ? 'supported' : 'unsupported';
+                const indicator = `<span class="status-indicator status-${status}"></span>`;
+                addResult('browser-support-results', 
+                    `${indicator}${name}: ${supported ? 'Supported' : 'Not Supported'}`,
+                    supported ? 'success' : 'error'
+                );
+            });
+        }
+
+        // Service Worker Testing
+        async function testServiceWorkerRegistration() {
+            clearResults('sw-results');
+            
+            try {
+                if (!('serviceWorker' in navigator)) {
+                    throw new Error('Service Workers not supported');
+                }
+
+                addResult('sw-results', 'Registering service worker...', 'info');
+                
+                const registration = await navigator.serviceWorker.register('/sw.js', {
+                    scope: '/'
+                });
+
+                addResult('sw-results', `✅ Service Worker registered successfully`, 'success');
+                addResult('sw-results', `Scope: ${registration.scope}`, 'info');
+
+                // Wait for service worker to be ready
+                const swReg = await navigator.serviceWorker.ready;
+                addResult('sw-results', '✅ Service Worker is ready', 'success');
+
+                return registration;
+            } catch (error) {
+                addResult('sw-results', `❌ Service Worker registration failed: ${error.message}`, 'error');
+                return null;
+            }
+        }
+
+        // Permission Testing
+        function checkPermissionStatus() {
+            const permission = Notification.permission;
+            document.getElementById('permission-status').textContent = permission;
+            
+            const statusMessages = {
+                'granted': '✅ Notifications are enabled',
+                'denied': '❌ Notifications are blocked',
+                'default': '⚠️ Permission not yet requested'
+            };
+
+            const statusType = {
+                'granted': 'success',
+                'denied': 'error',
+                'default': 'warning'
+            };
+
+            clearResults('permission-results');
+            addResult('permission-results', statusMessages[permission], statusType[permission]);
+        }
+
+        async function requestNotificationPermission() {
+            clearResults('permission-results');
+            
+            try {
+                if (!('Notification' in window)) {
+                    throw new Error('Notifications not supported');
+                }
+
+                addResult('permission-results', 'Requesting notification permission...', 'info');
+                
+                const permission = await Notification.requestPermission();
+                
+                checkPermissionStatus();
+                
+                if (permission === 'granted') {
+                    addResult('permission-results', '🎉 Permission granted successfully!', 'success');
+                } else if (permission === 'denied') {
+                    addResult('permission-results', '😞 Permission denied. Please enable in browser settings.', 'error');
+                } else {
+                    addResult('permission-results', '🤷 Permission request dismissed', 'warning');
+                }
+
+                return permission;
+            } catch (error) {
+                addResult('permission-results', `❌ Permission request failed: ${error.message}`, 'error');
+                return 'denied';
+            }
+        }
+
+        // Push Subscription Testing
+        async function testPushSubscription() {
+            clearResults('subscription-results');
+            
+            try {
+                // First ensure we have permission
+                if (Notification.permission !== 'granted') {
+                    addResult('subscription-results', 'Requesting notification permission first...', 'info');
+                    const permission = await requestNotificationPermission();
+                    if (permission !== 'granted') {
+                        throw new Error('Permission required for push subscriptions');
+                    }
+                }
+
+                // Register service worker
+                addResult('subscription-results', 'Registering service worker...', 'info');
+                const registration = await testServiceWorkerRegistration();
+                if (!registration) {
+                    throw new Error('Service Worker registration failed');
+                }
+
+                // Get VAPID public key
+                addResult('subscription-results', 'Getting VAPID public key...', 'info');
+                const vapidResponse = await makeAuthenticatedRequest(`${API_BASE}/api/push-notifications/vapid-public-key`);
+                const vapidKey = vapidResponse.publicKey;
+
+                // Convert VAPID key
+                function urlBase64ToUint8Array(base64String) {
+                    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+                    const base64 = (base64String + padding)
+                        .replace(/-/g, '+')
+                        .replace(/_/g, '/');
+                    const rawData = window.atob(base64);
+                    return new Uint8Array([...rawData].map(char => char.charCodeAt(0)));
+                }
+
+                // Subscribe to push
+                addResult('subscription-results', 'Creating push subscription...', 'info');
+                const subscription = await registration.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: urlBase64ToUint8Array(vapidKey)
+                });
+
+                currentSubscription = subscription;
+
+                // Send subscription to server
+                const subscriptionData = {
+                    endpoint: subscription.endpoint,
+                    keys: {
+                        p256dh: btoa(String.fromCharCode(...new Uint8Array(subscription.getKey('p256dh')))),
+                        auth: btoa(String.fromCharCode(...new Uint8Array(subscription.getKey('auth'))))
+                    },
+                    preferences: {
+                        shiftUpdates: true,
+                        swapRequests: true,
+                        emergencyAlerts: true,
+                        generalUpdates: false
+                    },
+                    deviceInfo: {
+                        userAgent: navigator.userAgent,
+                        deviceType: /Mobile|Android|iPhone|iPad/.test(navigator.userAgent) ? 'mobile' : 'desktop',
+                        browserName: navigator.userAgent.includes('Chrome') ? 'Chrome' : 'Unknown',
+                        browserVersion: '1.0'
+                    }
+                };
+
+                addResult('subscription-results', 'Sending subscription to server...', 'info');
+                await makeAuthenticatedRequest(`${API_BASE}/api/push-notifications/subscribe`, {
+                    method: 'POST',
+                    body: JSON.stringify(subscriptionData)
+                });
+
+                addResult('subscription-results', '🎉 Push subscription successful!', 'success');
+                addResult('subscription-results', `Endpoint: ${subscription.endpoint.substring(0, 50)}...`, 'info');
+
+            } catch (error) {
+                addResult('subscription-results', `❌ Push subscription failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function testUnsubscribe() {
+            clearResults('subscription-results');
+            
+            try {
+                const registration = await navigator.serviceWorker.getRegistration();
+                if (!registration) {
+                    throw new Error('No service worker registration found');
+                }
+
+                const subscription = await registration.pushManager.getSubscription();
+                if (!subscription) {
+                    throw new Error('No active subscription found');
+                }
+
+                addResult('subscription-results', 'Unsubscribing from push notifications...', 'info');
+                
+                const success = await subscription.unsubscribe();
+                
+                if (success) {
+                    await makeAuthenticatedRequest(`${API_BASE}/api/push-notifications/unsubscribe`, {
+                        method: 'DELETE',
+                        body: JSON.stringify({ endpoint: subscription.endpoint })
+                    });
+                    
+                    currentSubscription = null;
+                    addResult('subscription-results', '✅ Successfully unsubscribed', 'success');
+                } else {
+                    throw new Error('Browser unsubscribe failed');
+                }
+
+            } catch (error) {
+                addResult('subscription-results', `❌ Unsubscribe failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function getSubscriptionInfo() {
+            clearResults('subscription-results');
+            
+            try {
+                const registration = await navigator.serviceWorker.getRegistration();
+                const subscription = await registration?.pushManager.getSubscription();
+
+                if (subscription) {
+                    addResult('subscription-results', '✅ Active push subscription found', 'success');
+                    addResult('subscription-results', `Endpoint: ${subscription.endpoint}`, 'info');
+                } else {
+                    addResult('subscription-results', 'ℹ️ No active subscription', 'warning');
+                }
+
+                // Get server-side subscription info
+                const subscriptions = await makeAuthenticatedRequest(`${API_BASE}/api/push-notifications/subscriptions`);
+                addResult('subscription-results', `📊 Server has ${subscriptions.length} subscription(s)`, 'info');
+
+            } catch (error) {
+                addResult('subscription-results', `❌ Failed to get subscription info: ${error.message}`, 'error');
+            }
+        }
+
+        // Notification Testing
+        function showLocalNotification() {
+            clearResults('notification-results');
+            
+            try {
+                if (Notification.permission !== 'granted') {
+                    throw new Error('Notification permission not granted');
+                }
+
+                const notification = new Notification('🧪 Test Notification', {
+                    body: 'This is a test notification from ClubFlow',
+                    icon: '/favicon.ico',
+                    badge: '/favicon.ico',
+                    requireInteraction: false,
+                    actions: [
+                        { action: 'view', title: 'View Details' }
+                    ]
+                });
+
+                notification.onclick = () => {
+                    addResult('notification-results', '👆 Notification clicked!', 'success');
+                    notification.close();
+                };
+
+                addResult('notification-results', '✅ Local notification displayed', 'success');
+
+            } catch (error) {
+                addResult('notification-results', `❌ Local notification failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function testPushNotification() {
+            clearResults('notification-results');
+            
+            try {
+                const response = await makeAuthenticatedRequest(`${API_BASE}/api/push-notifications/send`, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        title: '🧪 Push Test',
+                        body: 'This is a test push notification from ClubFlow',
+                        url: '/dashboard',
+                        recipients: 'all'
+                    })
+                });
+
+                addResult('notification-results', '✅ Push notification sent successfully', 'success');
+                addResult('notification-results', `Sent to ${response.sent || 0} device(s)`, 'info');
+
+            } catch (error) {
+                addResult('notification-results', `❌ Push notification failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function testEmergencyAlert() {
+            clearResults('notification-results');
+            
+            try {
+                const response = await makeAuthenticatedRequest(`${API_BASE}/api/push-notifications/emergency`, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        message: 'This is a test emergency alert - please ignore',
+                        url: '/dashboard'
+                    })
+                });
+
+                addResult('notification-results', '🚨 Emergency alert sent successfully', 'success');
+                addResult('notification-results', `Sent to ${response.sent || 0} device(s)`, 'info');
+
+            } catch (error) {
+                addResult('notification-results', `❌ Emergency alert failed: ${error.message}`, 'error');
+            }
+        }
+
+        // Settings Testing
+        async function testPreferencesUpdate() {
+            clearResults('settings-results');
+            
+            try {
+                const newPreferences = {
+                    shiftUpdates: true,
+                    swapRequests: false,
+                    emergencyAlerts: true,
+                    generalUpdates: true
+                };
+
+                await makeAuthenticatedRequest(`${API_BASE}/api/push-notifications/preferences`, {
+                    method: 'PUT',
+                    body: JSON.stringify({ preferences: newPreferences })
+                });
+
+                addResult('settings-results', '✅ Preferences updated successfully', 'success');
+                addResult('settings-results', `New preferences: ${JSON.stringify(newPreferences, null, 2)}`, 'info');
+
+            } catch (error) {
+                addResult('settings-results', `❌ Preferences update failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function testGetSubscriptions() {
+            clearResults('settings-results');
+            
+            try {
+                const subscriptions = await makeAuthenticatedRequest(`${API_BASE}/api/push-notifications/subscriptions`);
+
+                addResult('settings-results', `📱 Found ${subscriptions.length} subscription(s)`, 'success');
+                
+                subscriptions.forEach((sub, index) => {
+                    addResult('settings-results', 
+                        `${index + 1}. ${sub.deviceType} - ${sub.browserName} (${sub.enabled ? 'enabled' : 'disabled'})`,
+                        'info'
+                    );
+                });
+
+            } catch (error) {
+                addResult('settings-results', `❌ Get subscriptions failed: ${error.message}`, 'error');
+            }
+        }
+
+        // API Testing
+        async function testBackendAPI() {
+            clearResults('api-results');
+            
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.json();
+
+                addResult('api-results', '✅ Backend API is accessible', 'success');
+                addResult('api-results', `Status: ${data.status}`, 'info');
+                addResult('api-results', `Version: ${data.version}`, 'info');
+
+            } catch (error) {
+                addResult('api-results', `❌ Backend API failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function testVapidKey() {
+            clearResults('api-results');
+            
+            try {
+                const response = await makeAuthenticatedRequest(`${API_BASE}/api/push-notifications/vapid-public-key`);
+
+                addResult('api-results', '✅ VAPID public key retrieved', 'success');
+                addResult('api-results', `Key: ${response.publicKey.substring(0, 50)}...`, 'info');
+
+            } catch (error) {
+                addResult('api-results', `❌ VAPID key failed: ${error.message}`, 'error');
+            }
+        }
+
+        // Debug Information
+        function collectDebugInfo() {
+            clearResults('debug-info');
+            
+            const info = {
+                userAgent: navigator.userAgent,
+                platform: navigator.platform,
+                language: navigator.language,
+                cookieEnabled: navigator.cookieEnabled,
+                onLine: navigator.onLine,
+                serviceWorkerSupport: 'serviceWorker' in navigator,
+                pushManagerSupport: 'PushManager' in window,
+                notificationSupport: 'Notification' in window,
+                notificationPermission: 'Notification' in window ? Notification.permission : 'N/A',
+                currentUrl: window.location.href,
+                timestamp: new Date().toISOString()
+            };
+
+            addResult('debug-info', '<pre>' + JSON.stringify(info, null, 2) + '</pre>', 'info');
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            testBrowserSupport();
+            checkPermissionStatus();
+            
+            // Try to get auth token (this would normally be from login)
+            authToken = localStorage.getItem('token') || 'test-token';
+        });
+    </script>
+</body>
+</html>

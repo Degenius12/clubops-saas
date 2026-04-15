@@ -1,0 +1,142 @@
+{
+  "name": "ClubFlow - Gentlemen's Club Management",
+  "short_name": "ClubFlow",
+  "description": "Professional management platform for gentlemen's clubs",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1a1a2e",
+  "theme_color": "#ffd700",
+  "orientation": "any",
+  "scope": "/",
+  "lang": "en-US",
+  "dir": "ltr",
+  "icons": [
+    {
+      "src": "/icons/icon-72x72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-96x96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-128x128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-144x144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-152x152.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-384x384.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/dashboard-desktop.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "platform": "wide",
+      "label": "ClubFlow Dashboard"
+    },
+    {
+      "src": "/screenshots/dashboard-mobile.png", 
+      "sizes": "360x640",
+      "type": "image/png",
+      "platform": "narrow",
+      "label": "ClubFlow Mobile Dashboard"
+    }
+  ],
+  "categories": ["business", "productivity", "finance"],
+  "iarc_rating_id": "e84b072d-71b3-4d3e-86ae-31a8ce4e53b7",
+  "prefer_related_applications": false,
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "description": "View main dashboard",
+      "url": "/dashboard",
+      "icons": [
+        {
+          "src": "/icons/shortcut-dashboard.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Entertainers",
+      "short_name": "Entertainers",
+      "description": "Manage entertainers",
+      "url": "/dancers",
+      "icons": [
+        {
+          "src": "/icons/shortcut-entertainers.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Shift Schedule",
+      "short_name": "Schedule",
+      "description": "View shift schedule",
+      "url": "/shift-scheduling",
+      "icons": [
+        {
+          "src": "/icons/shortcut-schedule.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "VIP Booths",
+      "short_name": "VIP",
+      "description": "Manage VIP booths",
+      "url": "/vip",
+      "icons": [
+        {
+          "src": "/icons/shortcut-vip.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    }
+  ],
+  "edge_side_panel": {
+    "preferred_width": 400
+  },
+  "launch_handler": {
+    "client_mode": "navigate-existing"
+  }
+}
