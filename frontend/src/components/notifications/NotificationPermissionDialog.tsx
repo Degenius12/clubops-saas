@@ -71,7 +71,7 @@ export function NotificationPermissionDialog({
     }
   ];
 
-  if (!open) return null;
+  if (!open) return <></>;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">

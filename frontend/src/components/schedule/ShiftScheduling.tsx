@@ -18,8 +18,7 @@ import {
 interface Entertainer {
   id: string;
   stageName: string;
-  firstName: string;
-  lastName: string;
+  legalName?: string;
   photoUrl?: string;
 }
 
@@ -328,7 +327,9 @@ export function ShiftScheduling() {
                             </span>
                           </div>
                           {shift.swaps && shift.swaps.length > 0 && (
-                            <RefreshCw className="w-3 h-3 text-orange-500" title="Swap requested" />
+                            <span title="Swap requested">
+                              <RefreshCw className="w-3 h-3 text-orange-500" />
+                            </span>
                           )}
                         </div>
                         
@@ -384,7 +385,7 @@ export function ShiftScheduling() {
                 <div>
                   <label className="text-sm font-medium text-gray-700">Entertainer</label>
                   <p className="mt-1 text-gray-900">
-                    {selectedShift.entertainer.stageName} ({selectedShift.entertainer.firstName} {selectedShift.entertainer.lastName})
+                    {selectedShift.entertainer.stageName}{selectedShift.entertainer.legalName ? ` (${selectedShift.entertainer.legalName})` : ''}
                   </p>
                 </div>
 
@@ -479,7 +480,7 @@ export function ShiftScheduling() {
                     <option value="">Select entertainer</option>
                     {entertainers.map(entertainer => (
                       <option key={entertainer.id} value={entertainer.id}>
-                        {entertainer.stageName} ({entertainer.firstName} {entertainer.lastName})
+                        {entertainer.stageName}{entertainer.legalName ? ` (${entertainer.legalName})` : ''}
                       </option>
                     ))}
                   </select>

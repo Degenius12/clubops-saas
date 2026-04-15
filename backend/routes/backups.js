@@ -127,8 +127,8 @@ router.get('/history', async (req, res) => {
       orderBy: { createdAt: 'desc' },
       take: parseInt(limit)
     });
-    
-    res.json(backups);
+
+    res.json(backups.map(b => ({ ...b, size: b.size == null ? null : b.size.toString() })));
   } catch (error) {
     console.error('Failed to get backup history:', error);
     res.status(500).json({

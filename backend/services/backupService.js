@@ -542,9 +542,9 @@ class BackupService {
       totalBackups,
       successfulBackups,
       failedBackups,
-      totalSize: totalSize._sum.size || 0,
+      totalSize: (totalSize._sum.size ?? 0n).toString(),
       successRate: totalBackups > 0 ? (successfulBackups / totalBackups) * 100 : 0,
-      recentBackups
+      recentBackups: recentBackups.map(b => ({ ...b, size: b.size == null ? null : b.size.toString() }))
     };
   }
 

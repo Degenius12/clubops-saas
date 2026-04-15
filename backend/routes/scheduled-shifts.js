@@ -44,8 +44,7 @@ router.get('/', async (req, res) => {
           select: {
             id: true,
             stageName: true,
-            firstName: true,
-            lastName: true,
+            legalName: true,
             photoUrl: true
           }
         },
@@ -234,8 +233,7 @@ router.post('/', authorize('MANAGER', 'SUPER_MANAGER', 'OWNER'), async (req, res
           select: {
             id: true,
             stageName: true,
-            firstName: true,
-            lastName: true,
+            legalName: true,
             email: true,
             phone: true
           }
@@ -331,8 +329,7 @@ router.patch('/:id', authorize('MANAGER', 'SUPER_MANAGER', 'OWNER'), async (req,
           select: {
             id: true,
             stageName: true,
-            firstName: true,
-            lastName: true
+            legalName: true
           }
         }
       }
@@ -532,8 +529,7 @@ router.get('/swaps', authorize('MANAGER', 'SUPER_MANAGER', 'OWNER'), async (req,
               select: {
                 id: true,
                 stageName: true,
-                firstName: true,
-                lastName: true
+                legalName: true
               }
             }
           }
@@ -542,8 +538,7 @@ router.get('/swaps', authorize('MANAGER', 'SUPER_MANAGER', 'OWNER'), async (req,
           select: {
             id: true,
             stageName: true,
-            firstName: true,
-            lastName: true
+            legalName: true
           }
         },
         reviewer: {

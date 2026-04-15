@@ -14,8 +14,7 @@ import {
 interface Entertainer {
   id: string;
   stageName: string;
-  firstName: string;
-  lastName: string;
+  legalName?: string;
 }
 
 interface ScheduledShift {
@@ -326,9 +325,11 @@ export function ShiftSwapRequests() {
                         <div className="font-medium text-gray-900">
                           {swap.requester.stageName}
                         </div>
-                        <div className="text-gray-500">
-                          {swap.requester.firstName} {swap.requester.lastName}
-                        </div>
+                        {swap.requester.legalName && (
+                          <div className="text-gray-500">
+                            {swap.requester.legalName}
+                          </div>
+                        )}
                       </div>
                     </td>
                     <td className="px-6 py-4">
@@ -397,8 +398,12 @@ export function ShiftSwapRequests() {
                   <label className="text-sm font-medium text-gray-700">Requested By</label>
                   <p className="mt-1">
                     <span className="font-medium">{selectedSwap.requester.stageName}</span>
-                    <br />
-                    {selectedSwap.requester.firstName} {selectedSwap.requester.lastName}
+                    {selectedSwap.requester.legalName && (
+                      <>
+                        <br />
+                        {selectedSwap.requester.legalName}
+                      </>
+                    )}
                     <br />
                     <span className="text-sm text-gray-500">
                       {format(parseISO(selectedSwap.requestedDate), 'MMM d, h:mm a')}
@@ -429,7 +434,7 @@ export function ShiftSwapRequests() {
                     .filter(e => e.id !== selectedSwap.scheduledShift.entertainer.id)
                     .map(entertainer => (
                       <option key={entertainer.id} value={entertainer.id}>
-                        {entertainer.stageName} ({entertainer.firstName} {entertainer.lastName})
+                        {entertainer.stageName}{entertainer.legalName ? ` (${entertainer.legalName})` : ''}
                       </option>
                     ))}
                 </select>
