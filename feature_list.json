@@ -515,7 +515,7 @@
       "Tap notification",
       "Verify app opens to relevant section"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 35,
@@ -741,7 +741,7 @@
       "Verify count updates on entry/exit",
       "Verify capacity alerts trigger correctly"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 50,
