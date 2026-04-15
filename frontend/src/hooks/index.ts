@@ -17,6 +17,13 @@ export { useDoorStaffData } from './useDoorStaffData';
 export { useVipHostData } from './useVipHostData';
 export { useSecurityDashboard } from './useSecurityDashboard';
 
+// Patron count hook (Feature #49)
+export { usePatronCount } from './usePatronCount';
+
+// Push notifications hook (Feature #34)
+export { usePushNotifications } from './usePushNotifications';
+export type { PushNotificationState } from './usePushNotifications';
+
 // Re-export typed Redux hooks
 import { useDispatch, useSelector, TypedUseSelectorHook } from 'react-redux';
 import type { RootState, AppDispatch } from '../store/store';

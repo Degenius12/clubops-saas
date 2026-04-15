@@ -86,6 +86,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
     { name: 'Late Fees', href: '/fees/late', icon: ClockIcon, roles: ['OWNER', 'SUPER_MANAGER', 'MANAGER'] },
     { name: 'Discrepancies', href: '/discrepancy', icon: ExclamationTriangleIcon, roles: ['OWNER', 'SUPER_MANAGER', 'MANAGER'] },
     { name: 'Schedule', href: '/schedule', icon: CalendarIcon, roles: ['OWNER', 'SUPER_MANAGER', 'MANAGER'] },
+    { name: 'Shift Scheduling', href: '/shift-scheduling', icon: CalendarIcon, roles: ['OWNER', 'SUPER_MANAGER', 'MANAGER'] },
+    { name: 'Shift Swaps', href: '/shift-swaps', icon: UserIcon, roles: ['OWNER', 'SUPER_MANAGER', 'MANAGER'] },
     { name: 'Compliance', href: '/compliance', icon: DocumentTextIcon, roles: ['OWNER', 'SUPER_MANAGER', 'MANAGER'] },
     { name: 'Security', href: '/security', icon: ShieldCheckIcon, roles: ['OWNER', 'SUPER_MANAGER'] },
   ]

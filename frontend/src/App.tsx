@@ -23,6 +23,8 @@ import FeeManagement from './components/fees/FeeManagement'
 import DiscrepancyReport from './components/fees/DiscrepancyReport'
 import { LateFeeManagement } from './components/fees/LateFeeManagement'
 import ScheduleManager from './components/schedule/ScheduleManager'
+import { ShiftScheduling } from './components/schedule/ShiftScheduling'
+import { ShiftSwapRequests } from './components/schedule/ShiftSwapRequests'
 import Settings from './components/settings/Settings'
 
 // Role-Based Station Interfaces (Fraud Prevention)
@@ -195,6 +197,22 @@ function App() {
           <ProtectedRoute>
             <DashboardLayout>
               <ScheduleManager />
+            </DashboardLayout>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/shift-scheduling" element={
+          <ProtectedRoute>
+            <DashboardLayout>
+              <ShiftScheduling />
+            </DashboardLayout>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/shift-swaps" element={
+          <ProtectedRoute>
+            <DashboardLayout>
+              <ShiftSwapRequests />
             </DashboardLayout>
           </ProtectedRoute>
         } />

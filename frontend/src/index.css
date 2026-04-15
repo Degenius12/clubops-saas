@@ -101,6 +101,13 @@
     font-feature-settings: "cv03", "cv04", "cv11", "ss01";
   }
 
+  /* Touch device optimizations */
+  @media (pointer: coarse) {
+    * {
+      -webkit-tap-highlight-color: transparent;
+    }
+  }
+
   /* Focus styles - Stripe-inspired */
   *:focus-visible {
     @apply outline-none ring-2 ring-gold-500/40 ring-offset-2 ring-offset-midnight-900;
@@ -146,10 +153,12 @@
     box-shadow: var(--shadow-xs);
   }
 
-  .card-premium:hover {
-    @apply border-white/[0.10];
-    box-shadow: var(--shadow-md);
-    transform: translateY(-1px);
+  @media (hover: hover) {
+    .card-premium:hover {
+      @apply border-white/[0.10];
+      box-shadow: var(--shadow-md);
+      transform: translateY(-1px);
+    }
   }
 
   .card-glass {
@@ -183,12 +192,14 @@
       inset 0 1px 0 0 rgba(255, 255, 255, 0.15);
   }
 
-  .btn-primary:hover:not(:disabled) {
-    background-color: var(--accent-gold-hover);
-    box-shadow:
-      0 4px 6px -1px rgba(0, 0, 0, 0.4),
-      inset 0 1px 0 0 rgba(255, 255, 255, 0.2);
-    transform: translateY(-1px);
+  @media (hover: hover) {
+    .btn-primary:hover:not(:disabled) {
+      background-color: var(--accent-gold-hover);
+      box-shadow:
+        0 4px 6px -1px rgba(0, 0, 0, 0.4),
+        inset 0 1px 0 0 rgba(255, 255, 255, 0.2);
+      transform: translateY(-1px);
+    }
   }
 
   .btn-primary:active:not(:disabled) {
@@ -212,10 +223,12 @@
     border: 1px solid var(--border-default);
   }
 
-  .btn-secondary:hover {
-    @apply bg-white/[0.05] border-white/[0.12];
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-sm);
+  @media (hover: hover) {
+    .btn-secondary:hover {
+      @apply bg-white/[0.05] border-white/[0.12];
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-sm);
+    }
   }
 
   .btn-secondary:active {
@@ -232,8 +245,10 @@
     background: transparent;
   }
 
-  .btn-ghost:hover {
-    @apply bg-white/[0.04];
+  @media (hover: hover) {
+    .btn-ghost:hover {
+      @apply bg-white/[0.04];
+    }
   }
 
   .btn-ghost:active {
@@ -253,12 +268,14 @@
       inset 0 1px 0 0 rgba(255, 255, 255, 0.15);
   }
 
-  .btn-danger:hover {
-    background-color: #DC2626;
-    box-shadow:
-      0 4px 6px -1px rgba(0, 0, 0, 0.4),
-      inset 0 1px 0 0 rgba(255, 255, 255, 0.2);
-    transform: translateY(-1px);
+  @media (hover: hover) {
+    .btn-danger:hover {
+      background-color: #DC2626;
+      box-shadow:
+        0 4px 6px -1px rgba(0, 0, 0, 0.4),
+        inset 0 1px 0 0 rgba(255, 255, 255, 0.2);
+      transform: translateY(-1px);
+    }
   }
 
   /* Icon Button */
@@ -271,8 +288,10 @@
     border: 1px solid transparent;
   }
 
-  .btn-icon:hover {
-    @apply bg-white/[0.05] border-white/[0.08];
+  @media (hover: hover) {
+    .btn-icon:hover {
+      @apply bg-white/[0.05] border-white/[0.08];
+    }
   }
 
   .btn-icon:active {
@@ -289,8 +308,10 @@
     @apply transition-all duration-150;
   }
 
-  .nav-item:hover {
-    @apply text-text-primary bg-white/[0.04];
+  @media (hover: hover) {
+    .nav-item:hover {
+      @apply text-text-primary bg-white/[0.04];
+    }
   }
 
   .nav-item-active {
@@ -316,8 +337,10 @@
     min-height: 48px;
   }
 
-  .input-premium:hover {
-    border-color: var(--border-strong);
+  @media (hover: hover) {
+    .input-premium:hover {
+      border-color: var(--border-strong);
+    }
   }
 
   .input-premium:focus {
@@ -444,8 +467,10 @@
     @apply transition-colors duration-150;
   }
 
-  .table-premium tbody tr:hover {
-    @apply bg-white/[0.02];
+  @media (hover: hover) {
+    .table-premium tbody tr:hover {
+      @apply bg-white/[0.02];
+    }
   }
 
   .table-premium tbody tr.row-highlight {
@@ -557,9 +582,38 @@
     @apply transition-all duration-200;
   }
 
-  .elevate-on-hover:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-md);
+  @media (hover: hover) {
+    .elevate-on-hover:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+  }
+
+  /* Touch-friendly active/pressed states (replaces hover feedback on touch devices) */
+  @media (pointer: coarse) {
+    .btn-secondary:active {
+      @apply bg-white/[0.08] border-white/[0.15];
+    }
+
+    .btn-ghost:active {
+      @apply bg-white/[0.06];
+    }
+
+    .btn-icon:active {
+      @apply bg-white/[0.08] border-white/[0.12];
+    }
+
+    .nav-item:active {
+      @apply bg-white/[0.06];
+    }
+
+    .card-premium:active {
+      @apply border-white/[0.10];
+    }
+
+    .table-premium tbody tr:active {
+      @apply bg-white/[0.04];
+    }
   }
 }
 

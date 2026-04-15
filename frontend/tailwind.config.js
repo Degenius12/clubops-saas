@@ -302,5 +302,9 @@ export default {
   },
   plugins: [
     require('@tailwindcss/forms'),
+    // Fix sticky hover on touch devices — only apply hover: styles when device has a hover input
+    function({ addVariant }) {
+      addVariant('hover', '@media (hover: hover) { &:hover }')
+    },
   ],
 }
