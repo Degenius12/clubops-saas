@@ -75,6 +75,9 @@ const pushNotificationRoutes = require('../routes/push-notifications');
 // Automated Backup Routes (Feature #40)
 const backupRoutes = require('../routes/backups');
 
+// Berg POS Integration Routes (Feature #48)
+const bergIntegrationRoutes = require('../routes/berg-integration');
+
 // Queue Routes (alias for dj-queue)
 const queueRoutes = require('../routes/queue');
 
@@ -220,6 +223,9 @@ app.use('/api/push-notifications', pushNotificationRoutes);
 
 // Automated Backup System (Feature #40)
 app.use('/api/backups', backupRoutes);
+
+// Berg POS Integration (Feature #48)
+app.use('/api/berg-integration', bergIntegrationRoutes);
 
 // Patron Count System (Feature #49 - Door Count Integration - protected routes)
 app.use('/api/patron-count', patronCountRoutes.protected);

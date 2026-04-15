@@ -222,6 +222,9 @@ model Club {
   patronCountLogs      PatronCountLog[]
   pushSubscriptions    PushSubscription[]
   pushNotificationLogs PushNotificationLog[]
+  bergConfiguration    BergConfiguration?
+  bergProducts         BergProduct[]
+  bergPourLogs         BergPourLog[]
 
   @@map("clubs")
 }
@@ -1265,4 +1268,92 @@ model PushNotificationLog {
   @@index([notificationType, sentAt])
   @@index([status])
   @@map("push_notification_logs")
+}
+
+// ==============================================
+// BERG POS INTEGRATION (Feature #48)
+// Liquor dispenser integration. Hardware uses serial protocol
+// (RS-232, 9600 baud, 8N1). SIMULATOR mode allows demo without
+// hardware via backend/services/berg/bergSimulator.js.
+// ==============================================
+
+model BergConfiguration {
+  id              String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  clubId          String   @unique @map("club_id") @db.Uuid
+
+  // Connection settings
+  connectionType  String   @default("SIMULATOR") @map("connection_type") @db.VarChar(20)
+  // "USB" | "ETHERNET" | "SIMULATOR"
+  comPort         String?  @map("com_port") @db.VarChar(50)       // USB: "COM3" / "/dev/ttyUSB0"
+  ipAddress       String?  @map("ip_address") @db.VarChar(45)     // Ethernet
+  tcpPort         Int?     @map("tcp_port")
+
+  // Berg settings
+  pourWithRelease Boolean  @default(true) @map("pour_with_release") // true = wait for ACK before dispensing
+  ackTimeoutMs    Int      @default(5000) @map("ack_timeout_ms")
+
+  // Status
+  isConnected     Boolean  @default(false) @map("is_connected")
+  lastConnectedAt DateTime? @map("last_connected_at")
+  lastError       String?  @map("last_error") @db.VarChar(500)
+
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @default(now()) @updatedAt @map("updated_at")
+
+  club            Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
+
+  @@map("berg_configurations")
+}
+
+model BergProduct {
+  id              String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  clubId          String   @map("club_id") @db.Uuid
+
+  plu             String   @db.VarChar(7)     // 1–7 digit ASCII PLU
+  brandName       String   @map("brand_name") @db.VarChar(100)
+  portionSize     String   @map("portion_size") @db.VarChar(20) // SHOT, ROCKS, TALL, BOTTLE
+  portionOz       Decimal  @map("portion_oz") @db.Decimal(6, 2)
+
+  price           Decimal  @db.Decimal(10, 2)
+  category        String   @default("LIQUOR") @db.VarChar(20)   // LIQUOR, BEER, WINE
+  active          Boolean  @default(true)
+
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @default(now()) @updatedAt @map("updated_at")
+
+  club            Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  pourLogs        BergPourLog[]
+
+  @@unique([clubId, plu])
+  @@index([clubId])
+  @@map("berg_products")
+}
+
+model BergPourLog {
+  id              String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  clubId          String   @map("club_id") @db.Uuid
+
+  plu             String   @db.VarChar(7)
+  bergProductId   String?  @map("berg_product_id") @db.Uuid
+
+  // ACK/NAK decision
+  authorized      Boolean                                                // true = ACK, false = NAK
+  reason          String?  @db.VarChar(200)                              // NAK reason: "PLU_NOT_FOUND", "POS_NOT_READY", etc.
+  source          String   @default("HARDWARE") @db.VarChar(20)          // "HARDWARE" | "SIMULATOR"
+
+  bartenderId     String?  @map("bartender_id") @db.Uuid
+  transactionId   String?  @map("transaction_id") @db.Uuid
+
+  // Reconciliation
+  wasRungUp       Boolean  @default(false) @map("was_rung_up")
+  varianceNotes   String?  @map("variance_notes") @db.VarChar(500)
+
+  pourTime        DateTime @default(now()) @map("pour_time")
+
+  club            Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  bergProduct     BergProduct? @relation(fields: [bergProductId], references: [id])
+
+  @@index([clubId, pourTime])
+  @@index([clubId, wasRungUp])
+  @@map("berg_pour_logs")
 }

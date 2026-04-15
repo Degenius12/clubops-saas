@@ -19,8 +19,10 @@ import {
   BuildingStorefrontIcon,
   CloudIcon,
   LinkIcon,
+  CpuChipIcon,
   ExclamationTriangleIcon
 } from '@heroicons/react/24/outline'
+import { BergIntegration } from './BergIntegration'
 
 const Settings: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>()
@@ -64,6 +66,7 @@ const Settings: React.FC = () => {
     { id: 'preferences', name: 'Preferences', icon: Cog6ToothIcon, description: 'System settings' },
     { id: 'security', name: 'Security', icon: ShieldCheckIcon, description: 'Account protection' },
     { id: 'integrations', name: 'Integrations', icon: LinkIcon, description: 'Connected services' },
+    { id: 'berg', name: 'Berg POS', icon: CpuChipIcon, description: 'Liquor dispenser control' },
     { id: 'appearance', name: 'Appearance', icon: PaintBrushIcon, description: 'Look & feel' }
   ]
 
@@ -502,6 +505,11 @@ const Settings: React.FC = () => {
                 ))}
               </div>
             </div>
+          )}
+
+          {/* Berg POS Tab (Feature #48) */}
+          {activeTab === 'berg' && (
+            <BergIntegration />
           )}
 
           {/* Appearance Tab */}
