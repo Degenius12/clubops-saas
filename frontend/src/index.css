@@ -556,9 +556,14 @@
     @apply bg-clip-text text-transparent;
   }
 
-  /* Touch Targets - Minimum 44x44px */
+  /* Touch Targets - Glove-friendly for rugged tablet use (Galaxy Tab Active5 Pro)
+     Base: 56px (Material "dense" button, readable with work gloves)
+     Large: 64px for primary/critical actions (Scan, Check-In, Emergency) */
   .touch-target {
-    @apply min-h-[44px] min-w-[44px];
+    @apply min-h-[56px] min-w-[56px];
+  }
+  .touch-target-lg {
+    @apply min-h-[64px] min-w-[64px];
   }
 
   /* Hide Scrollbar */

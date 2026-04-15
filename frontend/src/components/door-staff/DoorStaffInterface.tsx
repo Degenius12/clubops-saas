@@ -338,6 +338,17 @@ const DoorStaffInterface: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-midnight-950 via-midnight-900 to-midnight-950 p-4 md:p-6">
+      {/* Offline Banner — high visibility for rugged-tablet use */}
+      {!isConnected && (
+        <div className="mb-4 flex items-center gap-3 rounded-xl border border-status-danger/40 bg-status-danger/10 px-4 py-3 text-status-danger">
+          <SignalSlashIcon className="h-6 w-6 shrink-0" />
+          <div className="flex-1">
+            <p className="text-base font-semibold">Offline — check-ins may not sync</p>
+            <p className="text-sm opacity-90">Actions will queue and retry when connection returns.</p>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6 animate-fade-in">
         <div className="flex items-center gap-3">
@@ -356,17 +367,17 @@ const DoorStaffInterface: React.FC = () => {
         {/* Status Indicators & Shift Info */}
         <div className="flex items-center gap-4">
           {/* Connection Status */}
-          <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${
+          <div className={`flex items-center gap-2 px-4 py-3 rounded-lg border ${
             isConnected
               ? 'bg-status-success/10 border-status-success/30 text-status-success'
               : 'bg-status-danger/10 border-status-danger/30 text-status-danger'
           }`}>
             {isConnected ? (
-              <WifiIcon className="h-4 w-4" />
+              <WifiIcon className="h-5 w-5" />
             ) : (
-              <SignalSlashIcon className="h-4 w-4" />
+              <SignalSlashIcon className="h-5 w-5" />
             )}
-            <span className="text-xs font-medium">{isConnected ? 'Live' : 'Offline'}</span>
+            <span className="text-sm font-semibold">{isConnected ? 'Live' : 'Offline'}</span>
           </div>
 
           {/* Patron Count Widget (Feature #49) */}
@@ -376,16 +387,20 @@ const DoorStaffInterface: React.FC = () => {
           <button
             onClick={refreshData}
             disabled={isLoading}
-            className="p-2 rounded-lg bg-midnight-800 border border-white/10 hover:border-electric-500/30 transition-all"
+            aria-label="Refresh data"
+            className="touch-target p-3 rounded-lg bg-midnight-800 border border-white/10 hover:border-electric-500/30 transition-all flex items-center justify-center"
           >
-            <ArrowPathIcon className={`h-5 w-5 text-text-tertiary ${isLoading ? 'animate-spin' : ''}`} />
+            <ArrowPathIcon className={`h-6 w-6 text-text-tertiary ${isLoading ? 'animate-spin' : ''}`} />
           </button>
 
           {/* Alert Badge */}
           {unacknowledgedAlerts > 0 && (
-            <button className="relative p-3 rounded-xl bg-status-danger/10 border border-status-danger/30 animate-pulse">
-              <BellAlertIcon className="h-6 w-6 text-status-danger" />
-              <span className="absolute -top-1 -right-1 w-5 h-5 bg-status-danger rounded-full text-xs font-bold flex items-center justify-center text-white">
+            <button
+              aria-label={`${unacknowledgedAlerts} unacknowledged alerts`}
+              className="touch-target relative p-3 rounded-xl bg-status-danger/10 border border-status-danger/30 animate-pulse flex items-center justify-center"
+            >
+              <BellAlertIcon className="h-7 w-7 text-status-danger" />
+              <span className="absolute -top-1 -right-1 w-6 h-6 bg-status-danger rounded-full text-sm font-bold flex items-center justify-center text-white">
                 {unacknowledgedAlerts}
               </span>
             </button>
@@ -435,19 +450,19 @@ const DoorStaffInterface: React.FC = () => {
               <button
                 onClick={() => setShowQRScanner(true)}
                 disabled={!activeShift}
-                className="flex-1 min-w-[140px] btn-primary py-4 flex items-center justify-center gap-3 touch-target disabled:opacity-50"
+                className="flex-1 min-w-[160px] btn-primary py-5 flex items-center justify-center gap-3 touch-target-lg text-lg disabled:opacity-50"
               >
-                <QrCodeIcon className="h-6 w-6" />
+                <QrCodeIcon className="h-7 w-7" />
                 <span className="font-semibold">Scan QR Badge</span>
               </button>
-              
+
               {/* ID Scanner Button */}
               <button
                 onClick={() => setShowIDScanner(true)}
                 disabled={!activeShift}
-                className="flex-1 min-w-[140px] btn-secondary py-4 flex items-center justify-center gap-3 touch-target disabled:opacity-50"
+                className="flex-1 min-w-[160px] btn-secondary py-5 flex items-center justify-center gap-3 touch-target-lg text-lg disabled:opacity-50"
               >
-                <IdentificationIcon className="h-6 w-6" />
+                <IdentificationIcon className="h-7 w-7" />
                 <span className="font-semibold">Scan ID</span>
               </button>
               
@@ -589,31 +604,34 @@ const DoorStaffInterface: React.FC = () => {
                         
                         {/* Collect Deferred Fee */}
                         {record.barFeeStatus === 'DEFERRED' && (
-                          <div className="flex items-center gap-1">
+                          <div className="flex items-center gap-2">
                             <button
                               onClick={() => handleCollectDeferredFee(record.id, 'CASH')}
-                              className="p-2 rounded-lg bg-status-success/10 border border-status-success/30 hover:bg-status-success/20 transition-all touch-target"
+                              aria-label="Collect cash"
+                              className="touch-target flex items-center justify-center rounded-lg bg-status-success/10 border border-status-success/30 hover:bg-status-success/20 transition-all"
                               title="Collect Cash"
                             >
-                              <BanknotesIcon className="h-4 w-4 text-status-success" />
+                              <BanknotesIcon className="h-6 w-6 text-status-success" />
                             </button>
                             <button
                               onClick={() => handleCollectDeferredFee(record.id, 'CARD')}
-                              className="p-2 rounded-lg bg-electric-500/10 border border-electric-500/30 hover:bg-electric-500/20 transition-all touch-target"
+                              aria-label="Collect card"
+                              className="touch-target flex items-center justify-center rounded-lg bg-electric-500/10 border border-electric-500/30 hover:bg-electric-500/20 transition-all"
                               title="Collect Card"
                             >
-                              <CreditCardIcon className="h-4 w-4 text-electric-400" />
+                              <CreditCardIcon className="h-6 w-6 text-electric-400" />
                             </button>
                           </div>
                         )}
-                        
+
                         {/* Check Out Button */}
                         <button
                           onClick={() => handleCheckOutSubmit(record.id, record.dancer?.stageName)}
-                          className="p-2 rounded-lg bg-midnight-700/50 border border-white/10 hover:border-status-warning/30 hover:bg-status-warning/10 transition-all touch-target"
+                          aria-label="Check out"
+                          className="touch-target flex items-center justify-center rounded-lg bg-midnight-700/50 border border-white/10 hover:border-status-warning/30 hover:bg-status-warning/10 transition-all"
                           title="Check Out"
                         >
-                          <ArrowLeftOnRectangleIcon className="h-5 w-5 text-text-tertiary hover:text-status-warning" />
+                          <ArrowLeftOnRectangleIcon className="h-6 w-6 text-text-tertiary hover:text-status-warning" />
                         </button>
                       </div>
                     </div>
